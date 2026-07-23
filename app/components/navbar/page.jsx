@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import logo from "./logo.png";
 
 const Navbar = () => {
@@ -23,7 +24,6 @@ const Navbar = () => {
   }, []);
 
   const navLinks = [
-    { name: "Home", href: "#home" },
     { name: "Services", href: "#services" },
     { name: "Portfolio", href: "#portfolio" },
     { name: "About", href: "#about" },
@@ -44,14 +44,14 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <div className="shrink-0">
-            <a href="#home" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
               <Image
                 src={logo}
                 alt="ChitroJal Logo"
                 height={40}
                 className="h-10 w-auto"
               />
-            </a>
+            </Link>
           </div>
 
           {/* Desktop Navigation */}
@@ -72,7 +72,7 @@ const Navbar = () => {
             {/* Theme Toggle */}
             {/* CTA Button */}
             <motion.a
-              href="#contact"
+              href="/booking"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="bg-orange-600 text-white px-6 py-2.5 rounded-full font-semibold shadow-lg hover:bg-orange-500 transition-colors flex items-center gap-2 font-english text-lg"

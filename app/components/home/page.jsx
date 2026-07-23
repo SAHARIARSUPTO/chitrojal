@@ -1,4 +1,5 @@
 import { Camera, CheckCircle, Package, Star, Clock, Heart } from "lucide-react";
+import Link from "next/link";
 
 const serviceDetails = {
   "wedding-photography": {
@@ -53,6 +54,7 @@ const features = [
 const packages = [
   {
     name: "সিলভার প্যাকেজ",
+    slug: "silver",
     price: "৳ ১৫,০০০",
     features: [
       "১ জন টপ ফটোগ্রাফার",
@@ -64,6 +66,7 @@ const packages = [
   },
   {
     name: "গোল্ড প্যাকেজ",
+    slug: "gold",
     price: "৳ ২৫,০০০",
     features: [
       "২ জন টপ ফটোগ্রাফার",
@@ -76,6 +79,7 @@ const packages = [
   },
   {
     name: "প্লাটিনাম প্যাকেজ",
+    slug: "platinum",
     price: "৳ ৪০,০০০",
     features: [
       "৩ জন প্রিমিয়াম ফটোগ্রাফার",
@@ -167,9 +171,11 @@ export default function Home({ params }) {
                 প্যাকেজগুলো। কাস্টম প্যাকেজের জন্য যোগাযোগ করুন।
               </p>
             </div>
-            <button className="px-8 py-4 bg-transparent border border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-black rounded-full font-bold transition-all duration-300">
-              কাস্টম প্যাকেজ তৈরি করুন
-            </button>
+            <Link href="/booking">
+              <button className="px-8 py-4 bg-transparent border border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-black rounded-full font-bold transition-all duration-300">
+                কাস্টম প্যাকেজ তৈরি করুন
+              </button>
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -203,15 +209,17 @@ export default function Home({ params }) {
                   ))}
                 </div>
 
-                <button
-                  className={`w-full py-4 rounded-xl font-bold transition-colors ${
-                    pkg.isPopular
-                      ? "bg-amber-500 text-black hover:bg-amber-400"
-                      : "bg-white/10 text-white hover:bg-white/20"
-                  }`}
-                >
-                  বুকিং করুন
-                </button>
+                <Link href={`/booking?package=${pkg.slug}`} className="mt-auto">
+                  <button
+                    className={`w-full py-4 rounded-xl font-bold transition-colors ${
+                      pkg.isPopular
+                        ? "bg-amber-500 text-black hover:bg-amber-400"
+                        : "bg-white/10 text-white hover:bg-white/20"
+                    }`}
+                  >
+                    বুকিং করুন
+                  </button>
+                </Link>
               </div>
             ))}
           </div>

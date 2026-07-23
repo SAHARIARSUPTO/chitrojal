@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import Navbar from "./components/navbar/page";
 import Footer from "./components/footer/page";
+import ChitroJalPackages from "./components/home/packages/page";
 import HomeClient from "./components/home/home-client";
 import { Camera, Video, Heart, Aperture } from "lucide-react";
 
@@ -44,7 +45,7 @@ export default function Home() {
 
   // Read images from the hero-image folder
   const heroImageDir = path.join(process.cwd(), "public", "hero-image");
-  let heroImages = [];
+  let heroImages: string[] = [];
   try {
     if (fs.existsSync(heroImageDir)) {
       heroImages = fs
@@ -57,7 +58,7 @@ export default function Home() {
 
   // Read images from the portfolio folder
   const portfolioDir = path.join(process.cwd(), "public", "portfolio");
-  let portfolioImages = [];
+  let portfolioImages: string[] = [];
   try {
     if (fs.existsSync(portfolioDir)) {
       portfolioImages = fs
@@ -68,6 +69,20 @@ export default function Home() {
     console.error("Could not read portfolio directory:", error);
   }
 
+  // Read video from the about-video folder
+  const aboutVideoDir = path.join(process.cwd(), "public", "about-video");
+  let aboutVideo = "";
+  try {
+    if (fs.existsSync(aboutVideoDir)) {
+      const files = fs.readdirSync(aboutVideoDir);
+      if (files.length > 0) {
+        aboutVideo = `/about-video/${files[0]}`; // Get the first video
+      }
+    }
+  } catch (error) {
+    console.error("Could not read about-video directory:", error);
+  }
+
   return (
     <div className="bg-[#050505] text-white selection:bg-orange-500/30 min-h-screen font-sans">
       <Navbar />
@@ -75,7 +90,9 @@ export default function Home() {
         services={services}
         portfolioImages={portfolioImages}
         heroImages={heroImages}
+        aboutVideo={aboutVideo}
       />
+
       <Footer />
     </div>
   );
