@@ -57,7 +57,7 @@ const ServiceCard = ({ icon, title, description, image, slug }) => {
         {/* Content Container (Bottom Aligned) */}
         <div className="absolute inset-x-0 bottom-0 p-8 flex flex-col justify-end z-20">
           <div className="transform transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] translate-y-8 group-hover:translate-y-0">
-            <h3 className="font-extrabold text-2xl md:text-3xl mb-3 text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-400 group-hover:text-white transition-colors duration-300">
+            <h3 className="font-extrabold text-xl sm:text-2xl md:text-3xl mb-3 text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-400 group-hover:text-white transition-colors duration-300">
               {title}
             </h3>
 

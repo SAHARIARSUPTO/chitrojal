@@ -5,25 +5,54 @@ import Footer from "../footer/page";
 import HomeClient from "./home-client";
 import { Camera, Video, Heart, Aperture } from "lucide-react";
 
-// --- Main Page Component ---
-
-const HomePage = () => {
-  const portfolioDir = path.join(process.cwd(), "public", "portfolio");
-  let portfolioImages = [];
+const readImageDirectory = (dir) => {
+  const directoryPath = path.join(process.cwd(), "public", dir);
   try {
-    if (fs.existsSync(portfolioDir)) {
-      portfolioImages = fs
-        .readdirSync(portfolioDir)
-        .map((file) => `/portfolio/${file}`);
+    if (fs.existsSync(directoryPath)) {
+      return fs.readdirSync(directoryPath).map((file) => `/${dir}/${file}`);
     }
   } catch (error) {
-    console.error("Could not read portfolio directory:", error);
-    // Keep portfolioImages as an empty array
+    console.error(`Could not read directory: ${dir}`, error);
   }
+  return [];
+};
+
+const HomePage = () => {
+  const portfolioImages = readImageDirectory("portfolio");
+  const portraitImages = readImageDirectory("portrait-library");
+  const landscapeImages = readImageDirectory("landscape-library");
+
+  const carouselData = {
+    portfolio: {
+      title: "PORTFOLIO",
+      subtitle: "Our recent works",
+      images: portfolioImages,
+    },
+    portraitLibrary: {
+      title: "PHOTO LIBRARY",
+      subtitle: "Portrait collection",
+      images: portraitImages,
+    },
+    landscapeLibrary: {
+      title: "PHOTO LIBRARY",
+      subtitle: "Landscape collection",
+      images: landscapeImages,
+    },
+  };
+
+  const videoData = [
+    {
+      id: 1,
+      src: "/videos/video.mp4",
+      thumbnail: portfolioImages[0] || "", // Use first portfolio image as a fallback thumbnail
+      title: "সিনেমাটিক ওয়েডিং ফিল্ম",
+      description: "প্রেম ও উদযাপনের এক সুন্দর গল্প।",
+    },
+  ];
 
   const services = [
     {
-      icon: <Heart size={24} />,
+      icon: "Heart",
       title: "ওয়েডিং ফটোগ্রাফি",
       slug: "wedding-photography",
       description:
@@ -31,7 +60,7 @@ const HomePage = () => {
       image: "",
     },
     {
-      icon: <Video size={24} />,
+      icon: "Video",
       title: "সিনেমাটিক ওয়েডিং",
       slug: "cinematic-wedding",
       description:
@@ -39,7 +68,7 @@ const HomePage = () => {
       image: "",
     },
     {
-      icon: <Camera size={24} />,
+      icon: "Camera",
       title: "প্রি-ওয়েডিং শ্যুট",
       slug: "pre-wedding-shoot",
       description:
@@ -47,7 +76,7 @@ const HomePage = () => {
       image: "",
     },
     {
-      icon: <Aperture size={24} />,
+      icon: "Aperture",
       title: "গায়ে হলুদ ও মেহেদী",
       slug: "holud-and-mehendi",
       description:
@@ -59,7 +88,12 @@ const HomePage = () => {
   return (
     <div className="bg-[#050505] text-white selection:bg-orange-500/30 min-h-screen font-sans">
       <Navbar />
-      <HomeClient services={services} portfolioImages={portfolioImages} />
+      <HomeClient
+        services={services}
+        portfolioImages={portfolioImages}
+        carouselData={carouselData}
+        videoData={videoData}
+      />
       <Footer />
     </div>
   );

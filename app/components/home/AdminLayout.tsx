@@ -86,9 +86,9 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           <Image
             src="/logo.png"
             alt="ChitroJal Logo"
-            width={32}
-            height={32}
-            className="h-8 w-auto"
+            width={100}
+            height={26}
+            className="h-7 w-auto"
           />
         </Link>
       </div>

@@ -1,10 +1,9 @@
 "use client";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import ServicesSection from "./services-section"; // Import the new component
-import ChitroJalPackages from "./packages/page";
-import { useState, useEffect } from "react";
 import Image from "next/image";
+import BentoGridHero from "./BentoGridHero"; // Import the new hero component
+import VideoCarousel from "./VideoCarousel"; // Import the new video carousel component
 import {
   Camera,
   Video,
@@ -38,127 +37,11 @@ const StatItem = ({ number, text }) => (
   </div>
 );
 
-const HomeClient = ({ services, portfolioImages, heroImages, aboutVideo }) => {
-  // Assign images to grid items. This can be made more robust.
-  const gridImages = [
-    portfolioImages[0] || "",
-    portfolioImages[1] || "",
-    portfolioImages[2] || "",
-    portfolioImages[3] || "",
-    portfolioImages[4] || "",
-  ];
-
-  const [currentImageIndex, setCurrentImageIndex] = useState(null);
-
-  useEffect(() => {
-    // Set the initial random image only on the client
-    setCurrentImageIndex(Math.floor(Math.random() * heroImages.length));
-
-    if (heroImages.length > 1) {
-      const interval = setInterval(() => {
-        setCurrentImageIndex(
-          (prevIndex) => (prevIndex + 1) % heroImages.length,
-        );
-      }, 3000); // Change image every 3 seconds
-      return () => clearInterval(interval);
-    }
-  }, [heroImages]);
-
+const HomeClient = ({ portfolioImages, carouselData, videoData, services }) => {
   return (
     <main>
-      {/* --- Cinematic Hero Section --- */}
-      <section
-        id="home"
-        className="relative h-screen flex items-center justify-center overflow-hidden"
-      >
-        {/* Hero Background Image with Parallax effect */}
-        {heroImages.length > 0 &&
-          heroImages.map((image, index) => (
-            <div
-              key={image}
-              className="absolute inset-0 bg-cover bg-center scale-105 animate-[kenburns_20s_ease-in-out_infinite_alternate] transition-opacity duration-1000"
-              style={{
-                backgroundImage: `url(${image})`,
-                opacity: index === currentImageIndex ? 1 : 0,
-                zIndex: index === currentImageIndex ? 1 : 0,
-              }}
-            ></div>
-          ))}
-
-        {/* Deep Cinematic Gradients */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-[#050505]"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-black/80"></div>
-
-        <motion.div
-          className="relative z-10 px-4 max-w-5xl mx-auto text-center pt-20"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, ease: "easeOut" }}
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.8 }}
-            className="mb-8"
-          >
-            <Image
-              src="/logo.png"
-              alt="ChitroJal Logo"
-              width={420}
-              height={420}
-              className="mx-auto w-36 h-auto hidden md:block"
-            />
-          </motion.div>
-
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight mb-6 leading-tight [text-shadow:_0_3px_15px_rgba(0,0,0,0.5)]">
-            স্মৃতির ক্যানভাসে <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-red-500">
-              রঙের ছোঁয়া
-            </span>
-          </h1>
-
-          <p className="mt-6 max-w-xl mx-auto text-lg md:text-2xl text-gray-200 font-light leading-relaxed [text-shadow:_0_2px_10px_rgba(0,0,0,0.8)] font-bengali">
-            জীবনের সেরা মুহূর্তগুলো শুধু ছবি নয়, এগুলো এক একটি গল্প।{" "}
-            <span className="text-orange-400 font-medium font-english text-2xl md:text-3xl">
-              ChitroJal
-            </span>
-            -এর সাথে আপনার গল্পগুলো বেঁচে থাকুক আজীবন।
-          </p>
-
-          <div className="mt-12 flex flex-col sm:flex-row justify-center gap-6 items-center">
-            <Link href="/booking">
-              <motion.button
-                className="sm:w-auto bg-orange-600 text-white font-bold px-8 py-3 sm:px-10 sm:py-4 rounded-full shadow-[0_0_30px_rgba(255,122,0,0.4)] hover:bg-orange-500 transition-all duration-300 flex items-center justify-center gap-2"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Calendar size={20} /> ইভেন্ট বুক করুন
-              </motion.button>
-            </Link>
-            <motion.button
-              className="sm:w-auto flex items-center justify-center gap-3 text-white font-medium hover:text-orange-400 transition-colors duration-300"
-              whileHover={{ scale: 1.05 }}
-            >
-              <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20">
-                <Play size={18} className="ml-1" />
-              </div>
-              আমাদের শো-রিল দেখুন
-            </motion.button>
-          </div>
-        </motion.div>
-
-        {/* Scroll Indicator */}
-        <motion.div
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/50 flex flex-col items-center"
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          <span className="text-xs uppercase tracking-widest mb-2 font-english">
-            Scroll Down
-          </span>
-          <div className="w-[1px] h-12 bg-gradient-to-b from-orange-500 to-transparent"></div>
-        </motion.div>
-      </section>
+      {/* --- New Bento Grid Hero Section --- */}
+      <BentoGridHero carouselData={carouselData} />
 
       {/* --- Quick Stats Bar --- */}
       <section className="py-12 border-b border-white/5 bg-[#0A0A0A]">
@@ -172,9 +55,7 @@ const HomeClient = ({ services, portfolioImages, heroImages, aboutVideo }) => {
         </div>
       </section>
 
-      <ChitroJalPackages />
-
-      <ServicesSection services={services} heroImages={heroImages} />
+      <VideoCarousel videoData={videoData} />
 
       {/* --- Portfolio Preview Grid (Masonry Style) --- */}
       <section
@@ -289,18 +170,18 @@ const HomeClient = ({ services, portfolioImages, heroImages, aboutVideo }) => {
         <div className="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
 
         <div className="container mx-auto px-4 relative z-10 text-center max-w-3xl">
-          <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-6">
+          <h2 className="text-3xl sm:text-4xl md:text-6xl font-extrabold text-white mb-6">
             আপনার স্পেশাল দিনটি <br />{" "}
             <span className="text-orange-500">বুক করুন</span>
           </h2>
-          <p className="text-lg text-gray-300 mb-10">
+          <p className="text-base md:text-lg text-gray-300 mb-10">
             আমাদের ডেটগুলো খুব দ্রুত বুক হয়ে যায়। তাই আপনার ইভেন্টের তারিখ
             কনফার্ম করতে আজই যোগাযোগ করুন আমাদের সাথে।
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link href="/booking">
               <motion.button
-                className="bg-orange-600 text-white font-bold px-10 py-4 rounded-full shadow-[0_0_30px_rgba(255,122,0,0.4)]"
+                className="bg-orange-600 text-white font-bold px-8 py-3 sm:px-10 sm:py-4 rounded-full shadow-[0_0_30px_rgba(255,122,0,0.4)]"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -308,14 +189,14 @@ const HomeClient = ({ services, portfolioImages, heroImages, aboutVideo }) => {
               </motion.button>
             </Link>
             <motion.button
-              className="bg-white/10 border border-white/20 text-white font-semibold px-10 py-4 rounded-full backdrop-blur-md flex items-center justify-center gap-2"
+              className="bg-white/10 border border-white/20 text-white font-semibold px-8 py-3 sm:px-10 sm:py-4 rounded-full backdrop-blur-md flex items-center justify-center gap-2"
               whileHover={{
                 scale: 1.05,
                 backgroundColor: "rgba(255,255,255,0.15)",
               }}
               whileTap={{ scale: 0.95 }}
             >
-              <Phone size={20} /> কল করুন: +880 1234-567890
+              <Phone size={20} /> কল করুন: +8801834258375
             </motion.button>
           </div>
         </div>

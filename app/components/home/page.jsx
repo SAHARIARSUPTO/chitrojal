@@ -119,10 +119,10 @@ export default function Home({ params }) {
               <span className="w-8 h-[1px] bg-amber-500"></span>
               {service.subtitle}
             </span>
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 mb-6 leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 mb-6 leading-tight">
               {service.title}
             </h1>
-            <p className="text-lg md:text-2xl text-gray-300 max-w-2xl leading-relaxed font-light border-l-4 border-amber-500 pl-6">
+            <p className="text-base sm:text-lg md:text-2xl text-gray-300 max-w-2xl leading-relaxed font-light border-l-4 border-amber-500 pl-6">
               {service.description}
             </p>
           </div>
@@ -131,7 +131,7 @@ export default function Home({ params }) {
         {/* WHY CHOOSE US SECTION */}
         <section className="py-16">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
               কেন আমাদের <span className="text-amber-500">বেছে নিবেন?</span>
             </h2>
             <p className="text-gray-400 max-w-2xl mx-auto">
@@ -149,7 +149,9 @@ export default function Home({ params }) {
                 <div className="bg-amber-500/10 w-16 h-16 rounded-xl flex items-center justify-center mb-6 group-hover:bg-amber-500/20 transition-colors">
                   <feat.icon className="w-8 h-8 text-amber-500" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">{feat.title}</h3>
+                <h3 className="text-lg sm:text-xl font-bold mb-3">
+                  {feat.title}
+                </h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
                   {feat.desc}
                 </p>
@@ -162,7 +164,7 @@ export default function Home({ params }) {
         <section id="contact" className="py-24">
           <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
             <div>
-              <h2 className="text-3xl md:text-5xl font-bold mb-4 flex items-center gap-3">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 flex items-center gap-3">
                 <Package className="w-10 h-10 text-amber-500" />
                 প্যাকেজ সমূহ
               </h2>
@@ -193,9 +195,11 @@ export default function Home({ params }) {
                     সবচেয়ে জনপ্রিয়
                   </div>
                 )}
-                <h3 className="text-2xl font-bold mb-2">{pkg.name}</h3>
+                <h3 className="text-xl sm:text-2xl font-bold mb-2">
+                  {pkg.name}
+                </h3>
                 <div className="flex items-baseline gap-1 mb-8">
-                  <span className="text-4xl md:text-5xl font-extrabold text-amber-500">
+                  <span className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-amber-500">
                     {pkg.price}
                   </span>
                 </div>

@@ -6,6 +6,18 @@ import ChitroJalPackages from "./components/home/packages/page";
 import HomeClient from "./components/home/home-client";
 import { Camera, Video, Heart, Aperture } from "lucide-react";
 
+const readImageDirectory = (dir: string): string[] => {
+  const directoryPath = path.join(process.cwd(), "public", dir);
+  try {
+    if (fs.existsSync(directoryPath)) {
+      return fs.readdirSync(directoryPath).map((file) => `/${dir}/${file}`);
+    }
+  } catch (error) {
+    console.error(`Could not read directory: ${dir}`, error);
+  }
+  return [];
+};
+
 export default function Home() {
   // Data for the services section. You can manage this here.
   const services = [
@@ -43,45 +55,38 @@ export default function Home() {
     },
   ];
 
-  // Read images from the hero-image folder
-  const heroImageDir = path.join(process.cwd(), "public", "hero-image");
-  let heroImages: string[] = [];
-  try {
-    if (fs.existsSync(heroImageDir)) {
-      heroImages = fs
-        .readdirSync(heroImageDir)
-        .map((file) => `/hero-image/${file}`);
-    }
-  } catch (error) {
-    console.error("Could not read hero-image directory:", error);
-  }
-
   // Read images from the portfolio folder
-  const portfolioDir = path.join(process.cwd(), "public", "portfolio");
-  let portfolioImages: string[] = [];
-  try {
-    if (fs.existsSync(portfolioDir)) {
-      portfolioImages = fs
-        .readdirSync(portfolioDir)
-        .map((file) => `/portfolio/${file}`);
-    }
-  } catch (error) {
-    console.error("Could not read portfolio directory:", error);
-  }
+  const portfolioImages = readImageDirectory("portfolio");
+  const portraitImages = readImageDirectory("portrait-library");
+  const landscapeImages = readImageDirectory("landscape-library");
 
-  // Read video from the about-video folder
-  const aboutVideoDir = path.join(process.cwd(), "public", "about-video");
-  let aboutVideo = "";
-  try {
-    if (fs.existsSync(aboutVideoDir)) {
-      const files = fs.readdirSync(aboutVideoDir);
-      if (files.length > 0) {
-        aboutVideo = `/about-video/${files[0]}`; // Get the first video
-      }
-    }
-  } catch (error) {
-    console.error("Could not read about-video directory:", error);
-  }
+  const carouselData = {
+    portfolio: {
+      title: "PORTFOLIO",
+      subtitle: "Our recent works",
+      images: portfolioImages,
+    },
+    portraitLibrary: {
+      title: "PHOTO LIBRARY",
+      subtitle: "Portrait collection",
+      images: portraitImages,
+    },
+    landscapeLibrary: {
+      title: "PHOTO LIBRARY",
+      subtitle: "Landscape collection",
+      images: landscapeImages,
+    },
+  };
+
+  const videoData = [
+    {
+      id: 1,
+      src: "/videos/video.mp4",
+      thumbnail: portfolioImages[0] || "", // Use first portfolio image as a fallback thumbnail
+      title: "সিনেমাটিক ওয়েডিং ফিল্ম",
+      description: "প্রেম ও উদযাপনের এক সুন্দর গল্প।",
+    },
+  ];
 
   return (
     <div className="bg-[#050505] text-white selection:bg-orange-500/30 min-h-screen font-sans">
@@ -89,8 +94,8 @@ export default function Home() {
       <HomeClient
         services={services}
         portfolioImages={portfolioImages}
-        heroImages={heroImages}
-        aboutVideo={aboutVideo}
+        carouselData={carouselData}
+        videoData={videoData}
       />
 
       <Footer />
