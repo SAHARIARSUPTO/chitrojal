@@ -97,7 +97,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="text-white selection:bg-orange-500/30 min-h-screen font-sans">
+    <div className="bg-[#0a0a0a] text-white selection:bg-orange-500/30 min-h-screen font-sans">
       <Navbar />
       <HomeClient
         services={services}

@@ -22,7 +22,7 @@ const BentoGridHero = ({ carouselData, packageImages }) => {
 
   return (
     <>
-      <section className="w-full bg-[#1a1a1a] p-4 md:p-6 lg:p-8 mt-24">
+      <section className="w-full bg-[#040404] p-4 md:p-6 lg:p-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 lg:gap-8 max-w-7xl mx-auto">
           {/* Left Column */}
           <div className="md:col-span-5 flex flex-col gap-4 md:gap-6 lg:gap-8">
