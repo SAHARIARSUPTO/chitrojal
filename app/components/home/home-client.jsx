@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
+import ContactSection from "../contacts/page";
 import BentoGridHero from "./BentoGridHero"; // Import the new hero component
 import VideoCarousel from "./VideoCarousel"; // Import the new video carousel component
 import {
@@ -16,6 +17,7 @@ import {
   Play,
   CheckCircle2,
 } from "lucide-react";
+import QuotesShowcase from "../section1/page";
 
 const iconComponents = {
   Heart: <Heart size={24} />,
@@ -37,30 +39,39 @@ const StatItem = ({ number, text }) => (
   </div>
 );
 
-const HomeClient = ({ portfolioImages, carouselData, videoData, services }) => {
+const HomeClient = ({
+  portfolioImages,
+  carouselData,
+  videoData,
+  services,
+  packageImages,
+}) => {
   return (
     <main>
       {/* --- New Bento Grid Hero Section --- */}
-      <BentoGridHero carouselData={carouselData} />
+      <BentoGridHero
+        carouselData={carouselData}
+        packageImages={packageImages}
+      />
 
       {/* --- Quick Stats Bar --- */}
-      <section className="py-12 border-b border-white/5 bg-[#0A0A0A]">
+      <section className="py-12 border-b border-white/5">
         <div className="container mx-auto px-4">
           <div className="flex flex-wrap justify-center items-center gap-y-8 md:gap-y-0">
-            <StatItem number="১০+" text="হ্যাপি কাপল" />
+            <StatItem number="১০+" text="হ্যাপি ক্লায়েন্ট" />
             <StatItem number="৫০+" text="ইভেন্ট কভারড" />
             <StatItem number="০৫+" text="বছরের অভিজ্ঞতা" />
             <StatItem number="১০০%" text="স্যাটিসফ্যাকশন" />
           </div>
         </div>
       </section>
-
+      <ContactSection />
       <VideoCarousel videoData={videoData} />
-
+      <QuotesShowcase />
       {/* --- Portfolio Preview Grid (Masonry Style) --- */}
       <section
         id="portfolio"
-        className="py-24 bg-[#0A0A0A] relative border-y border-white/5"
+        className="py-24 relative border-y border-white/5"
       >
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="text-center mb-16">

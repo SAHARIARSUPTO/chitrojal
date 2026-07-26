@@ -1,11 +1,11 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import { Play, Pause, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 const VideoCarousel = ({ videoData = [] }) => {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [fullscreen, setFullscreen] = useState({ isOpen: false, video: null });
-  const videoRef = useRef(null);
 
   const currentVideo = videoData[currentVideoIndex];
 
@@ -57,15 +57,13 @@ const VideoCarousel = ({ videoData = [] }) => {
           </div>
 
           <div className="relative w-full aspect-video rounded-lg overflow-hidden group">
-            <video
-              ref={videoRef}
-              src={currentVideo.src}
-              poster={currentVideo.thumbnail}
+            <Image
+              src={currentVideo.thumbnail}
+              alt={currentVideo.title}
+              fill
               className="w-full h-full object-cover"
-              loop
-              muted
-              preload="metadata"
-              playsInline
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              priority
             />
             <div className="absolute inset-0 bg-black/50 flex flex-col justify-end p-6">
               <h3 className="text-2xl md:text-3xl font-bold text-white">
@@ -110,41 +108,33 @@ const VideoCarousel = ({ videoData = [] }) => {
 };
 
 const FullscreenVideoPlayer = ({ video, onClose, onNext, onPrev }) => {
-  const videoRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(true);
-
-  useEffect(() => {
-    const videoElement = videoRef.current;
-    if (videoElement) {
-      if (isPlaying) {
-        videoElement
-          .play()
-          .catch((e) => console.error("Autoplay was prevented:", e));
-      } else {
-        videoElement.pause();
-      }
-    }
-  }, [isPlaying, video.src]);
-
-  const togglePlay = () => {
-    setIsPlaying(!isPlaying);
-  };
-
   return (
     <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
-      <div className="relative w-full h-full max-w-screen-lg max-h-screen-lg">
-        <video
-          ref={videoRef}
-          src={video.src}
-          className="w-full h-full object-contain"
-          autoPlay
-          loop
-          onClick={togglePlay}
-        />
+      <div className="relative w-full h-full max-w-4xl aspect-video">
+        {video.localSrc ? (
+          <video
+            src={video.localSrc}
+            className="w-full h-full"
+            controls
+            autoPlay
+          ></video>
+        ) : (
+          video.facebookSrc && (
+            <iframe
+              src={video.facebookSrc}
+              className="w-full h-full"
+              style={{ border: "none", overflow: "hidden" }}
+              scrolling="no"
+              frameBorder="0"
+              allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+              allowFullScreen={true}
+            ></iframe>
+          )
+        )}
         <div className="absolute top-4 right-4">
           <button
             onClick={onClose}
-            className="text-white bg-black/50 rounded-full p-2"
+            className="text-white bg-black/50 rounded-full p-2 z-10"
           >
             <X size={32} />
           </button>
@@ -152,7 +142,7 @@ const FullscreenVideoPlayer = ({ video, onClose, onNext, onPrev }) => {
         <div className="absolute left-4 top-1/2 -translate-y-1/2">
           <button
             onClick={onPrev}
-            className="text-white bg-black/50 rounded-full p-2"
+            className="text-white bg-black/50 rounded-full p-2 z-10"
           >
             <ChevronLeft size={48} />
           </button>
@@ -160,17 +150,9 @@ const FullscreenVideoPlayer = ({ video, onClose, onNext, onPrev }) => {
         <div className="absolute right-4 top-1/2 -translate-y-1/2">
           <button
             onClick={onNext}
-            className="text-white bg-black/50 rounded-full p-2"
+            className="text-white bg-black/50 rounded-full p-2 z-10"
           >
             <ChevronRight size={48} />
-          </button>
-        </div>
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2">
-          <button
-            onClick={togglePlay}
-            className="text-white bg-black/50 rounded-full p-4"
-          >
-            {isPlaying ? <Pause size={32} /> : <Play size={32} />}
           </button>
         </div>
       </div>

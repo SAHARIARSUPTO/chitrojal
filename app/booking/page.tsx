@@ -191,9 +191,7 @@ function BookingPageContents() {
     setFormData((prev) => ({
       ...prev,
       [name]:
-        type === "checkbox"
-          ? (e.target as HTMLInputElement).checked
-          : value,
+        type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
     }));
   };
 
@@ -251,15 +249,15 @@ function BookingPageContents() {
   };
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl relative z-10">
+    <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8 max-w-7xl relative z-10">
       {/* Header Section */}
       <div className="text-center mb-16">
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white via-orange-200 to-orange-600 mb-6 drop-shadow-lg tracking-tight">
           ইভেন্ট বুকিং
         </h1>
         <p className="text-neutral-400 text-lg md:text-xl font-medium max-w-2xl mx-auto leading-relaxed">
-          আপনার বিশেষ দিনটিকে ফ্রেমবন্দি করতে আজই আপনার পছন্দের তারিখ ও
-          প্যাকেজ নির্বাচন করুন।
+          আপনার বিশেষ দিনটিকে ফ্রেমবন্দি করতে আজই আপনার পছন্দের তারিখ ও প্যাকেজ
+          নির্বাচন করুন।
         </p>
       </div>
 
@@ -489,9 +487,7 @@ function BookingPageContents() {
                 ) : (
                   <FiAlertCircle className="w-6 h-6 shrink-0" />
                 )}
-                <p className="text-sm font-medium">
-                  {submitStatus.message}
-                </p>
+                <p className="text-sm font-medium">{submitStatus.message}</p>
               </div>
             )}
 
@@ -539,7 +535,7 @@ function BookingPageContents() {
 }
 
 export default function BookingPage() {
-    return (
+  return (
     <div className="min-h-screen flex flex-col bg-[#050505] text-neutral-200 font-sans selection:bg-orange-500/30">
       <Navbar />
 
@@ -549,11 +545,11 @@ export default function BookingPage() {
         <div className="absolute bottom-0 right-10 w-[600px] h-[600px] bg-orange-500/5 rounded-full blur-[150px] pointer-events-none"></div>
 
         <Suspense fallback={<div>Loading...</div>}>
-            <BookingPageContents />
+          <BookingPageContents />
         </Suspense>
       </main>
 
       <Footer />
     </div>
-    )
+  );
 }

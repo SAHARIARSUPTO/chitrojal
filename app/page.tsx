@@ -2,7 +2,6 @@ import fs from "fs";
 import path from "path";
 import Navbar from "./components/navbar/page";
 import Footer from "./components/footer/page";
-import ChitroJalPackages from "./components/home/packages/page";
 import HomeClient from "./components/home/home-client";
 import { Camera, Video, Heart, Aperture } from "lucide-react";
 
@@ -59,6 +58,7 @@ export default function Home() {
   const portfolioImages = readImageDirectory("portfolio");
   const portraitImages = readImageDirectory("portrait-library");
   const landscapeImages = readImageDirectory("landscape-library");
+  const packageImages = readImageDirectory("package");
 
   const carouselData = {
     portfolio: {
@@ -81,21 +81,30 @@ export default function Home() {
   const videoData = [
     {
       id: 1,
-      src: "/videos/video.mp4",
+      localSrc: "/videos/01.mp4",
       thumbnail: portfolioImages[0] || "", // Use first portfolio image as a fallback thumbnail
       title: "সিনেমাটিক ওয়েডিং ফিল্ম",
       description: "প্রেম ও উদযাপনের এক সুন্দর গল্প।",
     },
+    {
+      id: 2,
+      facebookSrc:
+        "https://www.facebook.com/plugins/video.php?height=314&href=https%3A%2F%2Fwww.facebook.com%2Freel%2F1484422342948146%2F&show_text=false&width=560&t=0",
+      thumbnail: portfolioImages[1] || "", // Placeholder thumbnail
+      title: "ফেসবুক রিল ১",
+      description: "আমাদের সাম্প্রতিক কাজ থেকে একটি রিল।",
+    },
   ];
 
   return (
-    <div className="bg-[#050505] text-white selection:bg-orange-500/30 min-h-screen font-sans">
+    <div className="text-white selection:bg-orange-500/30 min-h-screen font-sans">
       <Navbar />
       <HomeClient
         services={services}
         portfolioImages={portfolioImages}
         carouselData={carouselData}
         videoData={videoData}
+        packageImages={packageImages}
       />
 
       <Footer />

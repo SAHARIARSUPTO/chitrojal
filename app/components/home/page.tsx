@@ -205,10 +205,10 @@ export default function BookingPage() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-5 gap-8 lg:gap-12">
+        <div className="grid md:grid-cols-5 gap-8 lg:gap-12 md:items-start">
           {/* Form Section */}
-          <div className="md:col-span-3">
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="md:col-span-3 md:sticky top-24">
+            <form onSubmit={handleSubmit} className="space-y-6 h-fit">
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
                   <label

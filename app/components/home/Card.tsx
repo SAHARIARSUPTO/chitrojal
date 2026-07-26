@@ -5,9 +5,16 @@ interface CardProps {
   title?: string;
   subtitle?: string;
   className?: string;
+  disablePadding?: boolean; // New prop
 }
 
-const Card = ({ children, title, subtitle, className = "" }: CardProps) => {
+const Card = ({
+  children,
+  title,
+  subtitle,
+  className = "",
+  disablePadding = false, // Default to false
+}: CardProps) => {
   return (
     <div
       className={`bg-neutral-900/50 border border-neutral-800 rounded-xl shadow-sm transition-colors hover:border-orange-500/20 ${className}`}
@@ -22,7 +29,7 @@ const Card = ({ children, title, subtitle, className = "" }: CardProps) => {
           )}
         </div>
       )}
-      <div className="p-5">{children}</div>
+      <div className={`${disablePadding ? "" : "p-5"}`}>{children}</div> {/* Conditionally apply padding */}
     </div>
   );
 };

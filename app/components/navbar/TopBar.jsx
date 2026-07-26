@@ -3,20 +3,20 @@ import { FiMapPin, FiPhone, FiMail } from 'react-icons/fi';
 
 const TopBar = () => {
   return (
-    <div className="bg-gray-900 text-white text-xs py-2">
+    <div className="bg-black/50 backdrop-blur-sm border-b border-white/10 text-neutral-300 text-xs py-2">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <FiMapPin className="text-orange-400" />
-            <span className="text-orange-400">Juma Market, Mizan Road, Feni</span>
+            <span>Juma Market, Mizan Road, Feni</span>
           </div>
           <div className="flex items-center gap-2">
             <FiPhone className="text-orange-400" />
-            <span className="text-orange-400">01834258375</span>
+            <a href="tel:01834258375" className="hover:text-orange-400 transition-colors">01834258375</a>
           </div>
           <div className="flex items-center gap-2">
             <FiMail className="text-orange-400" />
-            <span className="text-orange-400">Chitrojaal@gmail.com</span>
+            <a href="mailto:Chitrojaal@gmail.com" className="hover:text-orange-400 transition-colors">Chitrojaal@gmail.com</a>
           </div>
         </div>
       </div>

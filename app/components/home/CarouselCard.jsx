@@ -14,6 +14,7 @@ import Image from "next/image";
  *   textClassName?: string;
  *   titleClassName?: string;
  *   subtitleClassName?: string;
+ *   autoSlide?: boolean;
  * }} props
  */
 const CarouselCard = ({
@@ -24,19 +25,20 @@ const CarouselCard = ({
   textClassName = "",
   titleClassName = "",
   subtitleClassName = "",
+  autoSlide = true,
   onClick,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    if (images.length > 1) {
+    if (autoSlide && images.length > 1) {
       const interval = setInterval(() => {
         setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
       }, 3000); // Change image every 3 seconds
 
       return () => clearInterval(interval);
     }
-  }, [images.length]);
+  }, [autoSlide, images.length]);
 
   const handleCardClick = () => {
     if (onClick) {
@@ -46,7 +48,7 @@ const CarouselCard = ({
 
   return (
     <div
-      className={`relative w-full h-full overflow-hidden rounded-3xl group cursor-pointer ${className}`}
+      className={`relative w-full h-full overflow-hidden rounded-3xl group cursor-pointer bg-black ${className}`}
       onClick={handleCardClick}
     >
       <div
@@ -54,15 +56,16 @@ const CarouselCard = ({
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
         {images.map((src, index) => (
-          <Image
-            key={index}
-            src={src}
-            alt={`${title} - image ${index + 1}`}
-            fill
-            className="w-full h-full flex-shrink-0 object-cover"
-            sizes="(max-width: 768px) 90vw, (max-width: 1200px) 50vw, 33vw"
-            priority={index === 0}
-          />
+          <div key={index} className="relative w-full h-full flex-shrink-0">
+            <Image
+              src={src}
+              alt={`${title} - image ${index + 1}`}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 90vw, (max-width: 1200px) 50vw, 33vw"
+              priority={index === 0}
+            />
+          </div>
         ))}
       </div>
       <div className="absolute inset-0 bg-black/40 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />

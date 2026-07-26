@@ -27,3 +27,28 @@ body {
   color: var(--foreground);
   font-family: var(--font-bengali);
 }
+
+@keyframes move-background {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(-100px, -100px);
+  }
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: calc(100% + 100px);
+  height: calc(100% + 100px);
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: move-background 5s linear infinite;
+  will-change: transform;
+  z-index: -1;
+}
