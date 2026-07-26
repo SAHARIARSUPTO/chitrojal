@@ -2,379 +2,389 @@
 
 import React, { useState, useEffect } from "react";
 import AdminLayout from "../../components/home/AdminLayout";
-import {
-  FiSearch,
-  FiPlus,
-  FiEye,
-  FiEdit2,
-  FiTrash2,
-  FiMail,
-  FiUsers,
-  FiBriefcase,
-  FiCalendar,
-  FiFilter,
-  FiUserCheck,
-  FiUserMinus,
-} from "react-icons/fi";
-
-// Cohesive, "no blue" premium palette for roles
-const roleConfig: { [key: string]: string } = {
-  "Senior Photographer": "text-amber-400 bg-amber-400/10 border-amber-400/20",
-  Photographer: "text-neutral-200 bg-white/5 border-white/10",
-  "Video Editor": "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
-  "Photo Editor": "text-orange-400 bg-orange-400/10 border-orange-400/20",
-  "Assistant Photographer":
-    "text-neutral-400 bg-neutral-500/10 border-neutral-500/20",
-};
-
-// Cohesive status palette
-const statusConfig: { [key: string]: string } = {
-  Active: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
-  "On Leave": "text-amber-400 bg-amber-400/10 border-amber-400/20",
-  Inactive: "text-red-400 bg-red-400/10 border-red-400/20",
-};
+import { FiPlus, FiUser, FiX, FiUsers, FiEdit, FiTrash2 } from "react-icons/fi";
+import { useNotification } from "@/hooks/useNotification";
 
 interface StaffMember {
+  id: string;
   name: string;
-  email: string;
-  role: string;
-  phone: string;
-  joinDate: string;
-  assignments: number;
-  status: string;
+  contact: string;
+  address: string;
+  joiningDate: string;
+  salary: string;
+  eventsCovered: number;
 }
 
 export default function StaffPage() {
-  const [staff, setStaff] = useState<StaffMember[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState("All Roles");
-  const [statusFilter, setStatusFilter] = useState("All Status");
-  const [isLoading, setIsLoading] = useState(true);
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [newStaff, setNewStaff] = useState({
+    name: "",
+    contact: "",
+    address: "",
+    joiningDate: "",
+    salary: "",
+    eventsCovered: "",
+  });
+  const { showSuccess, showError } = useNotification();
+
+  const fetchStaff = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/admin/staff");
+      const result = await response.json();
+      if (response.ok) {
+        setStaffList(
+          (result.data || []).map((item: any) => ({
+            id: item._id,
+            name: item.name,
+            contact: item.contact,
+            address: item.address,
+            joiningDate: item.joiningDate,
+            salary: item.salary,
+            eventsCovered: item.eventsCovered || 0,
+          })),
+        );
+      }
+    } catch (error) {
+      console.error("Failed to fetch staff:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchStaff = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch("/api/admin/staff");
-        const data = await response.json();
-        if (data.success) setStaff(data.data);
-      } catch (error) {
-        console.error("Failed to fetch staff:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchStaff();
   }, []);
 
-  // Enhanced filtering logic
-  const filteredStaff = staff.filter((member) => {
-    const matchesSearch =
-      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole =
-      roleFilter === "All Roles" || member.role === roleFilter;
-    const matchesStatus =
-      statusFilter === "All Status" || member.status === statusFilter;
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewStaff((prev) => ({ ...prev, [name]: value }));
+  };
 
-    return matchesSearch && matchesRole && matchesStatus;
-  });
+  const resetForm = () => {
+    setNewStaff({
+      name: "",
+      contact: "",
+      address: "",
+      joiningDate: "",
+      salary: "",
+      eventsCovered: "",
+    });
+    setEditingStaff(null);
+  };
 
-  // Dynamic Stats calculations based on fetched data
-  const activeCount = staff.filter((s) => s.status === "Active").length;
-  const onLeaveCount = staff.filter((s) => s.status === "On Leave").length;
-  const activePercentage =
-    staff.length > 0 ? Math.round((activeCount / staff.length) * 100) : 0;
-  const totalAssignments = staff.reduce(
-    (sum, s) => sum + (Number(s.assignments) || 0),
-    0,
-  );
+  const handleAddStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStaff.name || !newStaff.contact || !newStaff.joiningDate) {
+      showError("Please fill all required fields.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        editingStaff
+          ? `/api/admin/staff/${editingStaff.id}`
+          : "/api/admin/staff",
+        {
+          method: editingStaff ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...newStaff,
+            eventsCovered: Number(newStaff.eventsCovered) || 0,
+            salary: newStaff.salary || "",
+          }),
+        },
+      );
+      if (response.ok) {
+        showSuccess(
+          editingStaff
+            ? "Staff updated successfully!"
+            : "Staff member added successfully!",
+        );
+        setIsModalOpen(false);
+        resetForm();
+        fetchStaff();
+      } else {
+        showError("Could not save staff member.");
+      }
+    } catch (error) {
+      console.error(error);
+      showError("Unexpected error");
+    }
+  };
+
+  const handleEdit = (staff: StaffMember) => {
+    setEditingStaff(staff);
+    setNewStaff({
+      name: staff.name,
+      contact: staff.contact,
+      address: staff.address,
+      joiningDate: staff.joiningDate,
+      salary: staff.salary,
+      eventsCovered: String(staff.eventsCovered || 0),
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (staffId: string) => {
+    if (!window.confirm("Delete this staff member?")) return;
+    try {
+      const response = await fetch(`/api/admin/staff/${staffId}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        fetchStaff();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <AdminLayout>
       <div className="relative max-w-7xl mx-auto space-y-8 pb-12 text-neutral-200">
-        {/* Ambient Glows */}
-        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none translate-y-[-50%]"></div>
-        <div className="absolute bottom-1/4 right-0 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[150px] pointer-events-none"></div>
-
-        {/* Header Section */}
+        {/* Header */}
         <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-white/10">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white to-neutral-400 tracking-tight flex items-center gap-3">
+            <h1 className="text-2xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white to-neutral-400 tracking-tight flex items-center gap-3">
               <FiUsers className="text-orange-500" /> Staff Management
             </h1>
-            <p className="text-neutral-400 mt-2 text-sm max-w-md leading-relaxed">
-              Manage your studio team members, track their roles, statuses, and
-              current assignments.
+            <p className="text-neutral-400 mt-2 text-xs sm:text-sm max-w-md leading-relaxed">
+              Add, view, and manage your studio's staff members.
             </p>
           </div>
-          <button className="flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:shadow-[0_0_30px_rgba(234,88,12,0.5)] transform active:scale-95 border-none w-full md:w-auto">
-            <FiPlus size={18} /> Add Staff Member
+          <button
+            onClick={() => {
+              resetForm();
+              setIsModalOpen(true);
+            }}
+            className="flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:shadow-[0_0_30px_rgba(234,88,12,0.5)] transform active:scale-95 border-none w-full md:w-auto"
+          >
+            <FiPlus size={18} /> Add New Staff
           </button>
         </div>
 
-        {/* Staff Stats Grid */}
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Total Staff */}
-          <div className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[1.5rem] p-6 hover:border-orange-500/30 transition-all duration-300 relative overflow-hidden group shadow-lg">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] to-transparent pointer-events-none"></div>
-            <div className="flex justify-between items-start mb-4 relative z-10">
-              <div className="p-3 rounded-xl border bg-white/5 border-white/10 text-white shadow-inner">
-                <FiUsers size={20} />
-              </div>
-            </div>
-            <div className="relative z-10">
-              <h3 className="text-neutral-400 text-xs uppercase tracking-widest font-bold mb-1">
-                Total Staff
-              </h3>
-              <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-300 mb-2 drop-shadow-sm">
-                {isLoading ? "—" : staff.length}
-              </p>
-              <div className="flex items-center text-xs font-semibold text-emerald-400 gap-1.5">
-                <FiUserCheck size={14} /> {activePercentage}% Active
-              </div>
-            </div>
-          </div>
-
-          {/* Active Assignments */}
-          <div className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[1.5rem] p-6 hover:border-orange-500/30 transition-all duration-300 relative overflow-hidden group shadow-lg">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] to-transparent pointer-events-none"></div>
-            <div className="flex justify-between items-start mb-4 relative z-10">
-              <div className="p-3 rounded-xl border bg-orange-500/10 border-orange-500/20 text-orange-500 shadow-inner">
-                <FiBriefcase size={20} />
-              </div>
-            </div>
-            <div className="relative z-10">
-              <h3 className="text-neutral-400 text-xs uppercase tracking-widest font-bold mb-1">
-                Active Assignments
-              </h3>
-              <p className="text-3xl font-black text-orange-400 mb-2 drop-shadow-sm">
-                {isLoading ? "—" : totalAssignments}
-              </p>
-              <div className="flex items-center text-xs font-semibold text-orange-500/80">
-                Currently distributed
-              </div>
-            </div>
-          </div>
-
-          {/* On Leave */}
-          <div className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[1.5rem] p-6 hover:border-orange-500/30 transition-all duration-300 relative overflow-hidden group shadow-lg">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] to-transparent pointer-events-none"></div>
-            <div className="flex justify-between items-start mb-4 relative z-10">
-              <div className="p-3 rounded-xl border bg-amber-400/10 border-amber-400/20 text-amber-400 shadow-inner">
-                <FiUserMinus size={20} />
-              </div>
-            </div>
-            <div className="relative z-10">
-              <h3 className="text-neutral-400 text-xs uppercase tracking-widest font-bold mb-1">
-                On Leave
-              </h3>
-              <p className="text-3xl font-black text-amber-400 mb-2 drop-shadow-sm">
-                {isLoading ? "—" : onLeaveCount}
-              </p>
-              <div className="flex items-center text-xs font-semibold text-amber-500/80 gap-1.5">
-                <FiCalendar size={14} />{" "}
-                {onLeaveCount > 0 ? "Members unavailable" : "Fully staffed"}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Filters & Search Toolbar */}
-        <div className="relative z-10 bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[1.5rem] p-4 sm:p-6 shadow-lg">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none rounded-[1.5rem]"></div>
-
-          <div className="flex flex-col lg:flex-row gap-4 relative z-10">
-            {/* Search Bar */}
-            <div className="flex-1 relative group">
-              <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-orange-500 transition-colors" />
-              <input
-                type="text"
-                placeholder="Search staff by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-white/10 bg-[#050505] text-white placeholder-neutral-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner"
-              />
-            </div>
-
-            {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-4 lg:w-auto">
-              <div className="relative flex-1 sm:w-56">
-                <FiBriefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
-                <select
-                  value={roleFilter}
-                  onChange={(e) => setRoleFilter(e.target.value)}
-                  className="w-full pl-10 pr-10 py-3.5 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner appearance-none cursor-pointer"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f97316'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                    backgroundPosition: "right 1rem center",
-                    backgroundRepeat: "no-repeat",
-                    backgroundSize: "1.2em 1.2em",
-                  }}
-                >
-                  <option className="bg-[#0A0A0A]">All Roles</option>
-                  <option className="bg-[#0A0A0A]">Senior Photographer</option>
-                  <option className="bg-[#0A0A0A]">Photographer</option>
-                  <option className="bg-[#0A0A0A]">Photo Editor</option>
-                  <option className="bg-[#0A0A0A]">Video Editor</option>
-                  <option className="bg-[#0A0A0A]">
-                    Assistant Photographer
-                  </option>
-                </select>
-              </div>
-              <div className="relative flex-1 sm:w-48">
-                <FiFilter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full pl-10 pr-10 py-3.5 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner appearance-none cursor-pointer"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f97316'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                    backgroundPosition: "right 1rem center",
-                    backgroundRepeat: "no-repeat",
-                    backgroundSize: "1.2em 1.2em",
-                  }}
-                >
-                  <option className="bg-[#0A0A0A]">All Status</option>
-                  <option className="bg-[#0A0A0A]">Active</option>
-                  <option className="bg-[#0A0A0A]">On Leave</option>
-                  <option className="bg-[#0A0A0A]">Inactive</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Data Table Section */}
-        <div className="relative z-10 bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[2rem] shadow-2xl overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
-
-          {isLoading ? (
-            // Skeleton Loading State
-            <div className="p-6 space-y-4">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-4 bg-white/[0.02] rounded-xl animate-pulse"
-                >
-                  <div className="flex items-center gap-4 w-1/3">
-                    <div className="w-10 h-10 rounded-full bg-white/5"></div>
-                    <div className="space-y-2 w-full">
-                      <div className="h-4 bg-white/10 rounded w-1/2"></div>
-                      <div className="h-3 bg-white/5 rounded w-3/4"></div>
-                    </div>
-                  </div>
-                  <div className="w-24 h-6 bg-white/5 rounded-lg"></div>
-                  <div className="w-24 h-6 bg-white/5 rounded-lg"></div>
-                  <div className="w-1/4 h-4 bg-white/5 rounded"></div>
-                </div>
-              ))}
-            </div>
-          ) : filteredStaff.length === 0 ? (
-            // Empty State
-            <div className="flex flex-col items-center justify-center py-32 space-y-4 relative z-10 text-center px-4">
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-2">
-                <FiUsers className="w-8 h-8 text-neutral-500" />
-              </div>
-              <h3 className="text-xl font-bold text-white">No staff found</h3>
-              <p className="text-neutral-400">
-                Try adjusting your filters or search terms.
-              </p>
-            </div>
-          ) : (
-            // Custom Styled Table
-            <div className="overflow-x-auto relative z-10">
-              <table className="w-full text-left border-collapse text-sm whitespace-nowrap">
-                <thead>
-                  <tr className="bg-[#050505]/80 border-b border-white/5 text-neutral-400 uppercase tracking-wider text-[11px] font-bold">
-                    <th className="p-5 pl-6">Name & Email</th>
-                    <th className="p-5">Role</th>
-                    <th className="p-5">Contact Details</th>
-                    <th className="p-5">Join Date</th>
-                    <th className="p-5 text-center">Assignments</th>
-                    <th className="p-5">Status</th>
-                    <th className="p-5 pr-6 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {filteredStaff.map((person, index) => (
+        {/* Staff Table */}
+        <div className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[2rem] shadow-2xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead className="bg-[#050505]/50 text-neutral-400 uppercase tracking-wider text-xs font-semibold">
+                <tr>
+                  <th className="p-5">Name</th>
+                  <th className="p-5 hidden md:table-cell">Contact</th>
+                  <th className="p-5 hidden lg:table-cell">Joining Date</th>
+                  <th className="p-5 hidden md:table-cell">Salary</th>
+                  <th className="p-5">Events</th>
+                  <th className="p-5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {loading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="p-5">
+                        <div className="h-4 bg-neutral-700 rounded w-3/4"></div>
+                        <div className="h-3 bg-neutral-800 rounded w-1/2 mt-2"></div>
+                      </td>
+                      <td className="p-5 hidden md:table-cell">
+                        <div className="h-4 bg-neutral-700 rounded w-2/3"></div>
+                      </td>
+                      <td className="p-5 hidden lg:table-cell">
+                        <div className="h-4 bg-neutral-700 rounded w-1/2"></div>
+                      </td>
+                      <td className="p-5 hidden md:table-cell">
+                        <div className="h-4 bg-neutral-700 rounded w-1/3"></div>
+                      </td>
+                      <td className="p-5">
+                        <div className="h-4 bg-neutral-700 rounded w-1/4"></div>
+                      </td>
+                      <td className="p-5"></td>
+                    </tr>
+                  ))
+                ) : staffList.length > 0 ? (
+                  staffList.map((staff) => (
                     <tr
-                      key={index}
+                      key={staff.id}
                       className="hover:bg-white/[0.02] transition-colors group"
                     >
-                      <td className="p-5 pl-6">
-                        <div className="font-bold text-white group-hover:text-orange-100 transition-colors">
-                          {person.name}
-                        </div>
-                        <div className="text-xs text-neutral-500 mt-1 font-medium">
-                          {person.email}
+                      <td className="p-5">
+                        <div className="font-bold text-white">{staff.name}</div>
+                        <div className="text-xs text-neutral-500 mt-1">
+                          {staff.address}
                         </div>
                       </td>
-                      <td className="p-5">
-                        <span
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold border inline-block ${roleConfig[person.role] || "bg-white/5 text-white border-white/10"}`}
-                        >
-                          {person.role}
-                        </span>
+                      <td className="p-5 text-neutral-300 font-medium hidden md:table-cell">
+                        {staff.contact}
+                      </td>
+                      <td className="p-5 text-neutral-300 hidden lg:table-cell">
+                        {staff.joiningDate}
+                      </td>
+                      <td className="p-5 text-neutral-300 font-medium hidden md:table-cell">
+                        {staff.salary ? `৳${staff.salary}` : "N/A"}
                       </td>
                       <td className="p-5 text-neutral-300 font-medium">
-                        {person.phone}
+                        {staff.eventsCovered}
                       </td>
-                      <td className="p-5 text-neutral-400 font-medium">
-                        {new Date(person.joinDate).toLocaleDateString("en-GB", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </td>
-                      <td className="p-5 text-center font-bold text-white">
-                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#050505] border border-white/10 shadow-inner">
-                          {person.assignments}
-                        </div>
-                      </td>
-                      <td className="p-5">
-                        <span
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold border inline-block ${statusConfig[person.status] || statusConfig["Inactive"]}`}
-                        >
-                          {person.status}
-                        </span>
-                      </td>
-                      <td className="p-5 pr-6 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                      <td className="p-5 text-right">
+                        <div className="flex justify-end gap-2">
                           <button
-                            className="p-2 bg-[#050505] border border-white/10 hover:border-orange-500/50 hover:bg-orange-500/10 text-neutral-400 hover:text-orange-400 rounded-lg transition-all"
-                            title="View Profile"
+                            onClick={() => handleEdit(staff)}
+                            className="p-2 rounded-lg bg-black/50 hover:bg-white/20 text-white transition-colors"
                           >
-                            <FiEye className="w-4 h-4" />
+                            <FiEdit size={16} />
                           </button>
                           <button
-                            className="p-2 bg-[#050505] border border-white/10 hover:border-orange-500/50 hover:bg-orange-500/10 text-neutral-400 hover:text-orange-400 rounded-lg transition-all"
-                            title="Edit Staff"
+                            onClick={() => handleDelete(staff.id)}
+                            className="p-2 rounded-lg bg-red-500/80 hover:bg-red-500 text-white transition-colors"
                           >
-                            <FiEdit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            className="p-2 bg-[#050505] border border-white/10 hover:border-orange-500/50 hover:bg-orange-500/10 text-neutral-400 hover:text-orange-400 rounded-lg transition-all"
-                            title="Email Staff"
-                          >
-                            <FiMail className="w-4 h-4" />
-                          </button>
-                          <button
-                            className="p-2 bg-[#050505] border border-white/10 hover:border-red-500/50 hover:bg-red-500/10 text-neutral-400 hover:text-red-400 rounded-lg transition-all"
-                            title="Remove Staff"
-                          >
-                            <FiTrash2 className="w-4 h-4" />
+                            <FiTrash2 size={16} />
                           </button>
                         </div>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="text-center p-10 text-neutral-500"
+                    >
+                      No staff members found. Add one to get started.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
+
+      {/* Add Staff Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => setIsModalOpen(false)}
+          ></div>
+          <div className="bg-[#0A0A0A] border border-white/10 rounded-[2rem] w-full max-w-lg relative z-10 shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-6 border-b border-white/5 bg-[#050505]">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <FiUser className="text-orange-500" />{" "}
+                {editingStaff ? "Edit Staff Member" : "Add New Staff Member"}
+              </h2>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 rounded-xl hover:bg-white/5 text-neutral-400 hover:text-white transition-colors"
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleAddStaff}>
+              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                      Full Name*
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={newStaff.name}
+                      onChange={handleInputChange}
+                      className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
+                      placeholder="John Doe"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                      Contact Number*
+                    </label>
+                    <input
+                      type="text"
+                      name="contact"
+                      value={newStaff.contact}
+                      onChange={handleInputChange}
+                      className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
+                      placeholder="01XXXXXXXXX"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                    Address
+                  </label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={newStaff.address}
+                    onChange={handleInputChange}
+                    className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
+                    placeholder="123 Main St, Dhaka"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                      Joining Date*
+                    </label>
+                    <input
+                      type="date"
+                      name="joiningDate"
+                      value={newStaff.joiningDate}
+                      onChange={handleInputChange}
+                      className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                      Salary (BDT)
+                    </label>
+                    <input
+                      type="number"
+                      name="salary"
+                      value={newStaff.salary}
+                      onChange={handleInputChange}
+                      className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
+                      placeholder="25000"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                    Events Covered (Optional)
+                  </label>
+                  <input
+                    type="number"
+                    name="eventsCovered"
+                    value={newStaff.eventsCovered}
+                    onChange={handleInputChange}
+                    className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              <div className="p-6 border-t border-white/5 bg-[#050505] flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-6 py-2.5 rounded-xl font-bold text-neutral-400 hover:text-white hover:bg-white/5 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 text-white hover:from-orange-500 hover:to-orange-400 shadow-lg transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  <FiPlus /> {editingStaff ? "Update Staff" : "Add Staff"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }

@@ -1,18 +1,9 @@
 import { NextResponse } from "next/server";
-import { MongoClient } from "mongodb";
-
-// Ensure you have MONGODB_URI in your .env.local file
-const uri = process.env.MONGODB_URI;
-
-if (!uri) {
-  throw new Error(
-    "Please define the MONGODB_URI environment variable inside .env.local",
-  );
-}
-
-const client = new MongoClient(uri);
+import mongooseConnect from "@/lib/mongoose";
+import Order from "@/models/Order";
 
 export async function POST(request: Request) {
+  await mongooseConnect();
   try {
     const bookingData = await request.json();
 
@@ -29,22 +20,25 @@ export async function POST(request: Request) {
       );
     }
 
-    await client.connect();
-    const database = client.db("chitrojalDB"); // Replace with your database name
-    const bookings = database.collection("bookings");
-
-    const newBooking = {
-      ...bookingData,
+    const newOrder = new Order({
+      customerName: bookingData.name,
+      customerEmail: bookingData.email,
+      customerPhone: bookingData.phone,
+      eventDate: bookingData.eventDate,
+      package: bookingData.package || "Not specified", // Default value
+      totalAmount: bookingData.totalAmount || 0, // Default value
+      paidAmount: 0,
+      dueAmount: bookingData.totalAmount || 0,
       status: "Pending",
       createdAt: new Date(),
-    };
+    });
 
-    const result = await bookings.insertOne(newBooking);
+    await newOrder.save();
 
     return NextResponse.json(
       {
         message: "Booking request received successfully!",
-        bookingId: result.insertedId,
+        bookingId: newOrder._id,
       },
       { status: 201 },
     );
@@ -54,8 +48,5 @@ export async function POST(request: Request) {
       { message: "Internal Server Error" },
       { status: 500 },
     );
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
   }
 }

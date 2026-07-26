@@ -11,11 +11,12 @@ import {
   FiCreditCard,
   FiUsers,
   FiCamera,
-  FiAlertCircle,
   FiMenu,
   FiX,
   FiSearch,
   FiBell,
+  FiDollarSign,
+  FiLink,
 } from "react-icons/fi";
 import Image from "next/image";
 
@@ -24,8 +25,9 @@ const navItems = [
   { href: "/admin/events", icon: FiCalendar, label: "Events" },
   { href: "/admin/orders", icon: FiShoppingCart, label: "Orders" },
   { href: "/admin/invoices", icon: FiFileText, label: "Invoices" },
+  { href: "/admin/finance", icon: FiDollarSign, label: "Finance" },
   { href: "/admin/payments", icon: FiCreditCard, label: "Payments" },
-  { href: "/admin/due", icon: FiAlertCircle, label: "Due Tracking" },
+  { href: "/admin/photo-drive", icon: FiLink, label: "Photo Drive Links" },
   { href: "/admin/poses", icon: FiCamera, label: "Pose Library" },
   { href: "/admin/staff", icon: FiUsers, label: "Staff" },
 ];

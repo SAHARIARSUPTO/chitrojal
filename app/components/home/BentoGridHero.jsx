@@ -26,7 +26,7 @@ const BentoGridHero = ({ carouselData, packageImages }) => {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 lg:gap-8 max-w-7xl mx-auto">
           {/* Left Column */}
           <div className="md:col-span-5 flex flex-col gap-4 md:gap-6 lg:gap-8">
-            <div className="aspect-[4/3]">
+            <div className="aspect-[3/4] md:aspect-[4/3]">
               <CarouselCard
                 images={carouselData.portfolio.images}
                 title={carouselData.portfolio.title}
@@ -37,7 +37,7 @@ const BentoGridHero = ({ carouselData, packageImages }) => {
                 autoSlide={true}
               />
             </div>
-            <div className="aspect-[4/3] flex-grow">
+            <div className="aspect-[3/4] md:aspect-[4/3] flex-grow">
               <CarouselCard
                 images={carouselData.portraitLibrary.images}
                 title={carouselData.portraitLibrary.title}

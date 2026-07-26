@@ -159,12 +159,16 @@ function BookingPageContents() {
     email: "",
     phone: "",
     location: "",
+    address: "",
     eventType: bengaliEventTypes[0],
     selectedPackage: "",
     bookingDays: 1,
     eventDate: new Date(),
     message: "",
-    agreedToTerms: false, // Added state for Terms & Conditions
+    googleMapsLink: "",
+    bookingSource: "Website",
+    notes: "",
+    agreedToTerms: false,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -216,10 +220,29 @@ function BookingPageContents() {
     setSubmitStatus(null);
 
     try {
+      const payload = {
+        customerName: formData.name,
+        customerEmail: formData.email,
+        customerPhone: formData.phone,
+        customerAddress: formData.address || formData.location,
+        eventLocation: formData.location,
+        eventDate: formData.eventDate,
+        package: formData.selectedPackage || formData.eventType,
+        packageDetails: formData.message,
+        totalAmount: 0,
+        advanceAmount: 0,
+        paidAmount: 0,
+        bookingSource: formData.bookingSource || "Website",
+        notes: formData.notes || formData.message,
+        googleMapsLink: formData.googleMapsLink,
+        eventName: `${formData.name} - ${formData.eventType}`,
+        createdFromBooking: true,
+      };
+
       const response = await fetch("/api/booking-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
@@ -320,19 +343,50 @@ function BookingPageContents() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs uppercase tracking-widest text-neutral-400 font-semibold pl-1">
-                ফোন নম্বর
-              </label>
-              <input
-                type="tel"
-                name="phone"
-                required
-                value={formData.phone}
-                onChange={handleInputChange}
-                className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white placeholder-neutral-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner"
-                placeholder="+880 1XXX XXXXXX"
-              />
+            <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-widest text-neutral-400 font-semibold pl-1">
+                  ফোন নম্বর
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  required
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white placeholder-neutral-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner"
+                  placeholder="+880 1XXX XXXXXX"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-widest text-neutral-400 font-semibold pl-1">
+                  প্যাকেজ
+                </label>
+                <select
+                  name="selectedPackage"
+                  value={formData.selectedPackage}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner appearance-none cursor-pointer"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f97316'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                    backgroundPosition: "right 1rem center",
+                    backgroundRepeat: "no-repeat",
+                    backgroundSize: "1.5em 1.5em",
+                  }}
+                >
+                  {packageOptions.map((pkg) => (
+                    <option
+                      key={pkg.slug}
+                      value={pkg.slug}
+                      disabled={pkg.slug === ""}
+                      className="bg-[#0A0A0A] text-white"
+                    >
+                      {pkg.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -348,36 +402,6 @@ function BookingPageContents() {
                 className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white placeholder-neutral-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner resize-none"
                 placeholder="ভেন্যু বা বাসার ঠিকানা..."
               ></textarea>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs uppercase tracking-widest text-neutral-400 font-semibold pl-1">
-                প্যাকেজ
-              </label>
-              <select
-                name="selectedPackage"
-                value={formData.selectedPackage}
-                onChange={handleInputChange}
-                required
-                className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner appearance-none cursor-pointer"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f97316'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                  backgroundPosition: "right 1rem center",
-                  backgroundRepeat: "no-repeat",
-                  backgroundSize: "1.5em 1.5em",
-                }}
-              >
-                {packageOptions.map((pkg) => (
-                  <option
-                    key={pkg.slug}
-                    value={pkg.slug}
-                    disabled={pkg.slug === ""}
-                    className="bg-[#0A0A0A] text-white"
-                  >
-                    {pkg.name}
-                  </option>
-                ))}
-              </select>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
@@ -421,6 +445,49 @@ function BookingPageContents() {
                   className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner"
                 />
               </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-widest text-neutral-400 font-semibold pl-1">
+                  Google Maps Link
+                </label>
+                <input
+                  type="text"
+                  name="googleMapsLink"
+                  value={formData.googleMapsLink}
+                  onChange={handleInputChange}
+                  className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white placeholder-neutral-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner"
+                  placeholder="https://maps.google.com/..."
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-widest text-neutral-400 font-semibold pl-1">
+                  বুকিং সোর্স
+                </label>
+                <input
+                  type="text"
+                  name="bookingSource"
+                  value={formData.bookingSource}
+                  onChange={handleInputChange}
+                  className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white placeholder-neutral-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner"
+                  placeholder="Website / Referral / Facebook"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs uppercase tracking-widest text-neutral-400 font-semibold pl-1">
+                অতিরিক্ত নির্দেশনা
+              </label>
+              <textarea
+                name="notes"
+                value={formData.notes}
+                onChange={handleInputChange}
+                rows={4}
+                className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white placeholder-neutral-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner"
+                placeholder="কোনো বিশেষ অনুরোধ বা মন্তব্য"
+              />
             </div>
 
             <div className="space-y-2">

@@ -1,17 +1,11 @@
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/mongodb";
-import { ObjectId } from "mongodb";
-
-const STAFF_COLLECTION = "staff";
+import mongooseConnect from "@/lib/mongoose";
+import Staff from "@/models/Staff";
 
 export async function GET() {
+  await mongooseConnect();
   try {
-    const { db } = await dbConnect();
-    const staff = await db
-      .collection(STAFF_COLLECTION)
-      .find({})
-      .sort({ createdAt: -1 })
-      .toArray();
+    const staff = await Staff.find({}).sort({ createdAt: -1 });
     return NextResponse.json({ success: true, data: staff });
   } catch (error) {
     console.error("Error fetching staff:", error);
@@ -23,25 +17,38 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  await mongooseConnect();
   try {
-    const { db } = await dbConnect();
     const body = await request.json();
-
-    const newStaffMember = {
+    const newStaffMember = new Staff({
       ...body,
-      createdAt: new Date(),
       updatedAt: new Date(),
-    };
-
-    const result = await db
-      .collection(STAFF_COLLECTION)
-      .insertOne(newStaffMember);
+    });
+    await newStaffMember.save();
     return NextResponse.json(
-      { success: true, data: { ...newStaffMember, _id: result.insertedId } },
+      { success: true, data: newStaffMember },
       { status: 201 },
     );
   } catch (error) {
     console.error("Error creating staff member:", error);
+    return NextResponse.json(
+      { success: false, error: "Bad Request" },
+      { status: 400 },
+    );
+  }
+}
+
+export async function PUT(request: Request) {
+  await mongooseConnect();
+  try {
+    const body = await request.json();
+    const { _id, ...updates } = body;
+    const updatedStaff = await Staff.findByIdAndUpdate(_id, updates, {
+      new: true,
+    });
+    return NextResponse.json({ success: true, data: updatedStaff });
+  } catch (error) {
+    console.error("Error updating staff member:", error);
     return NextResponse.json(
       { success: false, error: "Bad Request" },
       { status: 400 },

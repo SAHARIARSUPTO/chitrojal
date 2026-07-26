@@ -10,8 +10,11 @@
   },
   "dependencies": {
     "@types/mongoose": "^5.11.96",
+    "cloudinary": "^2.10.0",
     "date-fns": "^4.4.0",
     "framer-motion": "^12.42.2",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.26.0",
     "mongodb": "^7.5.0",
     "mongoose": "^9.8.0",

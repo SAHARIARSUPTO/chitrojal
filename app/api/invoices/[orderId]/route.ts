@@ -1,0 +1,467 @@
+// app/api/invoices/[orderId]/route.ts
+import { NextResponse } from "next/server";
+import mongooseConnect from "@/lib/mongoose";
+import Order from "@/models/Order";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+
+type RouteContext = {
+  params: Promise<{ orderId?: string }> | { orderId?: string };
+};
+
+export async function GET(request: Request, context: RouteContext) {
+  await mongooseConnect();
+
+  try {
+    const params = await context.params;
+    const orderId = params?.orderId;
+
+    if (
+      !orderId ||
+      typeof orderId !== "string" ||
+      !/^[0-9a-fA-F]{24}$/.test(orderId)
+    ) {
+      return NextResponse.json({ error: "Invalid order ID" }, { status: 400 });
+    }
+
+    const order = await Order.findById(orderId).populate("payments");
+
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    // Initialize Document Setup (A4 Page)
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 36;
+    const contentWidth = pageWidth - margin * 2;
+
+    // Palette & Styling Standards
+    const brandColor = "#EA580C"; // Vibrant Accent
+    const darkText = "#0F172A"; // Slate 900
+    const bodyText = "#334155"; // Slate 700
+    const mutedText = "#64748B"; // Slate 500
+    const lightBg = "#F8FAFC"; // Slate 50
+    const borderFill = "#E2E8F0"; // Slate 200
+
+    // Standard ASCII Currency Helper (Prevents font symbol corruption)
+    const formatBDT = (amount: number) =>
+      `BDT ${amount.toLocaleString("en-BD", { minimumFractionDigits: 2 })}`;
+
+    const isPaid = !order.dueAmount || order.dueAmount <= 0;
+    const statusText = isPaid ? "PAID IN FULL" : "PAYMENT PENDING";
+    const statusColor = isPaid
+      ? { fill: "#DCFCE7", text: "#15803D" }
+      : { fill: "#FEF3C7", text: "#B45309" };
+
+    // Helper: Render Text
+    const addText = (
+      text: string,
+      x: number,
+      y: number,
+      options: {
+        fontSize?: number;
+        color?: string;
+        weight?: "normal" | "bold";
+        align?: "left" | "center" | "right";
+      } = {},
+    ) => {
+      doc.setFont("helvetica", options.weight || "normal");
+      doc.setFontSize(options.fontSize || 9);
+      doc.setTextColor(options.color || darkText);
+      doc.text(text, x, y, { align: options.align || "left" });
+    };
+
+    // Helper: Draw Card Background Box
+    const drawCard = (x: number, y: number, w: number, h: number) => {
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(borderFill);
+      doc.setLineWidth(0.8);
+      doc.roundedRect(x, y, w, h, 4, 4, "FD");
+    };
+
+    // -------------------------------------------------------------
+    // 1. BRAND HEADER & INVOICE META
+    // -------------------------------------------------------------
+    addText("CHITROJAAL", margin, margin + 20, {
+      fontSize: 22,
+      color: brandColor,
+      weight: "bold",
+    });
+    addText("Digital Media & Creative Engineering", margin, margin + 34, {
+      fontSize: 8.5,
+      color: mutedText,
+      weight: "bold",
+    });
+    addText(
+      "Juma Market, Mizan Road, Feni 3900, Bangladesh",
+      margin,
+      margin + 48,
+      { fontSize: 8, color: mutedText },
+    );
+    addText(
+      "Phone: +880 1834-258375 | Web: www.chitrojaal.com",
+      margin,
+      margin + 60,
+      { fontSize: 8, color: mutedText },
+    );
+
+    // Right Header - Invoice Badge & Numbers
+    addText("INVOICE", pageWidth - margin, margin + 20, {
+      fontSize: 22,
+      color: darkText,
+      weight: "bold",
+      align: "right",
+    });
+    addText(
+      `Invoice ID: #INV-${String(order._id).slice(-8).toUpperCase()}`,
+      pageWidth - margin,
+      margin + 35,
+      { fontSize: 8.5, color: bodyText, weight: "bold", align: "right" },
+    );
+    addText(
+      `Issue Date: ${new Date(order.createdAt || Date.now()).toLocaleDateString("en-BD")}`,
+      pageWidth - margin,
+      margin + 48,
+      { fontSize: 8, color: mutedText, align: "right" },
+    );
+    addText(
+      `Event Date: ${order.eventDate ? new Date(order.eventDate).toLocaleDateString("en-BD") : "N/A"}`,
+      pageWidth - margin,
+      margin + 60,
+      { fontSize: 8, color: mutedText, align: "right" },
+    );
+
+    // Status Badge Block
+    doc.setFillColor(statusColor.fill);
+    doc.roundedRect(pageWidth - margin - 100, margin + 68, 100, 16, 8, 8, "F");
+    addText(statusText, pageWidth - margin - 50, margin + 79, {
+      fontSize: 7.5,
+      color: statusColor.text,
+      weight: "bold",
+      align: "center",
+    });
+
+    // Decorative Header Divider
+    doc.setDrawColor(brandColor);
+    doc.setLineWidth(1.5);
+    doc.line(margin, margin + 92, pageWidth - margin, margin + 92);
+
+    // -------------------------------------------------------------
+    // 2. CLIENT & PROJECT INFORMATION CARDS
+    // -------------------------------------------------------------
+    const gridY = margin + 105;
+    const cardWidth = contentWidth / 2 - 8;
+    const cardHeight = 82;
+
+    // Card 1: Client Information
+    drawCard(margin, gridY, cardWidth, cardHeight);
+    addText("BILLED TO", margin + 12, gridY + 16, {
+      fontSize: 8,
+      color: brandColor,
+      weight: "bold",
+    });
+    addText(order.customerName || "Valued Client", margin + 12, gridY + 32, {
+      fontSize: 10.5,
+      color: darkText,
+      weight: "bold",
+    });
+    addText(
+      `Contact: ${order.customerPhone || "N/A"}`,
+      margin + 12,
+      gridY + 46,
+      {
+        fontSize: 8,
+        color: bodyText,
+      },
+    );
+    addText(`Email: ${order.customerEmail || "N/A"}`, margin + 12, gridY + 58, {
+      fontSize: 8,
+      color: bodyText,
+    });
+    addText(
+      `Address: ${order.customerAddress || "N/A"}`,
+      margin + 12,
+      gridY + 70,
+      { fontSize: 8, color: bodyText },
+    );
+
+    // Card 2: Operational & Project Context
+    const rightCardX = margin + cardWidth + 16;
+    drawCard(rightCardX, gridY, cardWidth, cardHeight);
+    addText("PROJECT & OPERATIONAL DETAILS", rightCardX + 12, gridY + 16, {
+      fontSize: 8,
+      color: brandColor,
+      weight: "bold",
+    });
+    addText(
+      `Service Package: ${order.package || "Custom Production"}`,
+      rightCardX + 12,
+      gridY + 32,
+      { fontSize: 8.5, color: darkText, weight: "bold" },
+    );
+    addText(
+      `Payment Method: ${order.paymentMethod || "Bank Transfer / MFS"}`,
+      rightCardX + 12,
+      gridY + 46,
+      { fontSize: 8, color: bodyText },
+    );
+    addText(
+      `Lead Studio Unit: Chitrojaal Media Lab`,
+      rightCardX + 12,
+      gridY + 58,
+      { fontSize: 8, color: bodyText },
+    );
+    addText(
+      `Coverage Area: Feni & Regional Operations`,
+      rightCardX + 12,
+      gridY + 70,
+      { fontSize: 8, color: bodyText },
+    );
+
+    // -------------------------------------------------------------
+    // 3. TABULAR DELIVERABLES DATA
+    // -------------------------------------------------------------
+    const tableY = gridY + cardHeight + 15;
+
+    autoTable(doc, {
+      startY: tableY,
+      margin: { left: margin, right: margin },
+      head: [
+        [
+          "Service & Deliverables Description",
+          "Qty / Unit",
+          "Unit Price",
+          "Total Amount",
+        ],
+      ],
+      body: [
+        [
+          `${order.package || "Creative Production Package"}\nIncludes high-resolution photographic coverage, cinematic editing, color grading, and digital gallery distribution.`,
+          "1 Package",
+          formatBDT(order.totalAmount || 0),
+          formatBDT(order.totalAmount || 0),
+        ],
+      ],
+      styles: {
+        font: "helvetica",
+        fontSize: 8.5,
+        cellPadding: 8,
+        textColor: [51, 65, 85],
+      },
+      headStyles: {
+        fillColor: [234, 88, 12],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        fontSize: 8.5,
+      },
+      columnStyles: {
+        0: { cellWidth: "auto" },
+        1: { cellWidth: 70, halign: "center" },
+        2: { cellWidth: 100, halign: "right" },
+        3: { cellWidth: 100, halign: "right" },
+      },
+      theme: "grid",
+    });
+
+    // @ts-expect-error lastAutoTable injected by autoTable plugin
+    const finalTableY = doc.lastAutoTable.finalY || tableY + 70;
+
+    // -------------------------------------------------------------
+    // 4. FINANCIAL SUMMARY & PAYMENT BANKING DETAILS
+    // -------------------------------------------------------------
+    const bottomGridY = finalTableY + 15;
+    const summaryCardWidth = 210;
+    const summaryCardX = pageWidth - margin - summaryCardWidth;
+    const paymentBoxWidth = contentWidth - summaryCardWidth - 14;
+
+    // Payment Info Card
+    drawCard(margin, bottomGridY, paymentBoxWidth, 100);
+    addText("PAYMENT INSTRUCTIONS & BANKING", margin + 12, bottomGridY + 16, {
+      fontSize: 8,
+      color: brandColor,
+      weight: "bold",
+    });
+    addText(
+      "Bank Name: City Bank PLC (Feni Branch)",
+      margin + 12,
+      bottomGridY + 32,
+      {
+        fontSize: 8,
+        color: bodyText,
+      },
+    );
+    addText(
+      "Account Title: Chitrojaal Digital Media",
+      margin + 12,
+      bottomGridY + 45,
+      {
+        fontSize: 8,
+        color: bodyText,
+      },
+    );
+    addText("Account No: 1502-984019-001", margin + 12, bottomGridY + 58, {
+      fontSize: 8,
+      color: darkText,
+      weight: "bold",
+    });
+    addText(
+      "bKash / Nagad Wallet: +880 1834-258375 (Personal / Merchant)",
+      margin + 12,
+      bottomGridY + 71,
+      { fontSize: 8, color: bodyText },
+    );
+    addText(
+      `Payment Ref: INV-${String(order._id).slice(-6).toUpperCase()}`,
+      margin + 12,
+      bottomGridY + 84,
+      { fontSize: 8, color: mutedText },
+    );
+
+    // Financial Calculation Card (Height adjusted to prevent line overlap)
+    drawCard(summaryCardX, bottomGridY, summaryCardWidth, 100);
+    let calcY = bottomGridY + 18;
+
+    const addSummaryRow = (
+      label: string,
+      value: string,
+      isBold = false,
+      color = darkText,
+    ) => {
+      addText(label, summaryCardX + 12, calcY, {
+        fontSize: 8.5,
+        color: isBold ? color : mutedText,
+        weight: isBold ? "bold" : "normal",
+      });
+      addText(value, summaryCardX + summaryCardWidth - 12, calcY, {
+        fontSize: 8.5,
+        color,
+        weight: isBold ? "bold" : "normal",
+        align: "right",
+      });
+      calcY += 16;
+    };
+
+    addSummaryRow("Subtotal", formatBDT(order.totalAmount || 0));
+    addSummaryRow("Advance Paid", formatBDT(order.paidAmount || 0));
+    addSummaryRow("Discount Applied", "- BDT 0.00", false, "#16A34A");
+
+    // Divider Line (Clean margin separation)
+    doc.setDrawColor(brandColor);
+    doc.setLineWidth(1);
+    doc.line(
+      summaryCardX + 12,
+      calcY,
+      summaryCardX + summaryCardWidth - 12,
+      calcY,
+    );
+
+    // Total Due text pushed down below the divider line
+    calcY += 16;
+    addSummaryRow(
+      "Total Due",
+      formatBDT(order.dueAmount || 0),
+      true,
+      brandColor,
+    );
+
+    // -------------------------------------------------------------
+    // 5. TERMS & CONDITIONS
+    // -------------------------------------------------------------
+    const termsY = bottomGridY + 112;
+    const termsHeight = 78;
+
+    drawCard(margin, termsY, contentWidth, termsHeight);
+    addText("TERMS & SERVICE AGREEMENT", margin + 12, termsY + 16, {
+      fontSize: 8,
+      color: brandColor,
+      weight: "bold",
+    });
+
+    const policies = [
+      "1. Payment Terms: Full balance must be cleared prior to releasing high-resolution media deliverables.",
+      "2. Delivery Schedule: Soft-copy previews within 5 days; final edited 4K output delivered in 21-28 business days.",
+      "3. Copyright & Intellectual Property: Chitrojaal retains raw media rights; client receives full non-commercial publishing rights.",
+      "4. Overtime & Operational Contingencies: Additional production hours will incur standard crew hourly rates.",
+    ];
+
+    let pY = termsY + 30;
+    policies.forEach((policy) => {
+      addText(policy, margin + 12, pY, { fontSize: 7.5, color: bodyText });
+      pY += 11;
+    });
+
+    // -------------------------------------------------------------
+    // 6. SIGNATURE BLOCK & FOOTER
+    // -------------------------------------------------------------
+    const footerY = pageHeight - 25;
+    const sigLineY = pageHeight - 65;
+
+    // Authorized Signature Block (Positioned safely above bottom footer line)
+    const sigWidth = 140;
+    const sigX = pageWidth - margin - sigWidth;
+
+    doc.setDrawColor("#94A3B8");
+    doc.setLineWidth(0.8);
+    doc.line(sigX, sigLineY, sigX + sigWidth, sigLineY);
+
+    addText("Authorized Signature", sigX + sigWidth / 2, sigLineY + 12, {
+      fontSize: 8,
+      color: darkText,
+      weight: "bold",
+      align: "center",
+    });
+    addText(
+      "Chitrojaal Digital Engineering",
+      sigX + sigWidth / 2,
+      sigLineY + 22,
+      {
+        fontSize: 7,
+        color: mutedText,
+        align: "center",
+      },
+    );
+
+    // Footer Divider Line
+    doc.setDrawColor(borderFill);
+    doc.setLineWidth(0.8);
+    doc.line(margin, footerY - 12, pageWidth - margin, footerY - 12);
+
+    addText(
+      "Thank you for choosing Chitrojaal for your creative production.",
+      margin,
+      footerY,
+      {
+        fontSize: 7.5,
+        color: mutedText,
+      },
+    );
+    addText("chitrojaal@gmail.com", pageWidth / 2, footerY, {
+      fontSize: 7.5,
+      color: mutedText,
+      align: "center",
+    });
+    addText("www.chitrojaal.com", pageWidth - margin, footerY, {
+      fontSize: 7.5,
+      color: mutedText,
+      align: "right",
+    });
+
+    // Buffer Generation
+    const pdfBuffer = Buffer.from(doc.output("arraybuffer"));
+
+    return new NextResponse(pdfBuffer, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="invoice-${order._id}.pdf"`,
+      },
+    });
+  } catch (error) {
+    console.error("Error generating invoice:", error);
+    return NextResponse.json(
+      { error: "Error generating invoice" },
+      { status: 500 },
+    );
+  }
+}
