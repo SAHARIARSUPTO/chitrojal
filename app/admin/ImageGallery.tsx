@@ -33,16 +33,14 @@ export default function ImageGallery({ images }: ImageGalleryProps) {
   const closeGalleryModal = () => setIsGalleryModalOpen(false);
 
   const showNextImage = useCallback(() => {
-    setCurrentImageIndex((prevIndex) =>
-      prevIndex === images.length - 1 ? 0 : prevIndex + 1,
-    );
-  }, [images.length]);
+    setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+  }, [images.length]); // images.length is stable if images array is not expected to change length while component is mounted.
 
   const showPrevImage = useCallback(() => {
-    setCurrentImageIndex((prevIndex) =>
-      prevIndex === 0 ? images.length - 1 : prevIndex - 1,
+    setCurrentImageIndex(
+      (prevIndex) => (prevIndex - 1 + images.length) % images.length,
     );
-  }, [images.length]);
+  }, [images.length]); // images.length is stable if images array is not expected to change length while component is mounted.
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -94,9 +92,9 @@ export default function ImageGallery({ images }: ImageGalleryProps) {
             <Image
               src={image.src}
               alt={image.alt}
-              width={300}
-              height={300}
-              className="rounded-lg object-cover aspect-square group-hover:opacity-75 transition-opacity"
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+              className="rounded-lg object-cover group-hover:opacity-75 transition-opacity"
             />
           </div>
         ))}
@@ -125,9 +123,9 @@ export default function ImageGallery({ images }: ImageGalleryProps) {
                     <Image
                       src={image.src}
                       alt={image.alt}
-                      width={200}
-                      height={200}
-                      className="rounded-md object-cover w-full h-full group-hover:opacity-75 transition-opacity"
+                      fill
+                      sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, (max-width: 1280px) 16vw, 12.5vw"
+                      className="rounded-md object-cover group-hover:opacity-75 transition-opacity"
                     />
                   </div>
                 ))}
@@ -155,9 +153,8 @@ export default function ImageGallery({ images }: ImageGalleryProps) {
                 key={images[currentImageIndex].src}
                 src={images[currentImageIndex].src}
                 alt={images[currentImageIndex].alt}
-                layout="fill"
-                objectFit="contain"
-                className="animate-zoomIn"
+                fill
+                className="object-contain animate-zoomIn"
               />
             </div>
 
@@ -191,8 +188,8 @@ export default function ImageGallery({ images }: ImageGalleryProps) {
                   <Image
                     src={image.src}
                     alt={image.alt}
-                    layout="fill"
-                    objectFit="cover"
+                    fill
+                    className="object-cover"
                   />
                 </div>
               ))}

@@ -38,7 +38,7 @@ type StaffRecordLike = {
 
 export function sanitizeStaffUser(user: StaffRecordLike): PublicStaffUser {
   return {
-    id: user._id?.toString() || user.id,
+    id: user._id?.toString() ?? user.id ?? "",
     name: user.name,
     email: user.email,
     role: user.role,
