@@ -1,7 +1,6 @@
 "use client";
-import React, { useState, useRef, useEffect } from "react";
-import Image from "next/image";
-import { Play, Pause, X, ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useState } from "react";
+import { Play, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 const VideoCarousel = ({ videoData = [] }) => {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
@@ -57,13 +56,10 @@ const VideoCarousel = ({ videoData = [] }) => {
           </div>
 
           <div className="relative w-full aspect-video rounded-lg overflow-hidden group">
-            <Image
-              src={currentVideo.thumbnail}
+            <img
+              src={currentVideo.thumbnail || "/why_us.jpg"}
               alt={currentVideo.title}
-              fill
               className="w-full h-full object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              priority
             />
             <div className="absolute inset-0 bg-black/50 flex flex-col justify-end p-6">
               <h3 className="text-2xl md:text-3xl font-bold text-white">
@@ -114,22 +110,30 @@ const FullscreenVideoPlayer = ({ video, onClose, onNext, onPrev }) => {
         {video.localSrc ? (
           <video
             src={video.localSrc}
-            className="w-full h-full"
+            poster={video.thumbnail || undefined}
+            className="w-full h-full object-cover"
             controls
             autoPlay
+            muted
+            playsInline
           ></video>
+        ) : video.facebookSrc ? (
+          <iframe
+            src={video.facebookSrc}
+            className="w-full h-full"
+            style={{ border: "none", overflow: "hidden" }}
+            scrolling="no"
+            frameBorder="0"
+            allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+            allowFullScreen={true}
+          ></iframe>
         ) : (
-          video.facebookSrc && (
-            <iframe
-              src={video.facebookSrc}
-              className="w-full h-full"
-              style={{ border: "none", overflow: "hidden" }}
-              scrolling="no"
-              frameBorder="0"
-              allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-              allowFullScreen={true}
-            ></iframe>
-          )
+          <div className="w-full h-full flex items-center justify-center bg-black text-white text-center p-4">
+            <p>
+              ভিডিও লোড করা যায়নি। অনুগ্রহ করে পরবর্তী আপডেটের জন্য অপেক্ষা
+              করুন বা ফেসবুক লিঙ্কটি খুলুন।
+            </p>
+          </div>
         )}
         <div className="absolute top-4 right-4">
           <button

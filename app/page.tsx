@@ -3,7 +3,9 @@ import path from "path";
 import Navbar from "./components/navbar/page";
 import Footer from "./components/footer/page";
 import HomeClient from "./components/home/home-client";
-import { Camera, Video, Heart, Aperture } from "lucide-react";
+
+const buildVideoThumbnailUrl = (sourceUrl: string) =>
+  `/api/video-thumbnail?url=${encodeURIComponent(sourceUrl)}`;
 
 const readImageDirectory = (dir: string): string[] => {
   const directoryPath = path.join(process.cwd(), "public", dir);
@@ -81,8 +83,11 @@ export default function Home() {
   const videoData = [
     {
       id: 1,
-      localSrc: "/videos/01.mp4",
-      thumbnail: portfolioImages[0] || "", // Use first portfolio image as a fallback thumbnail
+      facebookSrc:
+        "https://www.facebook.com/plugins/video.php?height=314&href=https%3A%2F%2Fwww.facebook.com%2Freel%2F1484422342948146%2F&show_text=false&width=560&t=0",
+      thumbnail: buildVideoThumbnailUrl(
+        "https://www.facebook.com/plugins/video.php?height=314&href=https%3A%2F%2Fwww.facebook.com%2Freel%2F1484422342948146%2F&show_text=false&width=560&t=0",
+      ),
       title: "সিনেমাটিক ওয়েডিং ফিল্ম",
       description: "প্রেম ও উদযাপনের এক সুন্দর গল্প।",
     },
@@ -90,7 +95,9 @@ export default function Home() {
       id: 2,
       facebookSrc:
         "https://www.facebook.com/plugins/video.php?height=314&href=https%3A%2F%2Fwww.facebook.com%2Freel%2F1484422342948146%2F&show_text=false&width=560&t=0",
-      thumbnail: portfolioImages[1] || "", // Placeholder thumbnail
+      thumbnail: buildVideoThumbnailUrl(
+        "https://www.facebook.com/plugins/video.php?height=314&href=https%3A%2F%2Fwww.facebook.com%2Freel%2F1484422342948146%2F&show_text=false&width=560&t=0",
+      ),
       title: "ফেসবুক রিল ১",
       description: "আমাদের সাম্প্রতিক কাজ থেকে একটি রিল।",
     },
@@ -101,7 +108,6 @@ export default function Home() {
       <Navbar />
       <HomeClient
         services={services}
-        portfolioImages={portfolioImages}
         carouselData={carouselData}
         videoData={videoData}
         packageImages={packageImages}

@@ -1,17 +1,34 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AdminLayout from "../components/home/AdminLayout";
 import {
   FiCalendar,
   FiCheckCircle,
+  FiChevronLeft,
+  FiChevronRight,
   FiClock,
   FiDollarSign,
   FiFileText,
   FiPlus,
+  FiCamera,
+  FiUsers,
+  FiClipboard,
   FiTrendingUp,
 } from "react-icons/fi";
+import {
+  addDays,
+  addMonths,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameDay,
+  isSameMonth,
+  startOfMonth,
+  startOfWeek,
+  subMonths,
+} from "date-fns";
 
 type DashboardMetric = {
   label: string;
@@ -35,14 +52,15 @@ type DashboardEvent = {
   price?: number;
 };
 
-type DashboardOrder = {
+type StaffFeature = {
   _id: string;
-  customerName: string;
-  package: string;
-  eventDate?: string;
-  totalAmount: number;
-  paidAmount: number;
-  dueAmount: number;
+  title: string;
+  description: string;
+  href: string;
+  iconKey: string;
+  badge?: string;
+  audience: "all" | "admin" | "staff";
+  active?: boolean;
 };
 
 const iconMap = {
@@ -52,12 +70,23 @@ const iconMap = {
   clock: FiClock,
 };
 
+const featureIconMap = {
+  calendar: FiCalendar,
+  camera: FiCamera,
+  users: FiUsers,
+  note: FiClipboard,
+};
+
 const formatCurrency = (value: number) => `৳${value.toLocaleString("en-BD")}`;
 
 export default function DashboardPage() {
   const [metrics, setMetrics] = useState<DashboardMetric[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<DashboardEvent[]>([]);
-  const [recentOrders, setRecentOrders] = useState<DashboardOrder[]>([]);
+  const [staffFeatures, setStaffFeatures] = useState<StaffFeature[]>([]);
+  const [calendarEvents, setCalendarEvents] = useState<DashboardEvent[]>([]);
+  const [calendarLoading, setCalendarLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -71,7 +100,6 @@ export default function DashboardPage() {
         if (result.success) {
           setMetrics(result.data.metrics || []);
           setUpcomingEvents(result.data.upcomingEvents || []);
-          setRecentOrders(result.data.recentOrders || []);
         }
       } catch (error) {
         console.error("Error loading dashboard", error);
@@ -82,6 +110,68 @@ export default function DashboardPage() {
 
     loadDashboard();
   }, []);
+
+  useEffect(() => {
+    const loadStaffFeatures = async () => {
+      try {
+        const response = await fetch("/api/admin/staff-features");
+        if (!response.ok) {
+          throw new Error("Failed to load staff features");
+        }
+        const result = await response.json();
+        if (result.success) {
+          setStaffFeatures(result.data || []);
+        }
+      } catch (error) {
+        console.error("Error loading staff features", error);
+      }
+    };
+
+    loadStaffFeatures();
+  }, []);
+
+  useEffect(() => {
+    const loadCalendarEvents = async () => {
+      try {
+        const response = await fetch("/api/events");
+        if (!response.ok) {
+          throw new Error("Failed to load calendar events");
+        }
+        const result = await response.json();
+        if (result.success) {
+          setCalendarEvents(result.data || []);
+        }
+      } catch (error) {
+        console.error("Error loading calendar events", error);
+      } finally {
+        setCalendarLoading(false);
+      }
+    };
+
+    loadCalendarEvents();
+  }, []);
+
+  const eventMap = useMemo(() => {
+    return calendarEvents.reduce<Record<string, DashboardEvent[]>>(
+      (map, event) => {
+        if (!event.date) return map;
+        const key = format(new Date(event.date), "yyyy-MM-dd");
+        if (!map[key]) {
+          map[key] = [];
+        }
+        map[key].push(event);
+        return map;
+      },
+      {},
+    );
+  }, [calendarEvents]);
+
+  const selectedDateKey = format(selectedDate, "yyyy-MM-dd");
+  const selectedDayEvents = eventMap[selectedDateKey] || [];
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(monthStart);
+  const startDate = startOfWeek(monthStart);
+  const endDate = endOfWeek(monthEnd);
 
   return (
     <AdminLayout>
@@ -162,6 +252,58 @@ export default function DashboardPage() {
                   </div>
                 );
               })}
+        </div>
+
+        <div className="relative z-10">
+          <div className="flex items-end justify-between gap-4 mb-5">
+            <div>
+              <h2 className="text-xl font-bold text-white">
+                Staff Features
+              </h2>
+              <p className="text-sm text-neutral-500 mt-1">
+                Dynamic shortcuts and reminders from the database.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            {staffFeatures.length > 0 ? (
+              staffFeatures.map((feature) => {
+                const Icon =
+                  featureIconMap[
+                    feature.iconKey as keyof typeof featureIconMap
+                  ] || FiFileText;
+
+                return (
+                  <Link
+                    key={feature._id}
+                    href={feature.href}
+                    className="group rounded-[1.5rem] border border-white/5 bg-[#0A0A0A]/80 backdrop-blur-xl p-5 hover:border-orange-500/30 transition-all duration-300 shadow-lg"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-4">
+                      <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-orange-500 group-hover:bg-orange-500/10 transition-colors">
+                        <Icon size={20} />
+                      </div>
+                      {feature.badge ? (
+                        <span className="rounded-full bg-orange-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-300">
+                          {feature.badge}
+                        </span>
+                      ) : null}
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-2">
+                      {feature.title}
+                    </h3>
+                    <p className="text-sm text-neutral-400 leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </Link>
+                );
+              })
+            ) : (
+              <div className="rounded-[1.5rem] border border-white/5 bg-[#0A0A0A]/80 p-5 text-sm text-neutral-500">
+                No staff features found.
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4">
@@ -247,66 +389,198 @@ export default function DashboardPage() {
           </div>
 
           <div className="lg:col-span-1 space-y-8">
-            <div className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[2rem] shadow-2xl relative overflow-hidden">
+            <div className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[2rem] shadow-2xl relative overflow-visible">
               <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
 
               <div className="p-6 border-b border-white/5 relative z-10">
-                <h2 className="text-xl font-bold text-white flex items-center gap-3">
-                  <div className="p-2 bg-orange-500/10 rounded-lg border border-orange-500/20">
-                    <FiDollarSign className="text-orange-500" />
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-xl font-bold text-white flex items-center gap-3">
+                      <div className="p-2 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                        <FiCalendar className="text-orange-500 text-xl" />
+                      </div>
+                      Event Calendar
+                    </h2>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Today&apos;s date is highlighted and event days show details on
+                      hover.
+                    </p>
                   </div>
-                  Recent Orders
-                </h2>
+                  <div className="flex flex-col items-end gap-2 text-right">
+                    <div className="text-sm font-semibold text-white">
+                      {format(currentMonth, "MMMM yyyy")}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCurrentMonth(subMonths(currentMonth, 1))
+                        }
+                        className="p-2 rounded-xl bg-white/5 hover:bg-orange-500/20 text-neutral-400 hover:text-orange-400 transition-all border border-transparent hover:border-orange-500/30"
+                      >
+                        <FiChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCurrentMonth(addMonths(currentMonth, 1))
+                        }
+                        className="p-2 rounded-xl bg-white/5 hover:bg-orange-500/20 text-neutral-400 hover:text-orange-400 transition-all border border-transparent hover:border-orange-500/30"
+                      >
+                        <FiChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="p-6 space-y-4 relative z-10">
-                {loading ? (
+              <div className="p-6 relative z-10">
+                {calendarLoading ? (
                   <div className="text-neutral-400 text-sm">
-                    Loading recent orders...
+                    Loading calendar...
                   </div>
-                ) : recentOrders.length > 0 ? (
-                  recentOrders.map((order) => (
-                    <div
-                      key={order._id}
-                      className="rounded-xl border border-white/10 bg-[#050505] p-4"
-                    >
-                      <div className="flex justify-between items-start gap-3">
-                        <div>
-                          <div className="font-semibold text-white">
-                            {order.customerName}
-                          </div>
-                          <div className="text-xs text-neutral-500 mt-1">
-                            {order.package}
-                          </div>
-                        </div>
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${order.dueAmount > 0 ? "bg-amber-500/10 text-amber-400" : "bg-emerald-500/10 text-emerald-400"}`}
-                        >
-                          {order.dueAmount > 0 ? "Due" : "Paid"}
-                        </span>
-                      </div>
-                      <div className="mt-3 text-sm text-neutral-400 flex items-center justify-between">
-                        <span>
-                          {order.eventDate
-                            ? new Date(order.eventDate).toLocaleDateString(
-                                "en-BD",
-                              )
-                            : "—"}
-                        </span>
-                        <span className="text-white font-semibold">
-                          {formatCurrency(order.totalAmount)}
-                        </span>
-                      </div>
-                      <div className="mt-2 text-xs text-neutral-500 flex justify-between">
-                        <span>Paid: {formatCurrency(order.paidAmount)}</span>
-                        <span>Due: {formatCurrency(order.dueAmount)}</span>
-                      </div>
-                    </div>
-                  ))
                 ) : (
-                  <div className="text-neutral-400 text-sm">
-                    No orders found yet.
-                  </div>
+                  <>
+                    <div className="grid grid-cols-7 gap-2 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-500 mb-3">
+                      {Array.from({ length: 7 }).map((_, index) => {
+                        const dayLabel = format(
+                          addDays(startOfWeek(new Date()), index),
+                          "EE",
+                        );
+                        return <div key={index}>{dayLabel}</div>;
+                      })}
+                    </div>
+                    <div className="space-y-2">
+                      {(() => {
+                        const rows = [];
+                        let day = startDate;
+                        let days: React.ReactNode[] = [];
+                        while (day <= endDate) {
+                          for (let i = 0; i < 7; i++) {
+                            const formattedDate = format(day, "d");
+                            const dayKey = format(day, "yyyy-MM-dd");
+                            const hasEvents = Boolean(eventMap[dayKey]?.length);
+                            const cloneDay = new Date(day.getTime());
+                            const isSelected = isSameDay(
+                              cloneDay,
+                              selectedDate,
+                            );
+                            const isCurrentMonth = isSameMonth(
+                              cloneDay,
+                              monthStart,
+                            );
+                            const isToday = isSameDay(cloneDay, new Date());
+
+                            days.push(
+                              <button
+                                key={cloneDay.toString()}
+                                type="button"
+                                onClick={() => setSelectedDate(cloneDay)}
+                                className={`group relative flex h-12 w-full items-center justify-center rounded-2xl transition-all duration-200 focus:outline-none active:scale-95 ${
+                                  isSelected
+                                    ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-[0_0_20px_rgba(234,88,12,0.35)]"
+                                    : isCurrentMonth
+                                      ? "bg-white/5 text-neutral-200 hover:bg-white/10"
+                                      : "bg-transparent text-neutral-500"
+                                }`}
+                                title={
+                                  hasEvents
+                                    ? `${eventMap[dayKey].length} event(s)`
+                                    : "No events"
+                                }
+                              >
+                                <span className="relative z-10 text-sm font-semibold">
+                                  {formattedDate}
+                                </span>
+                                {isToday && !isSelected ? (
+                                  <span className="absolute inset-x-1/4 bottom-2 h-1 rounded-full bg-orange-500/70"></span>
+                                ) : null}
+                                {hasEvents ? (
+                                  <span className="absolute bottom-2 left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.35)]"></span>
+                                ) : null}
+
+                                {hasEvents ? (
+                                  <div className="pointer-events-none absolute left-1/2 top-full z-20 -translate-x-1/2 w-64 rounded-2xl border border-white/10 bg-[#050505] p-3 text-left text-xs text-neutral-300 opacity-0 transition-opacity duration-200 group-hover:opacity-100 shadow-2xl">
+                                    <div className="font-semibold text-white mb-2">
+                                      Events
+                                    </div>
+                                    {eventMap[dayKey].map((event) => (
+                                      <div
+                                        key={event._id}
+                                        className="mb-2 last:mb-0"
+                                      >
+                                        <div className="font-semibold text-sm text-white">
+                                          {event.name}
+                                        </div>
+                                        <div className="text-[11px] text-neutral-400 leading-5">
+                                          {event.type || "Event"}
+                                          {event.location
+                                            ? ` • ${event.location}`
+                                            : ""}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : null}
+                              </button>,
+                            );
+                            day = addDays(day, 1);
+                          }
+
+                          rows.push(
+                            <div
+                              key={day.toString()}
+                              className="grid grid-cols-7 gap-2"
+                            >
+                              {days}
+                            </div>,
+                          );
+                          days = [];
+                        }
+                        return rows;
+                      })()}
+                    </div>
+
+                    <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-[#080808]/90 p-4 text-sm text-neutral-300">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <p className="text-xs uppercase tracking-wider text-neutral-500">
+                            Selected date
+                          </p>
+                          <p className="mt-1 text-white font-semibold">
+                            {format(selectedDate, "MMMM d, yyyy")}
+                          </p>
+                        </div>
+                        <span className="rounded-full bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-neutral-400">
+                          {selectedDayEvents.length} event
+                          {selectedDayEvents.length === 1 ? "" : "s"}
+                        </span>
+                      </div>
+                      {selectedDayEvents.length > 0 ? (
+                        <div className="space-y-3">
+                          {selectedDayEvents.map((event) => (
+                            <div
+                              key={event._id}
+                              className="rounded-2xl bg-white/5 p-3"
+                            >
+                              <div className="font-semibold text-white">
+                                {event.name}
+                              </div>
+                              <div className="text-xs text-neutral-400 mt-1">
+                                {event.type || "Event"}
+                                {event.location ? ` · ${event.location}` : ""}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-neutral-500">
+                          No events for this day. Hover or click highlighted
+                          dates to preview event details.
+                        </p>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             </div>

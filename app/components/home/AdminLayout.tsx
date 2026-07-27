@@ -12,9 +12,7 @@ import {
   FiUsers,
   FiCamera,
   FiMenu,
-  FiX,
   FiSearch,
-  FiBell,
   FiDollarSign,
   FiLink,
 } from "react-icons/fi";
@@ -157,27 +155,12 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
               className="md:hidden p-2 -ml-2 text-neutral-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             >
-              {isSidebarOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+              <FiMenu size={24} />
             </button>
-
-            {/* Search Bar */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-[#0A0A0A] border border-white/5 rounded-lg w-full max-w-sm focus-within:border-orange-500/50 transition-colors">
-              <FiSearch className="text-neutral-500" />
-              <input
-                type="text"
-                placeholder="Search projects, clients..."
-                className="bg-transparent border-none outline-none text-sm w-full text-white placeholder-neutral-600"
-              />
-            </div>
+            {/* Placeholder for breadcrumbs or page title if needed */}
+            <div className="flex-1"></div>
           </div>
 
-          {/* Header Utilities */}
-          <div className="flex items-center gap-3 sm:gap-4">
-            <button className="relative p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors">
-              <FiBell size={20} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-orange-500 rounded-full border border-[#050505]"></span>
-            </button>
-          </div>
         </header>
 
         {/* Page Content */}

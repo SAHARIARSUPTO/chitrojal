@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect, react/no-unescaped-entities */
 import React, { useState, useEffect } from "react";
 import AdminLayout from "../../components/home/AdminLayout";
 import { FiPlus, FiUser, FiX, FiUsers, FiEdit, FiTrash2 } from "react-icons/fi";
@@ -8,6 +9,8 @@ import { useNotification } from "@/hooks/useNotification";
 interface StaffMember {
   id: string;
   name: string;
+  loginId?: string;
+  accessRole?: "admin" | "staff";
   contact: string;
   address: string;
   joiningDate: string;
@@ -22,6 +25,8 @@ export default function StaffPage() {
   const [loading, setLoading] = useState(true);
   const [newStaff, setNewStaff] = useState({
     name: "",
+    loginId: "",
+    password: "",
     contact: "",
     address: "",
     joiningDate: "",
@@ -40,6 +45,8 @@ export default function StaffPage() {
           (result.data || []).map((item: any) => ({
             id: item._id,
             name: item.name,
+            loginId: item.loginId || "",
+            accessRole: item.accessRole || "staff",
             contact: item.contact,
             address: item.address,
             joiningDate: item.joiningDate,
@@ -67,6 +74,8 @@ export default function StaffPage() {
   const resetForm = () => {
     setNewStaff({
       name: "",
+      loginId: "",
+      password: "",
       contact: "",
       address: "",
       joiningDate: "",
@@ -78,8 +87,13 @@ export default function StaffPage() {
 
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newStaff.name || !newStaff.contact || !newStaff.joiningDate) {
+    if (!newStaff.name || !newStaff.loginId || !newStaff.joiningDate) {
       showError("Please fill all required fields.");
+      return;
+    }
+
+    if (!editingStaff && !newStaff.password) {
+      showError("Password is required for new staff accounts.");
       return;
     }
 
@@ -95,6 +109,7 @@ export default function StaffPage() {
             ...newStaff,
             eventsCovered: Number(newStaff.eventsCovered) || 0,
             salary: newStaff.salary || "",
+            password: newStaff.password || undefined,
           }),
         },
       );
@@ -120,6 +135,8 @@ export default function StaffPage() {
     setEditingStaff(staff);
     setNewStaff({
       name: staff.name,
+      loginId: staff.loginId || "",
+      password: "",
       contact: staff.contact,
       address: staff.address,
       joiningDate: staff.joiningDate,
@@ -174,6 +191,7 @@ export default function StaffPage() {
               <thead className="bg-[#050505]/50 text-neutral-400 uppercase tracking-wider text-xs font-semibold">
                 <tr>
                   <th className="p-5">Name</th>
+                  <th className="p-5 hidden md:table-cell">Login ID</th>
                   <th className="p-5 hidden md:table-cell">Contact</th>
                   <th className="p-5 hidden lg:table-cell">Joining Date</th>
                   <th className="p-5 hidden md:table-cell">Salary</th>
@@ -188,6 +206,9 @@ export default function StaffPage() {
                       <td className="p-5">
                         <div className="h-4 bg-neutral-700 rounded w-3/4"></div>
                         <div className="h-3 bg-neutral-800 rounded w-1/2 mt-2"></div>
+                      </td>
+                      <td className="p-5 hidden md:table-cell">
+                        <div className="h-4 bg-neutral-700 rounded w-1/2"></div>
                       </td>
                       <td className="p-5 hidden md:table-cell">
                         <div className="h-4 bg-neutral-700 rounded w-2/3"></div>
@@ -215,6 +236,9 @@ export default function StaffPage() {
                         <div className="text-xs text-neutral-500 mt-1">
                           {staff.address}
                         </div>
+                      </td>
+                      <td className="p-5 text-neutral-300 font-medium hidden md:table-cell">
+                        {staff.loginId || "N/A"}
                       </td>
                       <td className="p-5 text-neutral-300 font-medium hidden md:table-cell">
                         {staff.contact}
@@ -249,7 +273,7 @@ export default function StaffPage() {
                 ) : (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="text-center p-10 text-neutral-500"
                     >
                       No staff members found. Add one to get started.
@@ -300,6 +324,38 @@ export default function StaffPage() {
                   </div>
                   <div>
                     <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                      Login ID*
+                    </label>
+                    <input
+                      type="text"
+                      name="loginId"
+                      value={newStaff.loginId}
+                      onChange={handleInputChange}
+                      className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
+                      placeholder="staff01"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                    Password{editingStaff ? " (optional)" : "*"}
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={newStaff.password}
+                    onChange={handleInputChange}
+                    className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
+                    placeholder={
+                      editingStaff
+                        ? "Leave blank to keep current password"
+                        : "Set a password"
+                    }
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
                       Contact Number*
                     </label>
                     <input
@@ -309,6 +365,18 @@ export default function StaffPage() {
                       onChange={handleInputChange}
                       className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
                       placeholder="01XXXXXXXXX"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                      Joining Date*
+                    </label>
+                    <input
+                      type="date"
+                      name="joiningDate"
+                      value={newStaff.joiningDate}
+                      onChange={handleInputChange}
+                      className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
                     />
                   </div>
                 </div>
@@ -328,18 +396,6 @@ export default function StaffPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                      Joining Date*
-                    </label>
-                    <input
-                      type="date"
-                      name="joiningDate"
-                      value={newStaff.joiningDate}
-                      onChange={handleInputChange}
-                      className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
                       Salary (BDT)
                     </label>
                     <input
@@ -351,19 +407,19 @@ export default function StaffPage() {
                       placeholder="25000"
                     />
                   </div>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                    Events Covered (Optional)
-                  </label>
-                  <input
-                    type="number"
-                    name="eventsCovered"
-                    value={newStaff.eventsCovered}
-                    onChange={handleInputChange}
-                    className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
-                    placeholder="0"
-                  />
+                  <div>
+                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                      Events Covered (Optional)
+                    </label>
+                    <input
+                      type="number"
+                      name="eventsCovered"
+                      value={newStaff.eventsCovered}
+                      onChange={handleInputChange}
+                      className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
+                      placeholder="0"
+                    />
+                  </div>
                 </div>
               </div>
               <div className="p-6 border-t border-white/5 bg-[#050505] flex justify-end gap-3">

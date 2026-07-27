@@ -3,11 +3,24 @@ import mongooseConnect from "@/lib/mongoose";
 import Event from "@/models/Event";
 import Order from "@/models/Order";
 import Payment from "@/models/Payment";
+import {
+  getSessionTokenFromRequest,
+  verifySessionToken,
+} from "@/lib/session";
 
-export async function GET() {
+const FINANCE_METRIC_LABELS = ["Payment Received", "Due Payment"];
+
+async function getSessionRole(request: Request) {
+  const token = getSessionTokenFromRequest(request);
+  const session = await verifySessionToken(token);
+  return session?.accessRole || null;
+}
+
+export async function GET(request: Request) {
   await mongooseConnect();
 
   try {
+    const role = await getSessionRole(request);
     const now = new Date();
 
     const [
@@ -85,12 +98,15 @@ export async function GET() {
         detail: `${dueOrderCount} order${dueOrderCount === 1 ? "" : "s"} still pending`,
         icon: "clock",
       },
-    ];
+    ].filter((metric) =>
+      role === "staff" ? !FINANCE_METRIC_LABELS.includes(metric.label) : true,
+    );
 
     return NextResponse.json({
       success: true,
       data: {
         metrics,
+        accessRole: role || "admin",
         upcomingEvents: upcomingEvents.map((event) => ({
           ...event,
           date: event.date ? new Date(event.date).toISOString() : null,

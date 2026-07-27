@@ -1,8 +1,9 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import React, { useState, useEffect } from "react";
 import AdminLayout from "../../components/home/AdminLayout";
-import { FiCalendar, FiEdit2, FiEye, FiSearch, FiTrash2 } from "react-icons/fi";
+import { FiEdit2, FiSearch, FiTrash2 } from "react-icons/fi";
 
 const statusConfig = {
   Pending: "text-amber-400 bg-amber-400/10 border-amber-400/20",
@@ -29,6 +30,7 @@ export default function EventsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
+  const [canEditEvents, setCanEditEvents] = useState(false);
   const [form, setForm] = useState({
     name: "",
     status: "Pending" as EventStatus,
@@ -53,6 +55,25 @@ export default function EventsPage() {
     fetchEvents();
   }, []);
 
+  useEffect(() => {
+    const loadSession = async () => {
+      try {
+        const response = await fetch("/api/auth/me");
+        if (!response.ok) {
+          setCanEditEvents(false);
+          return;
+        }
+
+        const result = await response.json();
+        setCanEditEvents(result?.user?.accessRole === "admin");
+      } catch {
+        setCanEditEvents(false);
+      }
+    };
+
+    loadSession();
+  }, []);
+
   const filteredEvents = events.filter((event) => {
     const query = searchTerm.toLowerCase();
     return (
@@ -63,11 +84,13 @@ export default function EventsPage() {
   });
 
   const openEdit = (event: EventItem) => {
+    if (!canEditEvents) return;
     setEditingEvent(event);
     setForm({ name: event.name, status: event.status });
   };
 
   const handleSave = async () => {
+    if (!canEditEvents) return;
     if (!editingEvent) return;
     try {
       const response = await fetch(`/api/events/${editingEvent._id}`, {
@@ -85,6 +108,7 @@ export default function EventsPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!canEditEvents) return;
     if (!window.confirm("Delete this event?")) return;
     try {
       const response = await fetch(`/api/events/${id}`, { method: "DELETE" });
@@ -106,6 +130,11 @@ export default function EventsPage() {
               Upcoming bookings appear here automatically and can be updated by
               the admin.
             </p>
+            {!canEditEvents ? (
+              <p className="mt-3 inline-flex rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300">
+                Read-only for staff
+              </p>
+            ) : null}
           </div>
         </div>
 
@@ -170,22 +199,28 @@ export default function EventsPage() {
                         </span>
                       </td>
                       <td className="p-5 pr-6 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => openEdit(event)}
-                            className="p-2 rounded-lg border border-white/10 hover:border-orange-500/50 hover:bg-orange-500/10"
-                            title="Edit"
-                          >
-                            <FiEdit2 />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(event._id)}
-                            className="p-2 rounded-lg border border-white/10 hover:border-red-500/50 hover:bg-red-500/10"
-                            title="Delete"
-                          >
-                            <FiTrash2 />
-                          </button>
-                        </div>
+                        {canEditEvents ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => openEdit(event)}
+                              className="p-2 rounded-lg border border-white/10 hover:border-orange-500/50 hover:bg-orange-500/10"
+                              title="Edit"
+                            >
+                              <FiEdit2 />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(event._id)}
+                              className="p-2 rounded-lg border border-white/10 hover:border-red-500/50 hover:bg-red-500/10"
+                              title="Delete"
+                            >
+                              <FiTrash2 />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-neutral-500">
+                            View only
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -196,7 +231,7 @@ export default function EventsPage() {
         </div>
       </div>
 
-      {editingEvent ? (
+      {canEditEvents && editingEvent ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="w-full max-w-lg rounded-[1.5rem] border border-white/10 bg-[#0A0A0A] p-6">
             <h2 className="text-xl font-semibold mb-4">Edit event</h2>

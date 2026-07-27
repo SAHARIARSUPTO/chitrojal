@@ -8,6 +8,8 @@ export default function NewStaffPage() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    loginId: "",
+    password: "",
     phone: "",
     role: "Photographer",
     status: "Active",
@@ -57,6 +59,16 @@ export default function NewStaffPage() {
             <div className="space-y-2">
               <label className="text-sm font-bold">Email Address</label>
               <input type="email" name="email" value={formData.email} onChange={handleChange} required className="w-full px-4 py-3 rounded-xl bg-[#050505] border border-white/10" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-bold">Login ID</label>
+              <input type="text" name="loginId" value={formData.loginId} onChange={handleChange} required className="w-full px-4 py-3 rounded-xl bg-[#050505] border border-white/10" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-bold">Password</label>
+              <input type="password" name="password" value={formData.password} onChange={handleChange} required className="w-full px-4 py-3 rounded-xl bg-[#050505] border border-white/10" />
             </div>
           </div>
           <div className="space-y-2">

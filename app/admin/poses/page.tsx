@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect, react-hooks/exhaustive-deps, @next/next/no-img-element */
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
@@ -9,7 +10,6 @@ import {
   FiX,
   FiImage,
   FiUploadCloud,
-  FiHeart,
   FiSearch,
   FiEye,
   FiTrash2,
@@ -53,10 +53,12 @@ function PoseCard({
   pose,
   onOpenView,
   onDelete,
+  canDelete,
 }: {
   pose: any;
   onOpenView: (pose: any) => void;
   onDelete: (poseId: string) => void;
+  canDelete: boolean;
 }) {
   return (
     <div
@@ -77,12 +79,14 @@ function PoseCard({
             <button className="p-2 rounded-lg bg-black/50 hover:bg-white/20 text-white transition-colors">
               <FiEye size={16} />
             </button>
-            <button
-              onClick={() => onDelete(pose._id)}
-              className="p-2 rounded-lg bg-red-500/80 hover:bg-red-500 text-white transition-colors"
-            >
-              <FiTrash2 size={16} />
-            </button>
+            {canDelete ? (
+              <button
+                onClick={() => onDelete(pose._id)}
+                className="p-2 rounded-lg bg-red-500/80 hover:bg-red-500 text-white transition-colors"
+              >
+                <FiTrash2 size={16} />
+              </button>
+            ) : null}
           </div>
         </div>
         <div className="text-white">
@@ -250,6 +254,7 @@ export default function PosesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredPoses, setFilteredPoses] = useState<any[]>([]);
   const [totalImages, setTotalImages] = useState(0);
+  const [canManagePoses, setCanManagePoses] = useState(false);
 
   useEffect(() => {
     const filtered = poses.filter((pose) =>
@@ -262,6 +267,25 @@ export default function PosesPage() {
     );
     setTotalImages(total);
   }, [poses, searchTerm]);
+
+  useEffect(() => {
+    const loadSession = async () => {
+      try {
+        const response = await fetch("/api/auth/me");
+        if (!response.ok) {
+          setCanManagePoses(false);
+          return;
+        }
+
+        const result = await response.json();
+        setCanManagePoses(result?.user?.accessRole === "admin");
+      } catch {
+        setCanManagePoses(false);
+      }
+    };
+
+    loadSession();
+  }, []);
 
   async function fetchPoses(folderId: string) {
     setLoading(true);
@@ -334,6 +358,10 @@ export default function PosesPage() {
   };
 
   const handleDelete = async (poseId: string) => {
+    if (!canManagePoses) {
+      showError("Only admin accounts can delete pose collections.");
+      return;
+    }
     if (!window.confirm("Are you sure you want to delete this collection?"))
       return;
 
@@ -356,6 +384,10 @@ export default function PosesPage() {
   };
 
   const handleSaveCollection = async () => {
+    if (!canManagePoses) {
+      showError("Only admin accounts can upload pose collections.");
+      return;
+    }
     if (!selectedFolder) {
       showError("Please select a folder first.");
       return;
@@ -435,6 +467,10 @@ export default function PosesPage() {
   }, []);
 
   const handleCreateFolder = async () => {
+    if (!canManagePoses) {
+      showError("Only admin accounts can create folders.");
+      return;
+    }
     if (!newFolderName.trim()) {
       showError("Folder name cannot be empty.");
       return;
@@ -480,6 +516,11 @@ export default function PosesPage() {
               Curate, manage, and reference photography poses and mood boards
               for your shoots.
             </p>
+            {!canManagePoses ? (
+              <p className="mt-3 inline-flex rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300">
+                Read-only for staff
+              </p>
+            ) : null}
           </div>
           {selectedFolder ? (
             <div className="flex flex-col sm:flex-row gap-4">
@@ -489,20 +530,24 @@ export default function PosesPage() {
               >
                 Back to Folders
               </button>
-              <button
-                onClick={() => setIsUploadOpen(true)}
-                className="flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:shadow-[0_0_30px_rgba(234,88,12,0.5)] transform active:scale-95 border-none w-full md:w-auto"
-              >
-                <FiPlus size={18} /> Upload Poses
-              </button>
+              {canManagePoses ? (
+                <button
+                  onClick={() => setIsUploadOpen(true)}
+                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:shadow-[0_0_30px_rgba(234,88,12,0.5)] transform active:scale-95 border-none w-full md:w-auto"
+                >
+                  <FiPlus size={18} /> Upload Poses
+                </button>
+              ) : null}
             </div>
           ) : (
-            <button
-              onClick={() => setIsCreateFolderModalOpen(true)}
-              className="flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:shadow-[0_0_30px_rgba(234,88,12,0.5)] transform active:scale-95 border-none w-full md:w-auto"
-            >
-              <FiFolder size={18} /> Create Folder
-            </button>
+            canManagePoses ? (
+              <button
+                onClick={() => setIsCreateFolderModalOpen(true)}
+                className="flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:shadow-[0_0_30px_rgba(234,88,12,0.5)] transform active:scale-95 border-none w-full md:w-auto"
+              >
+                <FiFolder size={18} /> Create Folder
+              </button>
+            ) : null
           )}
         </div>
 
@@ -548,6 +593,7 @@ export default function PosesPage() {
                     pose={pose}
                     onOpenView={openViewModal}
                     onDelete={handleDelete}
+                    canDelete={canManagePoses}
                   />
                 ))
               ) : (
