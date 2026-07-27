@@ -42,7 +42,6 @@ export async function GET(request: Request, context: RouteContext) {
     const darkText = "#0F172A"; // Slate 900
     const bodyText = "#334155"; // Slate 700
     const mutedText = "#64748B"; // Slate 500
-    const lightBg = "#F8FAFC"; // Slate 50
     const borderFill = "#E2E8F0"; // Slate 200
 
     // Standard ASCII Currency Helper (Prevents font symbol corruption)
@@ -84,27 +83,22 @@ export async function GET(request: Request, context: RouteContext) {
     // -------------------------------------------------------------
     // 1. BRAND HEADER & INVOICE META
     // -------------------------------------------------------------
-    addText("CHITROJAAL", margin, margin + 20, {
-      fontSize: 22,
+    addText("CHITROJAAL", margin, margin + 22, {
+      fontSize: 24,
       color: brandColor,
-      weight: "bold",
-    });
-    addText("Digital Media & Creative Engineering", margin, margin + 34, {
-      fontSize: 8.5,
-      color: mutedText,
       weight: "bold",
     });
     addText(
       "Juma Market, Mizan Road, Feni 3900, Bangladesh",
       margin,
-      margin + 48,
-      { fontSize: 8, color: mutedText },
+      margin + 42,
+      { fontSize: 8.5, color: mutedText },
     );
     addText(
       "Phone: +880 1834-258375 | Web: www.chitrojaal.com",
       margin,
-      margin + 60,
-      { fontSize: 8, color: mutedText },
+      margin + 55,
+      { fontSize: 8.5, color: mutedText },
     );
 
     // Right Header - Invoice Badge & Numbers
@@ -171,10 +165,7 @@ export async function GET(request: Request, context: RouteContext) {
       `Contact: ${order.customerPhone || "N/A"}`,
       margin + 12,
       gridY + 46,
-      {
-        fontSize: 8,
-        color: bodyText,
-      },
+      { fontSize: 8, color: bodyText },
     );
     addText(`Email: ${order.customerEmail || "N/A"}`, margin + 12, gridY + 58, {
       fontSize: 8,
@@ -284,24 +275,16 @@ export async function GET(request: Request, context: RouteContext) {
       weight: "bold",
     });
     addText(
-      "Bank Name: City Bank PLC (Feni Branch)",
+      "Bank Name: Dutch Bangla Bank - DBBL (Feni Branch)",
       margin + 12,
       bottomGridY + 32,
-      {
-        fontSize: 8,
-        color: bodyText,
-      },
+      { fontSize: 8, color: bodyText },
     );
-    addText(
-      "Account Title: Chitrojaal Digital Media",
-      margin + 12,
-      bottomGridY + 45,
-      {
-        fontSize: 8,
-        color: bodyText,
-      },
-    );
-    addText("Account No: 1502-984019-001", margin + 12, bottomGridY + 58, {
+    addText("Account Title: MD SALMAN HOSSAIN", margin + 12, bottomGridY + 45, {
+      fontSize: 8,
+      color: bodyText,
+    });
+    addText("Account No: 1407348737513", margin + 12, bottomGridY + 58, {
       fontSize: 8,
       color: darkText,
       weight: "bold",
@@ -319,7 +302,7 @@ export async function GET(request: Request, context: RouteContext) {
       { fontSize: 8, color: mutedText },
     );
 
-    // Financial Calculation Card (Height adjusted to prevent line overlap)
+    // Financial Calculation Card
     drawCard(summaryCardX, bottomGridY, summaryCardWidth, 100);
     let calcY = bottomGridY + 18;
 
@@ -347,7 +330,7 @@ export async function GET(request: Request, context: RouteContext) {
     addSummaryRow("Advance Paid", formatBDT(order.paidAmount || 0));
     addSummaryRow("Discount Applied", "- BDT 0.00", false, "#16A34A");
 
-    // Divider Line (Clean margin separation)
+    // Divider Line
     doc.setDrawColor(brandColor);
     doc.setLineWidth(1);
     doc.line(
@@ -357,7 +340,7 @@ export async function GET(request: Request, context: RouteContext) {
       calcY,
     );
 
-    // Total Due text pushed down below the divider line
+    // Total Due
     calcY += 16;
     addSummaryRow(
       "Total Due",
@@ -398,7 +381,7 @@ export async function GET(request: Request, context: RouteContext) {
     const footerY = pageHeight - 25;
     const sigLineY = pageHeight - 65;
 
-    // Authorized Signature Block (Positioned safely above bottom footer line)
+    // Authorized Signature Block
     const sigWidth = 140;
     const sigX = pageWidth - margin - sigWidth;
 
@@ -432,10 +415,7 @@ export async function GET(request: Request, context: RouteContext) {
       "Thank you for choosing Chitrojaal for your creative production.",
       margin,
       footerY,
-      {
-        fontSize: 7.5,
-        color: mutedText,
-      },
+      { fontSize: 7.5, color: mutedText },
     );
     addText("chitrojaal@gmail.com", pageWidth / 2, footerY, {
       fontSize: 7.5,

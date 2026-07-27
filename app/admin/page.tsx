@@ -15,6 +15,7 @@ import {
   FiCamera,
   FiUsers,
   FiClipboard,
+  FiLink,
   FiTrendingUp,
 } from "react-icons/fi";
 import {
@@ -74,6 +75,7 @@ const featureIconMap = {
   calendar: FiCalendar,
   camera: FiCamera,
   users: FiUsers,
+  link: FiLink,
   note: FiClipboard,
 };
 
@@ -181,10 +183,10 @@ export default function DashboardPage() {
 
         <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 pb-6 border-b border-white/10">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white to-neutral-400 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white to-neutral-400 tracking-tight">
               Admin Dashboard
             </h1>
-            <p className="text-neutral-400 mt-2 text-sm max-w-md leading-relaxed">
+            <p className="text-sm sm:text-base md:text-lg text-neutral-400 mt-2 max-w-md leading-relaxed">
               Monitor live event activity, payment status, and the latest client
               orders from your database.
             </p>
@@ -192,27 +194,27 @@ export default function DashboardPage() {
           <div className="flex flex-wrap gap-3">
             <Link
               href="/admin/orders/new"
-              className="flex items-center gap-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)]"
+              className="flex items-center gap-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-sm font-semibold transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)]"
             >
-              <FiPlus size={16} /> Create Order
+              <FiPlus size={16} /> New Event
             </Link>
             <Link
               href="/admin/invoices"
-              className="flex items-center gap-2 bg-[#0A0A0A] border border-white/10 hover:border-orange-500/50 hover:bg-white/5 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
+              className="flex items-center gap-2 bg-[#0A0A0A] border border-white/10 hover:border-orange-500/50 hover:bg-white/5 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-sm font-semibold transition-all"
             >
               <FiFileText size={16} /> Create Invoice
             </Link>
           </div>
         </div>
 
-        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="relative z-10 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {loading
             ? Array.from({ length: 4 }).map((_, index) => (
                 <div
                   key={index}
-                  className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[1.5rem] p-6 animate-pulse"
+                  className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[1.5rem] p-4 sm:p-6 animate-pulse"
                 >
-                  <div className="h-3 w-24 rounded bg-white/10 mb-4" />
+                  <div className="h-3 w-20 rounded bg-white/10 mb-4" />
                   <div className="h-8 w-20 rounded bg-white/10 mb-3" />
                   <div className="h-3 w-32 rounded bg-white/10" />
                 </div>
@@ -222,16 +224,16 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={stat.label}
-                    className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[1.5rem] p-6 hover:border-orange-500/30 transition-all duration-300 relative overflow-hidden group shadow-lg"
+                    className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[1.5rem] p-4 sm:p-6 hover:border-orange-500/30 transition-all duration-300 relative overflow-hidden group shadow-lg"
                   >
                     <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] to-transparent pointer-events-none" />
-                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
-                      <Icon size={64} className="text-orange-500" />
+                    <div className="absolute top-0 right-0 p-3 sm:p-4 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
+                      <Icon size={48} className="text-orange-500" />
                     </div>
 
                     <div className="flex justify-between items-start mb-6 relative z-10">
-                      <div className="p-3 bg-white/5 rounded-xl text-orange-500 border border-white/10 group-hover:bg-orange-500/10 transition-colors shadow-inner">
-                        <Icon size={20} />
+                      <div className="p-2 sm:p-3 bg-white/5 rounded-xl text-orange-500 border border-white/10 group-hover:bg-orange-500/10 transition-colors shadow-inner">
+                        <Icon className="w-[18px] h-[18px] sm:w-5 sm:h-5" />
                       </div>
                     </div>
 
@@ -239,12 +241,12 @@ export default function DashboardPage() {
                       <h3 className="text-neutral-400 text-xs uppercase tracking-widest font-bold mb-1">
                         {stat.label}
                       </h3>
-                      <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-300 mb-3 drop-shadow-sm">
+                      <p className="text-lg sm:text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-300 mb-3 drop-shadow-sm break-words">
                         {stat.kind === "currency"
                           ? formatCurrency(stat.value)
                           : stat.value}
                       </p>
-                      <div className="flex items-center text-xs font-semibold text-neutral-500">
+                      <div className="flex items-center text-[10px] sm:text-xs font-semibold text-neutral-500">
                         <FiTrendingUp className="mr-1.5" />
                         {stat.detail}
                       </div>
@@ -254,156 +256,24 @@ export default function DashboardPage() {
               })}
         </div>
 
-        <div className="relative z-10">
-          <div className="flex items-end justify-between gap-4 mb-5">
-            <div>
-              <h2 className="text-xl font-bold text-white">
-                Staff Features
-              </h2>
-              <p className="text-sm text-neutral-500 mt-1">
-                Dynamic shortcuts and reminders from the database.
-              </p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            {staffFeatures.length > 0 ? (
-              staffFeatures.map((feature) => {
-                const Icon =
-                  featureIconMap[
-                    feature.iconKey as keyof typeof featureIconMap
-                  ] || FiFileText;
-
-                return (
-                  <Link
-                    key={feature._id}
-                    href={feature.href}
-                    className="group rounded-[1.5rem] border border-white/5 bg-[#0A0A0A]/80 backdrop-blur-xl p-5 hover:border-orange-500/30 transition-all duration-300 shadow-lg"
-                  >
-                    <div className="flex items-start justify-between gap-3 mb-4">
-                      <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-orange-500 group-hover:bg-orange-500/10 transition-colors">
-                        <Icon size={20} />
-                      </div>
-                      {feature.badge ? (
-                        <span className="rounded-full bg-orange-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-300">
-                          {feature.badge}
-                        </span>
-                      ) : null}
-                    </div>
-                    <h3 className="text-lg font-bold text-white mb-2">
-                      {feature.title}
-                    </h3>
-                    <p className="text-sm text-neutral-400 leading-relaxed">
-                      {feature.description}
-                    </p>
-                  </Link>
-                );
-              })
-            ) : (
-              <div className="rounded-[1.5rem] border border-white/5 bg-[#0A0A0A]/80 p-5 text-sm text-neutral-500">
-                No staff features found.
-              </div>
-            )}
-          </div>
-        </div>
-
         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4">
-          <div className="lg:col-span-2 bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[2rem] flex flex-col shadow-2xl overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
-
-            <div className="p-6 border-b border-white/5 flex justify-between items-center relative z-10">
-              <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-3">
-                  <div className="p-2 bg-orange-500/10 rounded-lg border border-orange-500/20">
-                    <FiCalendar className="text-orange-500 text-xl" />
-                  </div>
-                  Upcoming Events
-                </h2>
-              </div>
-              <Link
-                href="/admin/events"
-                className="text-sm font-semibold text-neutral-400 hover:text-orange-400 transition-colors"
-              >
-                View All
-              </Link>
-            </div>
-
-            <div className="overflow-x-auto relative z-10">
-              <table className="w-full text-left border-collapse text-sm">
-                <thead>
-                  <tr className="bg-[#050505]/50 border-b border-white/5 text-neutral-400 uppercase tracking-wider text-xs font-semibold">
-                    <th className="p-5">Event</th>
-                    <th className="p-5">Date</th>
-                    <th className="p-5">Location</th>
-                    <th className="p-5">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={4} className="p-5 text-neutral-400">
-                        Loading events...
-                      </td>
-                    </tr>
-                  ) : upcomingEvents.length > 0 ? (
-                    upcomingEvents.map((event) => (
-                      <tr
-                        key={event._id}
-                        className="hover:bg-white/[0.02] transition-colors group"
-                      >
-                        <td className="p-5">
-                          <div className="font-bold text-white">
-                            {event.name}
-                          </div>
-                          <div className="text-xs text-neutral-500 mt-1 font-medium">
-                            {event.type || "Event"}
-                            {event.clientName ? ` • ${event.clientName}` : ""}
-                          </div>
-                        </td>
-                        <td className="p-5 text-neutral-300 font-medium">
-                          {event.date
-                            ? new Date(event.date).toLocaleDateString("en-BD", {
-                                dateStyle: "medium",
-                              })
-                            : "—"}
-                        </td>
-                        <td className="p-5 text-neutral-300 font-medium">
-                          {event.location || "—"}
-                        </td>
-                        <td className="p-5">
-                          <span className="px-3 py-1.5 rounded-lg text-xs font-bold border text-amber-400 bg-amber-400/10 border-amber-400/20">
-                            {event.status || "Pending"}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={4} className="p-5 text-neutral-400">
-                        No upcoming events yet.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="lg:col-span-1 space-y-8">
+          {/* Event Calendar (order-1 on mobile, order-2 on large) */}
+          <div className="lg:col-span-1 space-y-8 order-1 lg:order-2">
             <div className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[2rem] shadow-2xl relative overflow-visible">
               <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
 
               <div className="p-6 border-b border-white/5 relative z-10">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-xl font-bold text-white flex items-center gap-3">
+                    <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-3">
                       <div className="p-2 bg-orange-500/10 rounded-lg border border-orange-500/20">
                         <FiCalendar className="text-orange-500 text-xl" />
                       </div>
                       Event Calendar
                     </h2>
                     <p className="text-xs text-neutral-500 mt-1">
-                      Today&apos;s date is highlighted and event days show details on
-                      hover.
+                      Today&apos;s date is highlighted and event days show
+                      details on hover.
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-2 text-right">
@@ -476,7 +346,7 @@ export default function DashboardPage() {
                                 key={cloneDay.toString()}
                                 type="button"
                                 onClick={() => setSelectedDate(cloneDay)}
-                                className={`group relative flex h-12 w-full items-center justify-center rounded-2xl transition-all duration-200 focus:outline-none active:scale-95 ${
+                                className={`group relative flex h-10 w-full sm:h-12 items-center justify-center rounded-2xl transition-all duration-200 focus:outline-none active:scale-95 ${
                                   isSelected
                                     ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-[0_0_20px_rgba(234,88,12,0.35)]"
                                     : isCurrentMonth
@@ -500,14 +370,14 @@ export default function DashboardPage() {
                                 ) : null}
 
                                 {hasEvents ? (
-                                  <div className="pointer-events-none absolute left-1/2 top-full z-20 -translate-x-1/2 w-64 rounded-2xl border border-white/10 bg-[#050505] p-3 text-left text-xs text-neutral-300 opacity-0 transition-opacity duration-200 group-hover:opacity-100 shadow-2xl">
+                                  <div className="pointer-events-none absolute left-1/2 top-full z-20 -translate-x-1/2 w-56 sm:w-64 rounded-2xl border border-white/10 bg-[#050505] p-3 text-left text-xs text-neutral-300 opacity-0 transition-opacity duration-200 group-hover:opacity-100 shadow-2xl">
                                     <div className="font-semibold text-white mb-2">
                                       Events
                                     </div>
                                     {eventMap[dayKey].map((event) => (
                                       <div
                                         key={event._id}
-                                        className="mb-2 last:mb-0"
+                                        className="mb-2 last:mb-0 text-xs sm:text-sm"
                                       >
                                         <div className="font-semibold text-sm text-white">
                                           {event.name}
@@ -547,7 +417,7 @@ export default function DashboardPage() {
                           <p className="text-xs uppercase tracking-wider text-neutral-500">
                             Selected date
                           </p>
-                          <p className="mt-1 text-white font-semibold">
+                          <p className="mt-1 text-white font-semibold text-sm sm:text-base">
                             {format(selectedDate, "MMMM d, yyyy")}
                           </p>
                         </div>
@@ -584,21 +454,87 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
+          </div>
 
-            <div className="bg-gradient-to-br from-[#0A0A0A] to-[#050505] border border-orange-500/30 rounded-[2rem] p-6 relative overflow-hidden shadow-[0_0_30px_rgba(234,88,12,0.05)]">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/20 rounded-full blur-3xl pointer-events-none" />
-              <div className="flex items-center justify-between mb-4 relative z-10">
-                <h3 className="font-bold text-white flex items-center gap-2">
-                  <FiClock className="text-orange-500" /> Live Overview
-                </h3>
-                <span className="text-orange-500 text-sm font-black">
-                  Updated
-                </span>
+          {/* Upcoming Events (order-2 on mobile, order-1 on large) */}
+          <div className="lg:col-span-2 bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[2rem] flex flex-col shadow-2xl overflow-hidden relative order-2 lg:order-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
+
+            <div className="p-6 border-b border-white/5 flex justify-between items-center relative z-10">
+              <div>
+                <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-3">
+                  <div className="p-2 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                    <FiCalendar className="text-orange-500 text-xl" />
+                  </div>
+                  Upcoming Events
+                </h2>
               </div>
-              <p className="text-xs text-neutral-400 font-medium relative z-10">
-                These cards pull data from your events and orders collections,
-                so new bookings and payments are reflected automatically.
-              </p>
+              <Link
+                href="/admin/events"
+                className="text-sm font-semibold text-neutral-400 hover:text-orange-400 transition-colors"
+              >
+                View All
+              </Link>
+            </div>
+
+            <div className="overflow-x-auto relative z-10">
+              <table className="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr className="bg-[#050505]/50 border-b border-white/5 text-neutral-400 uppercase tracking-wider text-xs font-semibold">
+                    <th className="p-5">Event</th>
+                    <th className="p-5">Date</th>
+                    <th className="p-5">Location</th>
+                    <th className="p-5">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={4} className="p-5 text-neutral-400">
+                        Loading events...
+                      </td>
+                    </tr>
+                  ) : upcomingEvents.length > 0 ? (
+                    upcomingEvents.map((event) => (
+                      <tr
+                        key={event._id}
+                        className="hover:bg-white/[0.02] transition-colors group"
+                      >
+                        <td className="p-4 sm:p-5">
+                          <div className="font-bold text-white text-xs sm:text-base">
+                            {event.name}
+                          </div>
+                          <div className="text-[11px] sm:text-xs text-neutral-500 mt-1 font-medium">
+                            {event.type || "Event"}
+                            {event.clientName ? ` • ${event.clientName}` : ""}
+                          </div>
+                        </td>
+                        <td className="p-4 sm:p-5 text-neutral-300 font-medium text-sm sm:text-sm">
+                          {event.date
+                            ? new Date(event.date).toLocaleDateString("en-BD", {
+                                dateStyle: "medium",
+                              })
+                            : "—"}
+                        </td>
+                        <td className="p-4 sm:p-5 text-neutral-300 font-medium text-sm sm:text-sm">
+                          {event.location || "—"}
+                        </td>
+                        <td className="p-4 sm:p-5">
+                          <span className="px-3 py-1.5 rounded-lg text-xs font-bold border text-amber-400 bg-amber-400/10 border-amber-400/20">
+                            {event.status || "Pending"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="p-5 text-neutral-400">
+                        No upcoming events yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

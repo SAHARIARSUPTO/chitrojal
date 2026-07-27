@@ -1,8 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import AdminLayout from "../../components/home/AdminLayout";
-import { FiEdit2, FiLink, FiPlus, FiTrash2 } from "react-icons/fi";
+import {
+  FiCopy,
+  FiEdit2,
+  FiLink,
+  FiPlus,
+  FiSearch,
+  FiTrash2,
+} from "react-icons/fi";
 
 type DriveLink = {
   _id: string;
@@ -13,12 +20,26 @@ type DriveLink = {
   accessLevel?: string;
   notes?: string;
   status?: string;
+  contactNumber?: string;
+};
+
+type Order = {
+  _id: string;
+  name: string;
+  clientName?: string;
+  status?: string;
+  contactNumber?: string;
 };
 
 export default function PhotoDrivePage() {
   const [links, setLinks] = useState<DriveLink[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] = useState(true);
   const [editingLink, setEditingLink] = useState<DriveLink | null>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<string>("");
+  const [orderSearchTerm, setOrderSearchTerm] = useState("");
+  const [linkSearchTerm, setLinkSearchTerm] = useState("");
   const [form, setForm] = useState({
     title: "",
     link: "",
@@ -26,6 +47,7 @@ export default function PhotoDrivePage() {
     eventName: "",
     accessLevel: "Client",
     notes: "",
+    contactNumber: "",
   });
 
   const loadLinks = async () => {
@@ -47,6 +69,24 @@ export default function PhotoDrivePage() {
     loadLinks();
   }, []);
 
+  useEffect(() => {
+    const loadOrders = async () => {
+      setOrdersLoading(true);
+      try {
+        const response = await fetch("/api/events?status=Completed");
+        const result = await response.json();
+        if (response.ok && result.success) {
+          setOrders(result.data || []);
+        }
+      } catch (error) {
+        console.error("Error loading orders:", error);
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+    loadOrders();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -66,7 +106,9 @@ export default function PhotoDrivePage() {
           eventName: "",
           accessLevel: "Client",
           notes: "",
+          contactNumber: "",
         });
+        setSelectedOrderId("");
         setEditingLink(null);
         loadLinks();
       }
@@ -84,7 +126,9 @@ export default function PhotoDrivePage() {
       eventName: link.eventName || "",
       accessLevel: link.accessLevel || "Client",
       notes: link.notes || "",
+      contactNumber: link.contactNumber || "",
     });
+    setSelectedOrderId(""); // Reset order selection on manual edit
   };
 
   const handleDelete = async (id: string) => {
@@ -99,6 +143,64 @@ export default function PhotoDrivePage() {
     } catch (error) {
       console.error(error);
     }
+  };
+
+  const handleOrderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const orderId = e.target.value;
+    setSelectedOrderId(orderId);
+    const selectedOrder = orders.find((order) => order._id === orderId);
+    if (selectedOrder) {
+      setForm((prevForm) => ({
+        ...prevForm,
+        title: prevForm.title || `${selectedOrder.name} Photos`,
+        eventName: selectedOrder.name,
+        clientName: selectedOrder.clientName || "",
+        contactNumber: selectedOrder.contactNumber || "",
+      }));
+    }
+  };
+
+  const filteredOrders = useMemo(() => {
+    if (!orderSearchTerm) return orders;
+    return orders.filter(
+      (order) =>
+        order.name.toLowerCase().includes(orderSearchTerm.toLowerCase()) ||
+        order.clientName
+          ?.toLowerCase()
+          .includes(orderSearchTerm.toLowerCase()) ||
+        order.contactNumber
+          ?.toLowerCase()
+          .includes(orderSearchTerm.toLowerCase()),
+    );
+  }, [orders, orderSearchTerm]);
+
+  const filteredLinks = useMemo(() => {
+    if (!linkSearchTerm) return links;
+    return links.filter(
+      (link) =>
+        link.title.toLowerCase().includes(linkSearchTerm.toLowerCase()) ||
+        link.eventName?.toLowerCase().includes(linkSearchTerm.toLowerCase()) ||
+        link.clientName?.toLowerCase().includes(linkSearchTerm.toLowerCase()) ||
+        link.contactNumber
+          ?.toLowerCase()
+          .includes(linkSearchTerm.toLowerCase()),
+    );
+  }, [links, linkSearchTerm]);
+
+  const handleCopy = (link: string, id: string) => {
+    navigator.clipboard.writeText(link).then(() => {
+      // Visually indicate that the copy was successful
+      const button = document.getElementById(`copy-btn-${id}`);
+      if (button) {
+        const originalText = button.innerHTML;
+        button.innerHTML = "Copied!";
+        button.classList.add("text-green-400");
+        setTimeout(() => {
+          button.innerHTML = originalText;
+          button.classList.remove("text-green-400");
+        }, 2000);
+      }
+    });
   };
 
   return (
@@ -116,8 +218,49 @@ export default function PhotoDrivePage() {
 
         <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-8">
           <div className="rounded-[1.5rem] border border-white/10 bg-[#0A0A0A]/80 p-6">
-            <h2 className="text-xl font-semibold mb-4">Create Link</h2>
+            <h2 className="text-xl font-semibold mb-4">
+              {editingLink ? "Edit Link" : "Create Link"}
+            </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label
+                  htmlFor="order-search"
+                  className="block text-sm font-medium text-neutral-400 mb-2"
+                >
+                  Search Order
+                </label>
+                <input
+                  id="order-search"
+                  type="text"
+                  placeholder="Search by event, client, or phone..."
+                  value={orderSearchTerm}
+                  onChange={(e) => setOrderSearchTerm(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3 mb-2"
+                  disabled={editingLink !== null}
+                />
+                <label
+                  htmlFor="order-select"
+                  className="block text-sm font-medium text-neutral-400 mb-2"
+                >
+                  Select Completed Order (Optional)
+                </label>
+                <select
+                  id="order-select"
+                  value={selectedOrderId}
+                  onChange={handleOrderChange}
+                  className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
+                  disabled={ordersLoading || editingLink !== null}
+                >
+                  <option value="">
+                    {ordersLoading ? "Loading orders..." : "Select an order"}
+                  </option>
+                  {filteredOrders.map((order) => (
+                    <option key={order._id} value={order._id}>
+                      {order.name} - {order.clientName}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <input
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -132,7 +275,7 @@ export default function PhotoDrivePage() {
                 className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
                 required
               />
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-4">
                 <input
                   value={form.clientName}
                   onChange={(e) =>
@@ -149,8 +292,16 @@ export default function PhotoDrivePage() {
                   placeholder="Event name"
                   className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
                 />
+                <input
+                  value={form.contactNumber}
+                  onChange={(e) =>
+                    setForm({ ...form, contactNumber: e.target.value })
+                  }
+                  placeholder="Contact number"
+                  className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
+                />
               </div>
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-4">
                 <select
                   value={form.accessLevel}
                   onChange={(e) =>
@@ -179,28 +330,49 @@ export default function PhotoDrivePage() {
           </div>
 
           <div className="rounded-[1.5rem] border border-white/10 bg-[#0A0A0A]/80 p-6">
-            <h2 className="text-xl font-semibold mb-4">Saved Links</h2>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-4">
+              <h2 className="text-xl font-semibold">Saved Links</h2>
+              <div className="relative w-full sm:w-auto">
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                <input
+                  type="text"
+                  placeholder="Search links..."
+                  value={linkSearchTerm}
+                  onChange={(e) => setLinkSearchTerm(e.target.value)}
+                  className="w-full sm:w-64 rounded-xl border border-white/10 bg-[#050505] pl-10 pr-4 py-2 text-sm"
+                />
+              </div>
+            </div>
+
             {loading ? (
               <p className="text-sm text-neutral-400">Loading links...</p>
-            ) : links.length === 0 ? (
+            ) : filteredLinks.length === 0 ? (
               <p className="text-sm text-neutral-400">No links yet.</p>
             ) : (
-              <div className="space-y-3">
-                {links.map((link) => (
+              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-transparent">
+                {filteredLinks.map((link) => (
                   <div
                     key={link._id}
                     className="rounded-xl border border-white/10 bg-[#050505] p-4"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="font-semibold text-white">
+                      <div className="flex-1 min-w-0 pr-2">
+                        <h3 className="font-semibold text-white truncate text-sm sm:text-base">
                           {link.title}
                         </h3>
-                        <p className="text-xs text-neutral-500 mt-1">
-                          {link.clientName || "Client"}
+                        <p className="text-[11px] sm:text-xs text-neutral-400 mt-1 truncate">
+                          {link.eventName && (
+                            <span>{link.eventName} &bull; </span>
+                          )}
+                          {link.clientName && (
+                            <span>{link.clientName} &bull; </span>
+                          )}
+                          {link.contactNumber && (
+                            <span>{link.contactNumber}</span>
+                          )}
                         </p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-shrink-0">
                         <button
                           onClick={() => handleEdit(link)}
                           className="rounded-lg border border-white/10 p-2"
@@ -217,14 +389,23 @@ export default function PhotoDrivePage() {
                         </button>
                       </div>
                     </div>
-                    <a
-                      href={link.link}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-3 flex items-center gap-2 text-sm text-orange-400"
-                    >
-                      <FiLink /> Open link
-                    </a>
+                    <div className="flex items-center gap-4 mt-3">
+                      <a
+                        href={link.link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-2 text-sm text-orange-400 hover:text-orange-300 transition-colors"
+                      >
+                        <FiLink /> Open link
+                      </a>
+                      <button
+                        id={`copy-btn-${link._id}`}
+                        onClick={() => handleCopy(link.link, link._id)}
+                        className="flex items-center gap-2 text-sm text-neutral-400 hover:text-white transition-colors"
+                      >
+                        <FiCopy /> Copy
+                      </button>
+                    </div>
                     {link.notes ? (
                       <p className="mt-2 text-sm text-neutral-400">
                         {link.notes}

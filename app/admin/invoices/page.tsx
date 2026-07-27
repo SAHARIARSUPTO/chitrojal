@@ -112,7 +112,7 @@ export default function InvoicesPage() {
           </div>
         </div>
 
-        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {[
             {
               label: "Total Invoices",
@@ -141,18 +141,18 @@ export default function InvoicesPage() {
           ].map((stat, i) => (
             <div
               key={i}
-              className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[1.5rem] p-6"
+              className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[1.5rem] p-4 sm:p-6"
             >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                <div className="rounded-xl border border-white/10 bg-white/5 p-2 sm:p-3">
                   <stat.icon className={stat.color} />
                 </div>
                 <div>
-                  <h3 className="text-neutral-400 text-xs uppercase tracking-widest font-bold">
+                  <h3 className="text-neutral-400 text-[10px] sm:text-xs uppercase tracking-widest font-bold">
                     {stat.label}
                   </h3>
                   <p
-                    className={`text-2xl font-black ${stat.color === "text-white" ? "text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-300" : stat.color}`}
+                    className={`text-xl sm:text-2xl font-black ${stat.color === "text-white" ? "text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-300" : stat.color}`}
                   >
                     {stat.value}
                   </p>

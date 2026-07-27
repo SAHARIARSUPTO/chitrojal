@@ -21,7 +21,7 @@ import Image from "next/image";
 const navItems = [
   { href: "/admin", icon: FiGrid, label: "Dashboard" },
   { href: "/admin/events", icon: FiCalendar, label: "Events" },
-  { href: "/admin/orders", icon: FiShoppingCart, label: "Orders" },
+  { href: "/admin/orders", icon: FiShoppingCart, label: "Online Booking" },
   { href: "/admin/invoices", icon: FiFileText, label: "Invoices" },
   { href: "/admin/finance", icon: FiDollarSign, label: "Finance" },
   { href: "/admin/payments", icon: FiCreditCard, label: "Payments" },
@@ -160,11 +160,15 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             {/* Placeholder for breadcrumbs or page title if needed */}
             <div className="flex-1"></div>
           </div>
-
         </header>
 
         {/* Page Content */}
         <main className="flex-1 p-4 lg:p-8 overflow-x-hidden">{children}</main>
+
+        {/* Admin Footer */}
+        <footer className="border-t border-white/5 bg-[#050505] p-4 text-center text-xs text-neutral-500">
+          &copy; {new Date().getFullYear()} ChitroJal. All rights reserved.
+        </footer>
       </div>
     </div>
   );
