@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   FiGrid,
   FiCalendar,
@@ -15,13 +15,14 @@ import {
   FiSearch,
   FiDollarSign,
   FiLink,
+  FiLogOut,
 } from "react-icons/fi";
 import Image from "next/image";
 
 const navItems = [
   { href: "/admin", icon: FiGrid, label: "Dashboard" },
   { href: "/admin/events", icon: FiCalendar, label: "Events" },
-  { href: "/admin/orders", icon: FiShoppingCart, label: "Online Booking" },
+  { href: "/admin/orders", icon: FiShoppingCart, label: "Orders" },
   { href: "/admin/invoices", icon: FiFileText, label: "Invoices" },
   { href: "/admin/finance", icon: FiDollarSign, label: "Finance" },
   { href: "/admin/payments", icon: FiCreditCard, label: "Payments" },
@@ -33,6 +34,17 @@ const navItems = [
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/admin/login");
+    } catch (error) {
+      console.error("Failed to sign out", error);
+      // Optionally, show an error message to the user
+    }
+  };
 
   // Prevent background scrolling when mobile menu is open
   useEffect(() => {
@@ -124,6 +136,50 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     </div>
   );
 
+  const MobileBottomNav = () => {
+    const bottomNavItems = navItems.filter((item) =>
+      ["/admin", "/admin/events", "/admin/orders", "/admin/invoices"].includes(
+        item.href,
+      ),
+    );
+
+    const NavButton = ({
+      item,
+    }: {
+      item: { href: string; icon: React.ElementType; label: string };
+    }) => {
+      const isActive = pathname === item.href;
+      return (
+        <Link
+          href={item.href}
+          className={`flex flex-col items-center justify-center gap-1 w-full h-full transition-colors duration-200 ${
+            isActive ? "text-orange-400" : "text-neutral-400 hover:text-white"
+          }`}
+        >
+          <item.icon className="h-5 w-5" />
+          <span className="text-[10px] font-medium">{item.label}</span>
+        </Link>
+      );
+    };
+
+    return (
+      <div className="fixed bottom-0 left-0 right-0 h-16 bg-[#050505] border-t border-white/10 z-40 md:hidden">
+        <div className="flex items-center justify-around h-full">
+          {bottomNavItems.map((item) => (
+            <NavButton key={item.href} item={item} />
+          ))}
+          <button
+            onClick={handleSignOut}
+            className="flex flex-col items-center justify-center gap-1 w-full h-full text-neutral-400 hover:text-white"
+          >
+            <FiLogOut className="h-5 w-5" />
+            <span className="text-[10px] font-medium">Logout</span>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex min-h-screen w-full bg-[#0A0A0A] text-neutral-200 selection:bg-orange-500/30">
       {/* Desktop Sidebar (Fixed) */}
@@ -147,7 +203,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       )}
 
       {/* Main Content Area (Pushed right by sidebar width) */}
-      <div className="flex-1 flex flex-col md:pl-[240px] min-w-0">
+      <div className="flex-1 flex flex-col md:pl-[240px] min-w-0 pb-16 md:pb-0">
         {/* Top Header */}
         <header className="flex h-16 items-center justify-between gap-4 border-b border-white/5 bg-[#050505] px-4 lg:px-8 sticky top-0 z-30">
           <div className="flex items-center gap-4 flex-1">
@@ -170,6 +226,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           &copy; {new Date().getFullYear()} ChitroJal. All rights reserved.
         </footer>
       </div>
+      <MobileBottomNav />
     </div>
   );
 };

@@ -4,19 +4,32 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const PackageCard = ({ packageImages = [] }) => {
+const PackageCard = ({ packageImages = [], onClick }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const prevSlide = () => {
+  const prevSlide = (e) => {
+    e.stopPropagation();
     setCurrentIndex((prev) =>
       prev === 0 ? packageImages.length - 1 : prev - 1,
     );
   };
 
-  const nextSlide = () => {
+  const nextSlide = (e) => {
+    e.stopPropagation();
     setCurrentIndex((prev) =>
       prev === packageImages.length - 1 ? 0 : prev + 1,
     );
+  };
+
+  const handleDotClick = (e, index) => {
+    e.stopPropagation();
+    setCurrentIndex(index);
+  };
+
+  const handleCardClick = () => {
+    if (onClick) {
+      onClick(currentIndex);
+    }
   };
 
   if (packageImages.length === 0) {
@@ -33,7 +46,7 @@ const PackageCard = ({ packageImages = [] }) => {
   }
 
   return (
-    <div className="relative w-full h-full group">
+    <div className="relative w-full h-full group" onClick={handleCardClick}>
       {/* Image Slider Container */}
       <div className="relative w-full h-full rounded-3xl overflow-hidden bg-black">
         {packageImages.map((src, index) => (
@@ -79,7 +92,7 @@ const PackageCard = ({ packageImages = [] }) => {
         {packageImages.map((_, idx) => (
           <button
             key={idx}
-            onClick={() => setCurrentIndex(idx)}
+            onClick={(e) => handleDotClick(e, idx)}
             className={`h-2 rounded-full transition-all duration-300 ${
               currentIndex === idx ? "w-6 bg-orange-500" : "w-2 bg-white/50"
             }`}

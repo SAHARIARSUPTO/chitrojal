@@ -84,7 +84,7 @@ export default function AdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-transparent outline-none"
-                placeholder="admin123"
+                placeholder="you password"
                 autoComplete="current-password"
               />
             </div>
@@ -105,14 +105,6 @@ export default function AdminLoginPage() {
             </p>
           ) : null}
         </form>
-
-        <div className="mt-6 rounded-2xl border border-orange-500/20 bg-orange-500/5 px-4 py-4 text-sm text-neutral-300">
-          Default admin login:
-          <div className="mt-2 font-semibold text-white">admin / admin123</div>
-          <div className="mt-2 text-neutral-400">
-            Use the Staff page to create staff logins after signing in.
-          </div>
-        </div>
       </div>
     </main>
   );

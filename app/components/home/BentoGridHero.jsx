@@ -4,12 +4,18 @@ import React, { useState } from "react";
 import CarouselCard from "./CarouselCard";
 import PackageCard from "./PackageCard";
 import FullscreenCarousel from "./FullscreenCarousel";
+import ImageGallery from "./ImageGallery"; // Import the new gallery component
 
 const BentoGridHero = ({ carouselData, packageImages }) => {
   const [fullscreen, setFullscreen] = useState({
     isOpen: false,
     images: [],
     startIndex: 0,
+  });
+  const [gallery, setGallery] = useState({
+    isOpen: false,
+    images: [],
+    title: "",
   });
 
   const openFullscreen = (images, startIndex) => {
@@ -18,6 +24,19 @@ const BentoGridHero = ({ carouselData, packageImages }) => {
 
   const closeFullscreen = () => {
     setFullscreen({ isOpen: false, images: [], startIndex: 0 });
+  };
+
+  const openGallery = (images, title) => {
+    setGallery({ isOpen: true, images, title });
+  };
+
+  const closeGallery = () => {
+    setGallery({ isOpen: false, images: [], title: "" });
+  };
+
+  const handleImageClickInGallery = (index) => {
+    closeGallery();
+    openFullscreen(gallery.images, index);
   };
 
   return (
@@ -31,10 +50,12 @@ const BentoGridHero = ({ carouselData, packageImages }) => {
                 images={carouselData.portfolio.images}
                 title={carouselData.portfolio.title}
                 subtitle={carouselData.portfolio.subtitle}
-                onClick={(startIndex) =>
-                  openFullscreen(carouselData.portfolio.images, startIndex)
+                onClick={() =>
+                  openGallery(
+                    carouselData.portfolio.images,
+                    carouselData.portfolio.title,
+                  )
                 }
-                autoSlide={true}
               />
             </div>
             <div className="aspect-[3/4] md:aspect-[4/3] flex-grow">
@@ -42,13 +63,12 @@ const BentoGridHero = ({ carouselData, packageImages }) => {
                 images={carouselData.portraitLibrary.images}
                 title={carouselData.portraitLibrary.title}
                 subtitle={carouselData.portraitLibrary.subtitle}
-                onClick={(startIndex) =>
-                  openFullscreen(
+                onClick={() =>
+                  openGallery(
                     carouselData.portraitLibrary.images,
-                    startIndex,
+                    carouselData.portraitLibrary.title,
                   )
                 }
-                autoSlide={true}
                 textClassName="[writing-mode:vertical-rl] !left-auto !bottom-auto top-6 right-6 md:top-8 md:right-8 transform-none"
                 titleClassName="tracking-[0.2em]"
                 subtitleClassName="tracking-[0.2em]"
@@ -59,25 +79,37 @@ const BentoGridHero = ({ carouselData, packageImages }) => {
           {/* Right Column */}
           <div className="md:col-span-7 h-full flex flex-col gap-4 md:gap-6 lg:gap-8">
             <div className="aspect-square">
-              <PackageCard packageImages={packageImages} />
+              <PackageCard
+                packageImages={packageImages}
+                onClick={() => openGallery(packageImages, "Our Packages")}
+              />
             </div>
             <div className="aspect-[4/3]">
               <CarouselCard
                 images={carouselData.landscapeLibrary.images}
                 title={carouselData.landscapeLibrary.title}
                 subtitle={carouselData.landscapeLibrary.subtitle}
-                onClick={(startIndex) =>
-                  openFullscreen(
+                onClick={() =>
+                  openGallery(
                     carouselData.landscapeLibrary.images,
-                    startIndex,
+                    carouselData.landscapeLibrary.title,
                   )
                 }
-                autoSlide={true}
               />
             </div>
           </div>
         </div>
       </section>
+
+      {gallery.isOpen && (
+        <ImageGallery
+          images={gallery.images}
+          title={gallery.title}
+          onClose={closeGallery}
+          onImageClick={handleImageClickInGallery}
+        />
+      )}
+
       {fullscreen.isOpen && (
         <FullscreenCarousel
           images={fullscreen.images}

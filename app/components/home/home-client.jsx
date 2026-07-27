@@ -6,7 +6,14 @@ import Image from "next/image";
 import ContactSection from "../contacts/page";
 import BentoGridHero from "./BentoGridHero";
 import VideoCarousel from "./VideoCarousel";
-import { Phone, CheckCircle2, Heart, Video, Camera, Aperture } from "lucide-react";
+import {
+  Phone,
+  CheckCircle2,
+  Heart,
+  Video,
+  Camera,
+  Aperture,
+} from "lucide-react";
 import QuotesShowcase from "../section1/page";
 
 const StatItem = ({ number, text }) => (
@@ -28,27 +35,30 @@ const serviceIcons = {
 };
 
 const ServiceCard = ({ icon, title, description }) => (
-    <div className="bg-white/5 p-8 rounded-3xl border border-white/10 flex flex-col items-center text-center transform transition-transform duration-300 hover:scale-105 hover:border-orange-500/50 hover:shadow-2xl hover:shadow-orange-500/10">
-      <div className="mb-4">{serviceIcons[icon]}</div>
-      <h3 className="text-xl font-bold mb-2">{title}</h3>
-      <p className="text-gray-400 text-sm leading-relaxed">{description}</p>
-    </div>
-  );
+  <div className="bg-white/5 p-8 rounded-3xl border border-white/10 flex flex-col items-center text-center transform transition-transform duration-300 hover:scale-105 hover:border-orange-500/50 hover:shadow-2xl hover:shadow-orange-500/10">
+    <div className="mb-4">{serviceIcons[icon]}</div>
+    <h3 className="text-xl font-bold mb-2">{title}</h3>
+    <p className="text-gray-400 text-sm leading-relaxed">{description}</p>
+  </div>
+);
 
 const HomeClient = ({ services, carouselData, videoData, packageImages }) => {
   return (
     <main>
-      <BentoGridHero carouselData={carouselData} packageImages={packageImages} />
+      <BentoGridHero
+        carouselData={carouselData}
+        packageImages={packageImages}
+      />
 
       <section id="services" className="py-24 border-b border-white/5">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-4xl md:text-5xl font-bold font-serif mb-4">
-              Our Services
+              আমাদের সেবাসমূহ
             </h2>
             <p className="text-gray-400 text-lg">
-              We offer a range of photography and cinematography services to
-              capture your special moments.
+              আপনার বিশেষ মুহূর্তগুলোকে ফ্রেমবন্দি করতে আমরা বিভিন্ন ধরনের
+              ফটোগ্রাফি এবং সিনেমাটোগ্রাফি সেবা প্রদান করি।
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
