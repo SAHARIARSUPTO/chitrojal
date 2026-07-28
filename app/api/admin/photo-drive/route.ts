@@ -2,11 +2,21 @@ import { NextResponse } from "next/server";
 import mongooseConnect from "@/lib/mongoose";
 import PhotoDriveLink from "@/models/PhotoDriveLink";
 
-export async function GET() {
+export async function GET(request: Request) {
   await mongooseConnect();
 
   try {
-    const links = await PhotoDriveLink.find({}).sort({ createdAt: -1 }).lean();
+    const { searchParams } = new URL(request.url);
+    const contact = searchParams.get("contact");
+
+    const filter: any = {};
+    if (contact) {
+      filter.contactNumber = { $regex: contact, $options: "i" };
+    }
+
+    const links = await PhotoDriveLink.find(filter)
+      .sort({ createdAt: -1 })
+      .lean();
     return NextResponse.json({ success: true, data: links });
   } catch (error) {
     console.error("Error loading photo drive links", error);

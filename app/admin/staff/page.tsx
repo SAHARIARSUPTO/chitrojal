@@ -1,6 +1,6 @@
 "use client";
 
-/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect, react/no-unescaped-entities */
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect */
 import React, { useState, useEffect } from "react";
 import AdminLayout from "../../components/home/AdminLayout";
 import { FiPlus, FiUser, FiX, FiUsers, FiEdit, FiTrash2 } from "react-icons/fi";
@@ -23,6 +23,7 @@ export default function StaffPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [newStaff, setNewStaff] = useState({
     name: "",
     loginId: "",
@@ -35,6 +36,23 @@ export default function StaffPage() {
   });
   const { showSuccess, showError } = useNotification();
 
+  const isAdmin = userRole === "admin";
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const response = await fetch("/api/auth/me");
+        if (response.ok) {
+          const userData = await response.json();
+          setUserRole(userData.user?.accessRole);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user role", error);
+      }
+    };
+    fetchUserRole();
+  }, []);
+
   const fetchStaff = async () => {
     setLoading(true);
     try {
@@ -44,13 +62,13 @@ export default function StaffPage() {
         setStaffList(
           (result.data || []).map((item: any) => ({
             id: item._id,
-            name: item.name,
+            name: item.name || "",
             loginId: item.loginId || "",
             accessRole: item.accessRole || "staff",
-            contact: item.contact,
-            address: item.address,
-            joiningDate: item.joiningDate,
-            salary: item.salary,
+            contact: item.contact || "",
+            address: item.address || "",
+            joiningDate: item.joiningDate || "",
+            salary: item.salary || "",
             eventsCovered: item.eventsCovered || 0,
           })),
         );
@@ -87,6 +105,7 @@ export default function StaffPage() {
 
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) return;
     if (!newStaff.name || !newStaff.loginId || !newStaff.joiningDate) {
       showError("Please fill all required fields.");
       return;
@@ -132,21 +151,25 @@ export default function StaffPage() {
   };
 
   const handleEdit = (staff: StaffMember) => {
+    if (!isAdmin) return;
     setEditingStaff(staff);
     setNewStaff({
-      name: staff.name,
+      name: staff.name || "",
       loginId: staff.loginId || "",
       password: "",
-      contact: staff.contact,
-      address: staff.address,
-      joiningDate: staff.joiningDate,
-      salary: staff.salary,
+      contact: staff.contact || "",
+      address: staff.address || "",
+      joiningDate: staff.joiningDate
+        ? new Date(staff.joiningDate).toISOString().split("T")[0]
+        : "",
+      salary: staff.salary || "",
       eventsCovered: String(staff.eventsCovered || 0),
     });
     setIsModalOpen(true);
   };
 
   const handleDelete = async (staffId: string) => {
+    if (!isAdmin) return;
     if (!window.confirm("Delete this staff member?")) return;
     try {
       const response = await fetch(`/api/admin/staff/${staffId}`, {
@@ -162,285 +185,267 @@ export default function StaffPage() {
 
   return (
     <AdminLayout>
-      <div className="relative max-w-7xl mx-auto space-y-8 pb-12 text-neutral-200">
-        {/* Header */}
-        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-white/10">
+      <div className="relative max-w-7xl mx-auto space-y-6 pb-12 text-neutral-200 p-4">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-white/10">
           <div>
-            <h1 className="text-2xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white to-neutral-400 tracking-tight flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white to-neutral-400 tracking-tight flex items-center gap-3">
               <FiUsers className="text-orange-500" /> Staff Management
             </h1>
-            <p className="text-neutral-400 mt-2 text-xs sm:text-sm max-w-md leading-relaxed">
-              Add, view, and manage your studio's staff members.
+            <p className="text-neutral-400 mt-2 text-sm max-w-md leading-relaxed">
+              {isAdmin
+                ? "Add, view, and manage your studio's staff members."
+                : "View your studio's staff members."}
             </p>
           </div>
-          <button
-            onClick={() => {
-              resetForm();
-              setIsModalOpen(true);
-            }}
-            className="flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:shadow-[0_0_30px_rgba(234,88,12,0.5)] transform active:scale-95 border-none w-full md:w-auto"
-          >
-            <FiPlus size={18} /> Add New Staff
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => {
+                resetForm();
+                setIsModalOpen(true);
+              }}
+              className="flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:shadow-[0_0_30px_rgba(234,88,12,0.5)] transform active:scale-95 border-none w-full md:w-auto"
+            >
+              <FiPlus size={16} /> Add New Staff
+            </button>
+          )}
         </div>
 
-        {/* Staff Table */}
-        <div className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[2rem] shadow-2xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead className="bg-[#050505]/50 text-neutral-400 uppercase tracking-wider text-xs font-semibold">
-                <tr>
-                  <th className="p-5">Name</th>
-                  <th className="p-5 hidden md:table-cell">Login ID</th>
-                  <th className="p-5 hidden md:table-cell">Contact</th>
-                  <th className="p-5 hidden lg:table-cell">Joining Date</th>
-                  <th className="p-5 hidden md:table-cell">Salary</th>
-                  <th className="p-5">Events</th>
-                  <th className="p-5 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {loading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <tr key={i} className="animate-pulse">
-                      <td className="p-5">
-                        <div className="h-4 bg-neutral-700 rounded w-3/4"></div>
-                        <div className="h-3 bg-neutral-800 rounded w-1/2 mt-2"></div>
-                      </td>
-                      <td className="p-5 hidden md:table-cell">
-                        <div className="h-4 bg-neutral-700 rounded w-1/2"></div>
-                      </td>
-                      <td className="p-5 hidden md:table-cell">
-                        <div className="h-4 bg-neutral-700 rounded w-2/3"></div>
-                      </td>
-                      <td className="p-5 hidden lg:table-cell">
-                        <div className="h-4 bg-neutral-700 rounded w-1/2"></div>
-                      </td>
-                      <td className="p-5 hidden md:table-cell">
-                        <div className="h-4 bg-neutral-700 rounded w-1/3"></div>
-                      </td>
-                      <td className="p-5">
-                        <div className="h-4 bg-neutral-700 rounded w-1/4"></div>
-                      </td>
-                      <td className="p-5"></td>
-                    </tr>
-                  ))
-                ) : staffList.length > 0 ? (
-                  staffList.map((staff) => (
-                    <tr
-                      key={staff.id}
-                      className="hover:bg-white/[0.02] transition-colors group"
-                    >
-                      <td className="p-5">
-                        <div className="font-bold text-white">{staff.name}</div>
-                        <div className="text-xs text-neutral-500 mt-1">
-                          {staff.address}
-                        </div>
-                      </td>
-                      <td className="p-5 text-neutral-300 font-medium hidden md:table-cell">
-                        {staff.loginId || "N/A"}
-                      </td>
-                      <td className="p-5 text-neutral-300 font-medium hidden md:table-cell">
-                        {staff.contact}
-                      </td>
-                      <td className="p-5 text-neutral-300 hidden lg:table-cell">
-                        {staff.joiningDate}
-                      </td>
-                      <td className="p-5 text-neutral-300 font-medium hidden md:table-cell">
-                        {staff.salary ? `৳${staff.salary}` : "N/A"}
-                      </td>
-                      <td className="p-5 text-neutral-300 font-medium">
-                        {staff.eventsCovered}
-                      </td>
-                      <td className="p-5 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => handleEdit(staff)}
-                            className="p-2 rounded-lg bg-black/50 hover:bg-white/20 text-white transition-colors"
-                          >
-                            <FiEdit size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(staff.id)}
-                            className="p-2 rounded-lg bg-red-500/80 hover:bg-red-500 text-white transition-colors"
-                          >
-                            <FiTrash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="text-center p-10 text-neutral-500"
-                    >
-                      No staff members found. Add one to get started.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      {/* Add Staff Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            onClick={() => setIsModalOpen(false)}
-          ></div>
-          <div className="bg-[#0A0A0A] border border-white/10 rounded-[2rem] w-full max-w-lg relative z-10 shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-6 border-b border-white/5 bg-[#050505]">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <FiUser className="text-orange-500" />{" "}
-                {editingStaff ? "Edit Staff Member" : "Add New Staff Member"}
-              </h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-2 rounded-xl hover:bg-white/5 text-neutral-400 hover:text-white transition-colors"
-              >
-                <FiX size={20} />
-              </button>
+        <div className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-2xl shadow-2xl overflow-hidden">
+          {loading ? (
+            <div className="p-4 grid gap-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="rounded-xl border border-white/5 bg-[#050505] p-4 animate-pulse">
+                  <div className="h-4 w-32 bg-neutral-700 rounded mb-3" />
+                  <div className="h-3 w-48 bg-neutral-800 rounded mb-2" />
+                  <div className="h-3 w-40 bg-neutral-800 rounded" />
+                </div>
+              ))}
             </div>
-            <form onSubmit={handleAddStaff}>
-              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                      Full Name*
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={newStaff.name}
-                      onChange={handleInputChange}
-                      className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
-                      placeholder="John Doe"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                      Login ID*
-                    </label>
-                    <input
-                      type="text"
-                      name="loginId"
-                      value={newStaff.loginId}
-                      onChange={handleInputChange}
-                      className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
-                      placeholder="staff01"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                    Password{editingStaff ? " (optional)" : "*"}
-                  </label>
-                  <input
-                    type="password"
-                    name="password"
-                    value={newStaff.password}
-                    onChange={handleInputChange}
-                    className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
-                    placeholder={
-                      editingStaff
-                        ? "Leave blank to keep current password"
-                        : "Set a password"
-                    }
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                      Contact Number*
-                    </label>
-                    <input
-                      type="text"
-                      name="contact"
-                      value={newStaff.contact}
-                      onChange={handleInputChange}
-                      className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
-                      placeholder="01XXXXXXXXX"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                      Joining Date*
-                    </label>
-                    <input
-                      type="date"
-                      name="joiningDate"
-                      value={newStaff.joiningDate}
-                      onChange={handleInputChange}
-                      className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                    Address
-                  </label>
-                  <input
-                    type="text"
-                    name="address"
-                    value={newStaff.address}
-                    onChange={handleInputChange}
-                    className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
-                    placeholder="123 Main St, Dhaka"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                      Salary (BDT)
-                    </label>
-                    <input
-                      type="number"
-                      name="salary"
-                      value={newStaff.salary}
-                      onChange={handleInputChange}
-                      className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
-                      placeholder="25000"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                      Events Covered (Optional)
-                    </label>
-                    <input
-                      type="number"
-                      name="eventsCovered"
-                      value={newStaff.eventsCovered}
-                      onChange={handleInputChange}
-                      className="w-full mt-1 px-4 py-3 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="p-6 border-t border-white/5 bg-[#050505] flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-6 py-2.5 rounded-xl font-bold text-neutral-400 hover:text-white hover:bg-white/5 transition-all"
+          ) : staffList.length > 0 ? (
+            <div className="grid gap-3 p-4">
+              {staffList.map((staff) => (
+                <div
+                  key={staff.id}
+                  className="rounded-xl border border-white/5 bg-[#050505] p-4"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 text-white hover:from-orange-500 hover:to-orange-400 shadow-lg transition-all flex items-center gap-2 disabled:opacity-50"
-                >
-                  <FiPlus /> {editingStaff ? "Update Staff" : "Add Staff"}
-                </button>
-              </div>
-            </form>
-          </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-bold text-white text-sm sm:text-base truncate">
+                        {staff.name}
+                      </div>
+                      <div className="text-[11px] sm:text-xs text-neutral-500 mt-1 break-all">
+                        {staff.address || "N/A"}
+                      </div>
+                    </div>
+                    <div className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-neutral-300">
+                      {staff.accessRole || "staff"}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-neutral-500">Login ID</p>
+                      <p className="text-neutral-200 mt-1 break-all">{staff.loginId || "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-neutral-500">Contact</p>
+                      <p className="text-neutral-200 mt-1 break-all">{staff.contact || "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-neutral-500">Joining Date</p>
+                      <p className="text-neutral-200 mt-1">{staff.joiningDate || "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-neutral-500">Salary</p>
+                      <p className="text-neutral-200 mt-1">{staff.salary ? `৳${staff.salary}` : "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-neutral-500">Events</p>
+                      <p className="text-neutral-200 mt-1">{staff.eventsCovered}</p>
+                    </div>
+                  </div>
+
+                  {isAdmin && (
+                    <div className="mt-4 flex justify-end gap-2">
+                      <button
+                        onClick={() => handleEdit(staff)}
+                        className="p-2 rounded-lg bg-black/50 hover:bg-white/20 text-white transition-colors"
+                      >
+                        <FiEdit size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(staff.id)}
+                        className="p-2 rounded-lg bg-red-500/80 hover:bg-red-500 text-white transition-colors"
+                      >
+                        <FiTrash2 size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-10 text-center text-neutral-500">
+              No staff members found.
+              {isAdmin && " Add one to get started."}
+            </div>
+          )}
         </div>
-      )}
+        {isAdmin && isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              onClick={() => setIsModalOpen(false)}
+            ></div>
+            <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl w-full max-w-lg relative z-10 shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between p-4 border-b border-white/5 bg-[#050505]">
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <FiUser className="text-orange-500" />{" "}
+                  {editingStaff ? "Edit Staff Member" : "Add New Staff Member"}
+                </h2>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-2 rounded-xl hover:bg-white/5 text-neutral-400 hover:text-white transition-colors"
+                >
+                  <FiX size={20} />
+                </button>
+              </div>
+              <form onSubmit={handleAddStaff}>
+                <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                        Full Name*
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={newStaff.name || ""}
+                        onChange={handleInputChange}
+                        className="w-full mt-1 px-4 py-2.5 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
+                        placeholder="John Doe"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                        Login ID*
+                      </label>
+                      <input
+                        type="text"
+                        name="loginId"
+                        value={newStaff.loginId || ""}
+                        onChange={handleInputChange}
+                        className="w-full mt-1 px-4 py-2.5 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
+                        placeholder="staff01"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                      Password{editingStaff ? " (optional)" : "*"}
+                    </label>
+                    <input
+                      type="password"
+                      name="password"
+                      value={newStaff.password || ""}
+                      onChange={handleInputChange}
+                      className="w-full mt-1 px-4 py-2.5 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
+                      placeholder={
+                        editingStaff
+                          ? "Leave blank to keep current password"
+                          : "Set a password"
+                      }
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                        Contact Number*
+                      </label>
+                      <input
+                        type="text"
+                        name="contact"
+                        value={newStaff.contact || ""}
+                        onChange={handleInputChange}
+                        className="w-full mt-1 px-4 py-2.5 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
+                        placeholder="01XXXXXXXXX"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                        Joining Date*
+                      </label>
+                      <input
+                        type="date"
+                        name="joiningDate"
+                        value={newStaff.joiningDate || ""}
+                        onChange={handleInputChange}
+                        className="w-full mt-1 px-4 py-2.5 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                      Address
+                    </label>
+                    <input
+                      type="text"
+                      name="address"
+                      value={newStaff.address || ""}
+                      onChange={handleInputChange}
+                      className="w-full mt-1 px-4 py-2.5 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
+                      placeholder="123 Main St, Dhaka"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                        Salary (BDT)
+                      </label>
+                      <input
+                        type="number"
+                        name="salary"
+                        value={newStaff.salary || ""}
+                        onChange={handleInputChange}
+                        className="w-full mt-1 px-4 py-2.5 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
+                        placeholder="25000"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                        Events Covered (Optional)
+                      </label>
+                      <input
+                        type="number"
+                        name="eventsCovered"
+                        value={newStaff.eventsCovered || ""}
+                        onChange={handleInputChange}
+                        className="w-full mt-1 px-4 py-2.5 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 flex justify-end gap-3 border-t border-white/5 bg-[#050505]">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-5 py-2 rounded-xl font-bold text-neutral-400 hover:text-white hover:bg-white/5 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 text-white hover:from-orange-500 hover:to-orange-400 shadow-lg transition-all flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <FiPlus /> {editingStaff ? "Update Staff" : "Add Staff"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
     </AdminLayout>
   );
 }

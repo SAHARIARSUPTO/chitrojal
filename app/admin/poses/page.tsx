@@ -500,6 +500,60 @@ export default function PosesPage() {
     }
   };
 
+  const handleRenameFolder = async (folderId: string, currentName: string) => {
+    if (!canManagePoses) {
+      showError("Only admin accounts can edit folders.");
+      return;
+    }
+    const nextName = window.prompt("Rename folder", currentName)?.trim();
+    if (!nextName || nextName === currentName) return;
+
+    try {
+      const response = await fetch(`/api/folders/${folderId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: nextName }),
+      });
+      if (response.ok) {
+        showSuccess("Folder renamed successfully!");
+        fetchFolders();
+      } else {
+        const errorData = await response.json();
+        showError(errorData.error || "Failed to rename folder.");
+      }
+    } catch (error) {
+      console.error("Error renaming folder:", error);
+      showError("An unexpected error occurred while renaming folder.");
+    }
+  };
+
+  const handleDeleteFolder = async (folderId: string) => {
+    if (!canManagePoses) {
+      showError("Only admin accounts can delete folders.");
+      return;
+    }
+    if (!window.confirm("Delete this folder and its collections?")) return;
+
+    try {
+      const response = await fetch(`/api/folders/${folderId}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        showSuccess("Folder deleted successfully!");
+        if (selectedFolder?._id === folderId) {
+          setSelectedFolder(null);
+        }
+        fetchFolders();
+      } else {
+        const errorData = await response.json();
+        showError(errorData.error || "Failed to delete folder.");
+      }
+    } catch (error) {
+      console.error("Error deleting folder:", error);
+      showError("An unexpected error occurred while deleting folder.");
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="relative max-w-7xl mx-auto space-y-8 pb-12 text-neutral-200">
@@ -578,12 +632,12 @@ export default function PosesPage() {
               </div>
             </div>
             {/* Poses view */}
-            <div className="relative z-10 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="relative z-10 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
               {loading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <div
                     key={i}
-                    className="bg-[#0A0A0A] border border-white/5 rounded-[1.5rem] aspect-square animate-pulse"
+                    className="bg-[#0A0A0A] border border-white/5 rounded-2xl aspect-[4/3] sm:aspect-square animate-pulse"
                   ></div>
                 ))
               ) : filteredPoses.length > 0 ? (
@@ -614,27 +668,48 @@ export default function PosesPage() {
         ) : (
           <>
             {/* Folders view */}
-            <div className="relative z-10 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="relative z-10 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
               {loading ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <div
                     key={i}
-                    className="bg-[#0A0A0A] border border-white/5 rounded-[1.5rem] p-6 h-[88px] animate-pulse"
+                    className="bg-[#0A0A0A] border border-white/5 rounded-2xl p-3 sm:p-4 h-[72px] sm:h-[88px] animate-pulse"
                   ></div>
                 ))
               ) : folders.length > 0 ? (
                 folders.map((folder) => (
                   <div
                     key={folder._id}
-                    onClick={() => setSelectedFolder(folder)}
-                    className="bg-[#0A0A0A] border border-white/5 rounded-[1.5rem] p-6 hover:border-orange-500/30 transition-all duration-300 relative overflow-hidden group shadow-lg cursor-pointer"
+                    className="bg-[#0A0A0A] border border-white/5 rounded-2xl p-3 sm:p-4 hover:border-orange-500/30 transition-all duration-300 relative overflow-hidden group shadow-lg"
                   >
-                    <div className="flex items-center gap-4">
-                      <FiFolder className="text-orange-500" size={24} />
-                      <h3 className="font-bold text-lg text-white group-hover:text-orange-400 transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFolder(folder)}
+                      className="w-full text-left flex items-center gap-3"
+                    >
+                      <FiFolder className="text-orange-500 shrink-0" size={18} />
+                      <h3 className="font-bold text-sm sm:text-base text-white group-hover:text-orange-400 transition-colors truncate">
                         {folder.name}
                       </h3>
-                    </div>
+                    </button>
+                    {canManagePoses ? (
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleRenameFolder(folder._id, folder.name)}
+                          className="rounded-lg border border-white/10 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-white/5"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteFolder(folder._id)}
+                          className="rounded-lg border border-red-500/20 px-2.5 py-1.5 text-[11px] font-semibold text-red-300 hover:bg-red-500/10"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 ))
               ) : (

@@ -23,22 +23,13 @@ const DEFAULT_FEATURES = [
     order: 2,
   },
   {
-    title: "Staff Notes",
-    description: "Quick notes and reminders for the current shift.",
-    href: "/admin",
-    iconKey: "note",
-    badge: "Staff",
-    audience: "staff",
-    order: 3,
-  },
-  {
     title: "Team Roster",
     description: "Check the active crew and assigned members.",
     href: "/admin/staff",
     iconKey: "users",
-    badge: "Admin",
+    badge: "Team",
     audience: "admin",
-    order: 4,
+    order: 3,
   },
 ];
 
@@ -72,7 +63,10 @@ export async function GET(request: Request) {
         ? {}
         : { active: true, audience: { $in: ["all", "staff"] } };
 
-    const features = await StaffFeature.find(query)
+    const features = await StaffFeature.find({
+      ...query,
+      title: { $ne: "Staff Notes" },
+    })
       .sort({ order: 1, createdAt: 1 })
       .lean();
 

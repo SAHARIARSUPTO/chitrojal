@@ -9,6 +9,7 @@ const OrderSchema = new mongoose.Schema(
     eventDate: { type: Date, required: true },
     eventLocation: { type: String },
     eventName: { type: String },
+    eventType: { type: String },
     package: { type: String, required: true },
     packageDetails: { type: String },
     googleMapsLink: { type: String },
@@ -21,6 +22,8 @@ const OrderSchema = new mongoose.Schema(
     status: { type: String, default: "Pending" },
     createdFromBooking: { type: Boolean, default: false },
     payments: [{ type: Schema.Types.ObjectId, ref: "Payment" }],
+    photographer: { type: String },
+    duration: { type: String },
   },
   { timestamps: true },
 );

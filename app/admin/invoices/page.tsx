@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import AdminLayout from "../../components/home/AdminLayout";
 import {
-  FiEye,
-  FiDownload,
   FiSearch,
   FiFilter,
   FiFileText,
@@ -12,6 +11,7 @@ import {
   FiCheckCircle,
   FiAlertCircle,
 } from "react-icons/fi";
+import { useRouter } from "next/navigation";
 
 type InvoiceRecord = {
   _id: string;
@@ -31,14 +31,13 @@ export default function InvoicesPage() {
   const [records, setRecords] = useState<InvoiceRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
-  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRecord | null>(
-    null,
-  );
 
+  const router = useRouter();
   useEffect(() => {
     const loadInvoices = async () => {
+      console.log("Fetching invoices from /api/event-managements");
       try {
-        const response = await fetch("/api/orders");
+        const response = await fetch("/api/event-managements");
         const data = await response.json();
         if (Array.isArray(data)) {
           setRecords(data);
@@ -58,7 +57,7 @@ export default function InvoicesPage() {
   const filteredInvoices = useMemo(() => {
     return records.filter((invoice) => {
       const query =
-        `${invoice.customerName} ${invoice.package || ""}`.toLowerCase();
+        `${invoice.customerName} ${invoice.package || ""} ${invoice.customerPhone || ""}`.toLowerCase();
       const matchesSearch = query.includes(searchTerm.toLowerCase());
       const status =
         invoice.dueAmount && invoice.dueAmount > 0 ? "Pending" : "Paid";
@@ -83,36 +82,24 @@ export default function InvoicesPage() {
     return { totalRevenue, paid, overdue, count: records.length };
   }, [records]);
 
-  const handleDownload = async (invoice: InvoiceRecord) => {
-    const response = await fetch(`/api/invoices/${invoice._id}`);
-    if (!response.ok) return;
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `invoice-${invoice._id}.pdf`;
-    link.click();
-    window.URL.revokeObjectURL(url);
-  };
-
   return (
     <AdminLayout>
-      <div className="relative max-w-7xl mx-auto space-y-8 pb-12 text-neutral-200">
+      <div className="relative max-w-7xl mx-auto space-y-6 pb-12 text-neutral-200 p-4">
         <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none translate-y-[-50%]" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-white/10">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white to-neutral-400 tracking-tight flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white to-neutral-400 tracking-tight flex items-center gap-3">
               <FiFileText className="text-orange-500" /> Invoices
             </h1>
-            <p className="text-neutral-400 mt-2 text-sm max-w-md leading-relaxed">
+            <p className="text-sm text-neutral-400 mt-2 max-w-md leading-relaxed">
               Generate clean invoice records from live orders and download
               professional PDF copies.
             </p>
           </div>
         </div>
 
-        <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             {
               label: "Total Invoices",
@@ -141,18 +128,18 @@ export default function InvoicesPage() {
           ].map((stat, i) => (
             <div
               key={i}
-              className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[1.5rem] p-4 sm:p-6"
+              className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[1.5rem] p-3 sm:p-4"
             >
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                <div className="rounded-xl border border-white/10 bg-white/5 p-2 sm:p-3">
+                <div className="rounded-xl border border-white/10 bg-white/5 p-2 sm:p-2.5">
                   <stat.icon className={stat.color} />
                 </div>
                 <div>
-                  <h3 className="text-neutral-400 text-[10px] sm:text-xs uppercase tracking-widest font-bold">
+                  <h3 className="text-neutral-400 text-[10px] uppercase tracking-widest font-bold">
                     {stat.label}
                   </h3>
                   <p
-                    className={`text-xl sm:text-2xl font-black ${stat.color === "text-white" ? "text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-300" : stat.color}`}
+                    className={`text-xl font-black ${stat.color === "text-white" ? "text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-300" : stat.color}`}
                   >
                     {stat.value}
                   </p>
@@ -162,24 +149,24 @@ export default function InvoicesPage() {
           ))}
         </div>
 
-        <div className="relative z-10 bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[1.5rem] p-4 sm:p-6 shadow-lg">
+        <div className="relative z-10 bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[1.5rem] p-4 shadow-lg">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative group">
-              <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
               <input
                 type="text"
-                placeholder="Search invoice by client or package..."
+                placeholder="Search by client, package, or phone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-white/10 bg-[#050505] text-white placeholder-neutral-600"
+                className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-white/10 bg-[#050505] text-white placeholder-neutral-600"
               />
             </div>
             <div className="relative w-full md:w-64">
-              <FiFilter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+              <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full pl-10 pr-10 py-3.5 rounded-xl border border-white/10 bg-[#050505] text-white"
+                className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-white/10 bg-[#050505] text-white"
               >
                 <option>All Status</option>
                 <option>Paid</option>
@@ -191,15 +178,15 @@ export default function InvoicesPage() {
 
         <div className="relative z-10 bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[2rem] shadow-2xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm whitespace-nowrap">
+            <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
               <thead>
                 <tr className="bg-[#050505]/80 border-b border-white/5 text-neutral-400 uppercase tracking-wider text-[11px] font-bold">
-                  <th className="p-5 pl-6">Invoice</th>
-                  <th className="p-5">Client</th>
-                  <th className="p-5">Date</th>
-                  <th className="p-5">Amount</th>
-                  <th className="p-5">Status</th>
-                  <th className="p-5 pr-6 text-right">Actions</th>
+                  <th className="p-3 pl-4">Invoice</th>
+                  <th className="p-3">Client</th>
+                  <th className="p-3 hidden sm:table-cell">Date</th>
+                  <th className="p-3 hidden md:table-cell">Amount</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3 pr-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -213,7 +200,7 @@ export default function InvoicesPage() {
                       key={invoice._id}
                       className="hover:bg-white/[0.02] transition-colors"
                     >
-                      <td className="p-5 pl-6">
+                      <td className="p-3 pl-4">
                         <div className="font-bold text-white">
                           INV-{invoice._id.slice(-6).toUpperCase()}
                         </div>
@@ -221,40 +208,35 @@ export default function InvoicesPage() {
                           {invoice.package || "Package"}
                         </div>
                       </td>
-                      <td className="p-5 text-neutral-300 font-medium">
+                      <td className="p-3 text-neutral-300 font-medium">
                         {invoice.customerName}
                       </td>
-                      <td className="p-5 text-neutral-300">
+                      <td className="p-3 text-neutral-300 hidden sm:table-cell">
                         {invoice.eventDate
                           ? new Date(invoice.eventDate).toLocaleDateString(
                               "en-BD",
                             )
                           : "—"}
                       </td>
-                      <td className="p-5 font-bold text-white">
+                      <td className="p-3 font-bold text-white hidden md:table-cell">
                         {formatCurrency(invoice.totalAmount)}
                       </td>
-                      <td className="p-5">
+                      <td className="p-3">
                         <span
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold border inline-block ${status === "Paid" ? "text-emerald-400 bg-emerald-400/10 border-emerald-400/20" : "text-amber-400 bg-amber-400/10 border-amber-400/20"}`}
+                          className={`px-2 py-1 text-xs rounded-lg font-bold border inline-block ${status === "Paid" ? "text-emerald-400 bg-emerald-400/10 border-emerald-400/20" : "text-amber-400 bg-amber-400/10 border-amber-400/20"}`}
                         >
                           {status}
                         </span>
                       </td>
-                      <td className="p-5 pr-6 text-right">
+                      <td className="p-3 pr-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => setSelectedInvoice(invoice)}
-                            className="p-2 rounded-lg border border-white/10 bg-[#050505] text-neutral-400 hover:text-orange-400"
+                          <Link
+                            href={`/admin/invoices/${invoice._id}`}
+                            className="p-1.5 rounded-lg border border-white/10 bg-[#050505] text-neutral-400 hover:text-orange-400"
+                            title="View Invoice"
                           >
-                            <FiEye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDownload(invoice)}
-                            className="p-2 rounded-lg border border-white/10 bg-[#050505] text-neutral-400 hover:text-orange-400"
-                          >
-                            <FiDownload className="w-4 h-4" />
-                          </button>
+                            <FiFileText className="w-4 h-4" />
+                          </Link>
                         </div>
                       </td>
                     </tr>
@@ -265,69 +247,6 @@ export default function InvoicesPage() {
           </div>
         </div>
       </div>
-
-      {selectedInvoice ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-8">
-          <div className="w-full max-w-3xl rounded-[2rem] border border-white/10 bg-[#0A0A0A] p-8 text-neutral-200 shadow-2xl">
-            <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
-              <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-orange-400">
-                  Invoice Preview
-                </p>
-                <h2 className="text-2xl font-bold text-white">Chitro Jal</h2>
-              </div>
-              <button
-                onClick={() => setSelectedInvoice(null)}
-                className="rounded-lg border border-white/10 px-3 py-2 text-sm"
-              >
-                Close
-              </button>
-            </div>
-            <div className="mt-6 grid md:grid-cols-2 gap-6">
-              <div>
-                <p className="text-sm text-neutral-500">Bill To</p>
-                <p className="font-semibold text-white">
-                  {selectedInvoice.customerName}
-                </p>
-                <p className="text-sm text-neutral-400">
-                  {selectedInvoice.customerEmail || "—"}
-                </p>
-                <p className="text-sm text-neutral-400">
-                  {selectedInvoice.customerPhone || "—"}
-                </p>
-              </div>
-              <div className="text-sm text-neutral-400">
-                <p>
-                  Invoice No: INV-{selectedInvoice._id.slice(-6).toUpperCase()}
-                </p>
-                <p>
-                  Date:{" "}
-                  {selectedInvoice.eventDate
-                    ? new Date(selectedInvoice.eventDate).toLocaleDateString(
-                        "en-BD",
-                      )
-                    : "—"}
-                </p>
-                <p>Package: {selectedInvoice.package || "—"}</p>
-              </div>
-            </div>
-            <div className="mt-8 rounded-2xl border border-white/10 bg-[#050505] p-5">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3 text-sm text-neutral-400">
-                <span>Item</span>
-                <span>Amount</span>
-              </div>
-              <div className="flex items-center justify-between py-3 text-white">
-                <span>{selectedInvoice.package || "Photography Service"}</span>
-                <span>{formatCurrency(selectedInvoice.totalAmount)}</span>
-              </div>
-              <div className="flex items-center justify-between border-t border-white/10 pt-3 text-sm text-neutral-400">
-                <span>Due</span>
-                <span>{formatCurrency(selectedInvoice.dueAmount || 0)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </AdminLayout>
   );
 }

@@ -1,5 +1,13 @@
 // lib/mongoose.ts
 import mongoose from 'mongoose';
+import "@/models/Order";
+import "@/models/Payment";
+import "@/models/Expense";
+import "@/models/Folder";
+import "@/models/PhotoDriveLink";
+import "@/models/Pose";
+import "@/models/Staff";
+import "@/models/StaffFeature";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 

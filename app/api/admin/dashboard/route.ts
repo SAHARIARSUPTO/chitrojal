@@ -3,10 +3,8 @@ import mongooseConnect from "@/lib/mongoose";
 import Event from "@/models/Event";
 import Order from "@/models/Order";
 import Payment from "@/models/Payment";
-import {
-  getSessionTokenFromRequest,
-  verifySessionToken,
-} from "@/lib/session";
+import Staff from "@/models/Staff";
+import { getSessionTokenFromRequest, verifySessionToken } from "@/lib/session";
 
 const FINANCE_METRIC_LABELS = ["Payment Received", "Due Payment"];
 
@@ -28,33 +26,22 @@ export async function GET(request: Request) {
       completedEventsCount,
       recentOrders,
       orderSummaries,
-      paymentDocs,
+      totalStaff,
     ] = await Promise.all([
-      Event.find({
-        date: { $gte: now },
-        status: { $nin: ["Completed", "Done", "Cancelled"] },
-      })
-        .sort({ date: 1 })
+      Order.find({ status: { $in: ["Pending", "Approved"] }, eventDate: { $gte: now } })
+        .sort({ eventDate: 1 })
         .limit(5)
         .lean(),
-      Event.countDocuments({
-        $or: [
-          { status: { $in: ["Completed", "Done", "Finished"] } },
-          { date: { $lt: now } },
-        ],
-      }),
+      Event.countDocuments({ status: "Completed" }),
       Order.find({}).sort({ eventDate: 1 }).limit(5).lean(),
       Order.find({}, "dueAmount paidAmount totalAmount").lean(),
-      Payment.find({}, "amount").lean(),
+      Staff.countDocuments(),
     ]);
 
-    const paymentReceived =
-      paymentDocs.length > 0
-        ? paymentDocs.reduce((sum, payment) => sum + (payment.amount || 0), 0)
-        : orderSummaries.reduce(
-            (sum, order) => sum + (order.paidAmount || 0),
-            0,
-          );
+    const paymentReceived = orderSummaries.reduce(
+      (sum, order) => sum + (order.paidAmount || 0),
+      0,
+    );
 
     const duePayment = orderSummaries.reduce(
       (sum, order) => sum + (order.dueAmount || 0),
@@ -70,7 +57,7 @@ export async function GET(request: Request) {
         value: upcomingEvents.length,
         kind: "count",
         detail: upcomingEvents[0]
-          ? `${upcomingEvents[0].name} • ${new Date(upcomingEvents[0].date).toLocaleDateString("en-BD", { dateStyle: "medium" })}`
+          ? `${upcomingEvents[0].eventName} • ${new Date(upcomingEvents[0].eventDate).toLocaleDateString("en-BD", { dateStyle: "medium" })}`
           : "No upcoming events",
         icon: "calendar",
       },
@@ -98,6 +85,13 @@ export async function GET(request: Request) {
         detail: `${dueOrderCount} order${dueOrderCount === 1 ? "" : "s"} still pending`,
         icon: "clock",
       },
+      {
+        label: "Total Staff",
+        value: totalStaff,
+        kind: "count",
+        detail: `${totalStaff} staff members`,
+        icon: "users",
+      },
     ].filter((metric) =>
       role === "staff" ? !FINANCE_METRIC_LABELS.includes(metric.label) : true,
     );
@@ -109,7 +103,7 @@ export async function GET(request: Request) {
         accessRole: role || "admin",
         upcomingEvents: upcomingEvents.map((event) => ({
           ...event,
-          date: event.date ? new Date(event.date).toISOString() : null,
+          name: event.eventName,
         })),
         recentOrders: recentOrders.map((order) => ({
           ...order,

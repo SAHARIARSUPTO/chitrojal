@@ -2,6 +2,13 @@
 import { NextResponse } from "next/server";
 import mongooseConnect from "@/lib/mongoose";
 import Pose from "@/models/Pose";
+import { getSessionTokenFromRequest, verifySessionToken } from "@/lib/session";
+
+async function requireAdmin(request: Request) {
+  const token = getSessionTokenFromRequest(request);
+  const session = await verifySessionToken(token);
+  return session?.accessRole === "admin";
+}
 
 export async function GET(request: Request) {
   await mongooseConnect();
@@ -9,7 +16,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const folderId = searchParams.get('folderId');
 
-    let query: any = {};
+    const query: { folder?: string } = {};
     if (folderId) {
       query.folder = folderId;
     }
@@ -25,6 +32,9 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   await mongooseConnect();
   try {
+    if (!(await requireAdmin(request))) {
+      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+    }
     const { name, imageUrls, folderId, category } = await request.json();
     if (!name || !imageUrls || imageUrls.length === 0 || !folderId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
