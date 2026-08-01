@@ -1,238 +1,72 @@
 "use client";
 
 import React, { useState } from "react";
-import AdminLayout from "../../../components/home/AdminLayout";
 import { useRouter } from "next/navigation";
+import AdminLayout from "../../../components/home/AdminLayout";
+import EventManagementFormFields, {
+  createEmptyEventForm,
+} from "../EventManagementFormFields";
 import { FiSave } from "react-icons/fi";
 
 export default function NewEventManagementPage() {
   const router = useRouter();
-  const [form, setForm] = useState({
-    customerName: "",
-    customerPhone: "",
-    customerEmail: "",
-    customerAddress: "",
-    eventDate: "",
-    eventLocation: "",
-    eventName: "",
-    eventType: "",
-    package: "",
-    packageDetails: "",
-    googleMapsLink: "",
-    bookingSource: "Admin",
-    notes: "",
-    totalAmount: "",
-    advanceAmount: "",
-    paidAmount: "",
-    dueAmount: "",
-    status: "Pending",
-    photographer: "",
-    duration: "",
-  });
+  const [form, setForm] = useState(createEmptyEventForm);
+  const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
+    setSaving(true);
     try {
       const totalAmount = Number(form.totalAmount || 0);
+      const discountAmount = Number(form.discountAmount || 0);
       const advanceAmount = Number(form.advanceAmount || 0);
-      const paidAmount = advanceAmount;
-      const dueAmount = totalAmount - paidAmount;
+      const paidAmount = Number(form.paidAmount || advanceAmount || 0);
+      const finalAmount = Math.max(totalAmount - discountAmount, 0);
+      const dueAmount = Math.max(finalAmount - paidAmount, 0);
 
       const response = await fetch("/api/event-managements", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customerName: form.customerName,
-          customerPhone: form.customerPhone,
-          customerEmail: form.customerEmail,
-          customerAddress: form.customerAddress,
-          eventDate: form.eventDate,
-          eventLocation: form.eventLocation,
-          eventName: form.eventName,
-          eventType: form.eventType,
-          package: form.package,
-          packageDetails: form.packageDetails,
-          googleMapsLink: form.googleMapsLink,
-          bookingSource: form.bookingSource,
-          notes: form.notes,
-          status: form.status,
-          photographer: form.photographer,
-          duration: form.duration,
+          ...form,
           totalAmount,
+          discountAmount,
           advanceAmount,
           paidAmount,
           dueAmount,
+          finalAmount,
+          eventDate: form.eventSchedule[0]?.date || form.eventDate,
         }),
       });
+
       if (response.ok) {
         router.push("/admin/event-managements");
       }
-    } catch (error) {
-      console.error("Error creating order:", error);
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
     <AdminLayout>
-      <div className="relative max-w-4xl mx-auto space-y-8 pb-12 text-neutral-200">
-        <div className="flex justify-between items-center mb-6 pb-6 border-b border-white/10">
-          <h1 className="text-3xl font-bold">New Event Management</h1>
+      <div className="relative mx-auto max-w-6xl space-y-6 p-4 pb-12 text-neutral-200 sm:p-6">
+        <div className="flex flex-col gap-4 border-b border-white/10 pb-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold sm:text-3xl">New Booking Management</h1>
+            <p className="mt-1 text-sm text-neutral-400">
+              Create the event, schedule, discount, and payment details in one place.
+            </p>
+          </div>
           <button
             onClick={handleSave}
-            className="flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all"
+            disabled={saving}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-600 to-orange-500 px-5 py-3 text-sm font-bold text-white transition hover:from-orange-500 hover:to-orange-400 disabled:opacity-50"
           >
-            <FiSave /> Save
+            <FiSave /> {saving ? "Saving..." : "Save"}
           </button>
         </div>
 
-        <div className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-[1.5rem] p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <input
-              value={form.customerName}
-              onChange={(e) =>
-                setForm({ ...form, customerName: e.target.value })
-              }
-              className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
-              placeholder="Customer name"
-            />
-            <input
-              value={form.customerPhone}
-              onChange={(e) =>
-                setForm({ ...form, customerPhone: e.target.value })
-              }
-              className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
-              placeholder="Phone"
-            />
-            <input
-              value={form.customerEmail}
-              onChange={(e) =>
-                setForm({ ...form, customerEmail: e.target.value })
-              }
-              className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
-              placeholder="Email"
-            />
-            <input
-              value={form.customerAddress}
-              onChange={(e) =>
-                setForm({ ...form, customerAddress: e.target.value })
-              }
-              className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
-              placeholder="Address"
-            />
-            <input
-              type="date"
-              value={form.eventDate}
-              onChange={(e) =>
-                setForm({ ...form, eventDate: e.target.value })
-              }
-              className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
-              placeholder="Event date"
-            />
-            <input
-              value={form.eventLocation}
-              onChange={(e) =>
-                setForm({ ...form, eventLocation: e.target.value })
-              }
-              className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
-              placeholder="Event location"
-            />
-            <input
-              value={form.eventName}
-              onChange={(e) =>
-                setForm({ ...form, eventName: e.target.value })
-              }
-              className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
-              placeholder="Event name"
-            />
-            <input
-              value={form.eventType}
-              onChange={(e) =>
-                setForm({ ...form, eventType: e.target.value })
-              }
-              className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
-              placeholder="Event type"
-            />
-            <input
-              value={form.package}
-              onChange={(e) => setForm({ ...form, package: e.target.value })}
-              className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
-              placeholder="Package"
-            />
-            <textarea
-              value={form.packageDetails}
-              onChange={(e) =>
-                setForm({ ...form, packageDetails: e.target.value })
-              }
-              className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
-              placeholder="Package details"
-            />
-            <input
-              value={form.googleMapsLink}
-              onChange={(e) =>
-                setForm({ ...form, googleMapsLink: e.target.value })
-              }
-              className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
-              placeholder="Google Maps link"
-            />
-            <input
-              value={form.bookingSource}
-              onChange={(e) =>
-                setForm({ ...form, bookingSource: e.target.value })
-              }
-              className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
-              placeholder="Booking source"
-            />
-            <textarea
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3 md:col-span-2"
-              placeholder="Notes"
-            />
-            <input
-              type="number"
-              value={form.totalAmount}
-              onChange={(e) =>
-                setForm({ ...form, totalAmount: e.target.value })
-              }
-              className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
-              placeholder="Total amount"
-            />
-            <input
-              type="number"
-              value={form.advanceAmount}
-              onChange={(e) =>
-                setForm({ ...form, advanceAmount: e.target.value })
-              }
-              className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
-              placeholder="Advance amount"
-            />
-            <select
-              value={form.status}
-              onChange={(e) => setForm({ ...form, status: e.target.value })}
-              className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
-            >
-              <option value="Pending">Pending</option>
-              <option value="Approved">Approved</option>
-              <option value="Ongoing">Ongoing</option>
-              <option value="Completed">Completed</option>
-              <option value="Cancelled">Cancelled</option>
-            </select>
-            <input
-              value={form.photographer}
-              onChange={(e) =>
-                setForm({ ...form, photographer: e.target.value })
-              }
-              className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
-              placeholder="Photographer"
-            />
-            <input
-              value={form.duration}
-              onChange={(e) =>
-                setForm({ ...form, duration: e.target.value })
-              }
-              className="w-full rounded-xl border border-white/10 bg-[#050505] px-4 py-3"
-              placeholder="Duration"
-            />
-          </div>
+        <div className="rounded-[1.5rem] border border-white/5 bg-[#0A0A0A]/80 p-4 shadow-2xl backdrop-blur-xl sm:p-6">
+          <EventManagementFormFields form={form} setForm={setForm} />
         </div>
       </div>
     </AdminLayout>

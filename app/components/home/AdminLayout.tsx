@@ -18,11 +18,11 @@ import Image from "next/image";
 
 const navItems = [
   { href: "/admin", icon: FiGrid, label: "Dashboard" },
-  { href: "/admin/event-managements", icon: FiBriefcase, label: "Event Managements" },
+  { href: "/admin/event-managements", icon: FiBriefcase, label: "Booking Management" },
   { href: "/admin/invoices", icon: FiFileText, label: "Invoices" },
   { href: "/admin/finance", icon: FiDollarSign, label: "Finance" },
   { href: "/admin/photo-drive", icon: FiLink, label: "Photo Link" },
-  { href: "/admin/poses", icon: FiCamera, label: "Photo Library" },
+  { href: "/admin/pose-library", icon: FiCamera, label: "Photo Gallery" },
   { href: "/admin/staff", icon: FiUsers, label: "Staffs" },
 ];
 
@@ -190,9 +190,8 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   }, [isSidebarOpen]);
 
   const staffAllowedRoutes = [
-    "/admin",
     "/admin/photo-drive",
-    "/admin/poses",
+    "/admin/pose-library",
     "/admin/staff",
   ];
 
@@ -200,6 +199,16 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     user?.accessRole === "staff"
       ? navItems.filter((item) => staffAllowedRoutes.includes(item.href))
       : navItems;
+
+  useEffect(() => {
+    if (user?.accessRole !== "staff") return;
+    if (staffAllowedRoutes.includes(pathname)) return;
+    if (pathname === "/admin/poses") {
+      router.replace("/admin/pose-library");
+      return;
+    }
+    router.replace("/admin/staff");
+  }, [pathname, router, user?.accessRole]);
 
   const mobileNavItems = visibleNavItems.slice(0, 4);
   const mobileNavCount = mobileNavItems.length || 4;

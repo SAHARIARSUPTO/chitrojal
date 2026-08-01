@@ -2,11 +2,11 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   appId: "com.chitrojaal.app",
-  appName: "Chitro Jaal",
+  appName: "ChitroJaal",
   webDir: "public",
 
   server: {
-    url: "https://chitrojal.vercel.app",
+    url: "https://chitrojaal.com/admin",
     cleartext: false,
   },
 };

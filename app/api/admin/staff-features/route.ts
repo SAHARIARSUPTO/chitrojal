@@ -7,7 +7,7 @@ const DEFAULT_FEATURES = [
   {
     title: "Upcoming Events",
     description: "See the next shoots and bookings at a glance.",
-    href: "/admin/events",
+    href: "/admin/event-managements",
     iconKey: "calendar",
     badge: "Live",
     audience: "all",
@@ -16,7 +16,7 @@ const DEFAULT_FEATURES = [
   {
     title: "Pose Library",
     description: "Browse approved poses and reference boards.",
-    href: "/admin/poses",
+    href: "/admin/pose-library",
     iconKey: "camera",
     badge: "Read only",
     audience: "all",

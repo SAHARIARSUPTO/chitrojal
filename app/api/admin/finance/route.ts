@@ -11,26 +11,35 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const month = searchParams.get("month") || "";
 
-    const query = month
-      ? {
-          date: {
-            $gte: new Date(`${month}-01T00:00:00.000Z`),
-            $lt: new Date(
-              new Date(`${month}-01T00:00:00.000Z`).getFullYear(),
-              new Date(`${month}-01T00:00:00.000Z`).getMonth() + 1,
-              1,
-            ),
-          },
-        }
-      : {};
+    const monthStart = month ? new Date(`${month}-01T00:00:00.000Z`) : null;
+    const monthEnd = monthStart
+      ? new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1)
+      : null;
+
+    const monthQuery = (field: string) =>
+      monthStart && monthEnd
+        ? {
+            [field]: {
+              $gte: monthStart,
+              $lt: monthEnd,
+            },
+          }
+        : {};
+
+    const orderQuery = { ...monthQuery("eventDate"), status: { $ne: "Archived" } };
+    const expenseQuery = { ...monthQuery("date"), status: "Approved" };
 
     const [orders, payments, expenses] = await Promise.all([
       Order.find(
-        {},
-        "totalAmount paidAmount dueAmount customerName package eventDate",
-      ).lean(),
-      Payment.find({}, "amount date method").lean(),
-      Expense.find(query).sort({ date: -1 }).lean(),
+        orderQuery,
+        "totalAmount paidAmount dueAmount customerName package eventDate eventSchedule",
+      )
+        .sort({ eventDate: -1 })
+        .lean(),
+      Payment.find(monthQuery("date"), "amount date method")
+        .sort({ date: -1 })
+        .lean(),
+      Expense.find(expenseQuery).sort({ date: -1 }).lean(),
     ]);
 
     const income = payments.reduce((sum, item) => sum + (item.amount || 0), 0);

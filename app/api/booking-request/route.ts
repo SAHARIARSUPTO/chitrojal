@@ -15,37 +15,56 @@ export async function POST(request: Request) {
     const eventLocation =
       body.eventLocation || body.location || customerAddress;
     const eventDate = body.eventDate || body.bookingDate;
+    const eventSchedule = Array.isArray(body.eventSchedule)
+      ? body.eventSchedule
+      : eventDate
+        ? [{ date: eventDate, shift: body.eventShift || "Day" }]
+        : [];
     const packageName =
       body.package || body.selectedPackage || body.eventType || "Not specified";
     const packageDetails = body.packageDetails || body.message || "";
     const totalAmount = Number(body.totalAmount || body.amount || 0);
+    const discountAmount = Number(body.discountAmount || 0);
     const parsedAdvance = Number(body.advanceAmount || body.advance || 0);
     const parsedPaid = Number(body.paidAmount || body.paid || 0);
+    const finalAmount = Math.max(totalAmount - discountAmount, 0);
 
-    if (!customerName || !customerPhone || !customerEmail || !eventDate) {
+    if (!customerName || !customerPhone || !eventDate) {
       return NextResponse.json(
-        { message: "Required fields are missing." },
+        { message: "Name, Phone number, and Event Date are required." },
         { status: 400 },
       );
     }
 
+    const parsedEventDate = new Date(eventDate);
+    const formattedSchedule = eventSchedule.map((s: { date: string | Date; shift?: string }) => ({
+      date: new Date(s.date || eventDate),
+      shift: s.shift === "Night" ? "Night" : "Day",
+    }));
+
     const newOrder = await Order.create({
       customerName,
       customerPhone,
-      customerEmail,
+      customerEmail: customerEmail || "",
       customerAddress,
-      eventDate: new Date(eventDate),
+      eventDate: parsedEventDate,
+      eventSchedule: formattedSchedule,
       eventLocation,
       eventName: body.eventName || `${customerName} - ${packageName}`,
+      eventType: body.eventType || packageName,
       package: packageName,
+      eventProgramType: body.eventProgramType || "Main Program",
+      otherEventName: body.otherEventName || "",
       packageDetails,
       googleMapsLink: body.googleMapsLink || "",
       bookingSource: body.bookingSource || "Website",
       notes: body.notes || body.message || "",
       totalAmount,
+      discountAmount,
       advanceAmount: parsedAdvance,
       paidAmount: parsedPaid,
-      dueAmount: totalAmount - parsedPaid,
+      dueAmount: Math.max(finalAmount - parsedPaid, 0),
+      finalAmount,
       status: "Pending",
       createdFromBooking: true,
     });

@@ -2,11 +2,24 @@ import { NextResponse } from "next/server";
 import mongooseConnect from "@/lib/mongoose";
 import Event from "@/models/Event";
 import Order from "@/models/Order";
-import Payment from "@/models/Payment";
 import Staff from "@/models/Staff";
+import Pose from "@/models/Pose";
 import { getSessionTokenFromRequest, verifySessionToken } from "@/lib/session";
+import { parseDateValue } from "@/lib/date-utils";
 
 const FINANCE_METRIC_LABELS = ["Payment Received", "Due Payment"];
+
+type OrderLike = {
+  eventDate?: string | Date | null;
+  eventSchedule?: Array<{ date?: string | Date | null; shift?: string | null }>;
+  eventName?: string | null;
+  customerName?: string | null;
+  status?: string | null;
+  dueAmount?: number | null;
+  paidAmount?: number | null;
+  totalAmount?: number | null;
+  createdAt?: string | Date | null;
+};
 
 async function getSessionRole(request: Request) {
   const token = getSessionTokenFromRequest(request);
@@ -14,29 +27,65 @@ async function getSessionRole(request: Request) {
   return session?.accessRole || null;
 }
 
+function getOrderPrimaryDate(order: OrderLike) {
+  const scheduleDate = order.eventSchedule?.[0]?.date;
+  const dateValue = scheduleDate || order.eventDate;
+  return parseDateValue(dateValue);
+}
+
+function normalizeOrder(order: OrderLike) {
+  const primaryDate = getOrderPrimaryDate(order);
+  return {
+    ...order,
+    eventDate: primaryDate ? primaryDate.toISOString() : null,
+    primaryDate,
+  };
+}
+
 export async function GET(request: Request) {
   await mongooseConnect();
 
   try {
     const role = await getSessionRole(request);
-    const now = new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const [
-      upcomingEvents,
-      completedEventsCount,
-      recentOrders,
-      orderSummaries,
-      totalStaff,
-    ] = await Promise.all([
-      Order.find({ status: { $in: ["Pending", "Approved"] }, eventDate: { $gte: now } })
-        .sort({ eventDate: 1 })
-        .limit(5)
-        .lean(),
-      Event.countDocuments({ status: "Completed" }),
-      Order.find({}).sort({ eventDate: 1 }).limit(5).lean(),
-      Order.find({}, "dueAmount paidAmount totalAmount").lean(),
-      Staff.countDocuments(),
-    ]);
+    const [allOrders, completedEventsCount, orderSummaries, totalStaff, totalPoses] =
+      await Promise.all([
+        Order.find({}).lean(),
+        Event.countDocuments({ status: "Completed" }),
+        Order.find(
+          {},
+          "dueAmount paidAmount totalAmount eventDate eventSchedule eventName customerName status",
+        ).lean(),
+        Staff.countDocuments(),
+        Pose.countDocuments(),
+      ]);
+
+    const normalizedOrders = (allOrders as OrderLike[])
+      .map(normalizeOrder)
+      .sort((left, right) => {
+        const leftTime = left.primaryDate?.getTime() ?? 0;
+        const rightTime = right.primaryDate?.getTime() ?? 0;
+        return leftTime - rightTime;
+      });
+
+    const upcomingEvents = normalizedOrders.filter(
+      (order) =>
+        ["Pending", "Approved"].includes(order.status || "Pending") &&
+        !!order.primaryDate &&
+        order.primaryDate >= tomorrow,
+    );
+
+    const recentOrders = [...normalizedOrders]
+      .sort((left, right) => {
+        const leftTime = left.primaryDate?.getTime() ?? 0;
+        const rightTime = right.primaryDate?.getTime() ?? 0;
+        return rightTime - leftTime;
+      })
+      .slice(0, 5);
 
     const paymentReceived = orderSummaries.reduce(
       (sum, order) => sum + (order.paidAmount || 0),
@@ -57,7 +106,7 @@ export async function GET(request: Request) {
         value: upcomingEvents.length,
         kind: "count",
         detail: upcomingEvents[0]
-          ? `${upcomingEvents[0].eventName} • ${new Date(upcomingEvents[0].eventDate).toLocaleDateString("en-BD", { dateStyle: "medium" })}`
+          ? `${upcomingEvents[0].eventName || upcomingEvents[0].customerName || "Untitled Event"} • ${upcomingEvents[0].primaryDate?.toLocaleDateString("en-BD", { dateStyle: "medium" })}`
           : "No upcoming events",
         icon: "calendar",
       },
@@ -92,6 +141,13 @@ export async function GET(request: Request) {
         detail: `${totalStaff} staff members`,
         icon: "users",
       },
+      {
+        label: "Photo Library",
+        value: totalPoses,
+        kind: "count",
+        detail: `${totalPoses} pose reference${totalPoses === 1 ? "" : "s"}`,
+        icon: "image",
+      },
     ].filter((metric) =>
       role === "staff" ? !FINANCE_METRIC_LABELS.includes(metric.label) : true,
     );
@@ -103,13 +159,13 @@ export async function GET(request: Request) {
         accessRole: role || "admin",
         upcomingEvents: upcomingEvents.map((event) => ({
           ...event,
-          name: event.eventName,
+          name: event.eventName || event.customerName || "Untitled Event",
+          eventDate: event.primaryDate ? event.primaryDate.toISOString() : null,
         })),
         recentOrders: recentOrders.map((order) => ({
           ...order,
-          eventDate: order.eventDate
-            ? new Date(order.eventDate).toISOString()
-            : null,
+          eventDate: order.eventDate || null,
+          eventSchedule: order.eventSchedule || [],
         })),
       },
     });

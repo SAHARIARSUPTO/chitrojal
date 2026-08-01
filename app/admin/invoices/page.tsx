@@ -20,6 +20,8 @@ type InvoiceRecord = {
   customerEmail?: string;
   eventDate?: string;
   package?: string;
+  eventProgramType?: string;
+  discountAmount?: number;
   totalAmount: number;
   paidAmount?: number;
   dueAmount?: number;
@@ -206,6 +208,12 @@ export default function InvoicesPage() {
                         </div>
                         <div className="text-xs text-neutral-500 mt-1">
                           {invoice.package || "Package"}
+                        </div>
+                        <div className="text-xs text-neutral-500">
+                          {invoice.eventProgramType || "Main Program"}
+                          {invoice.discountAmount
+                            ? ` - Discount ${formatCurrency(invoice.discountAmount)}`
+                            : ""}
                         </div>
                       </td>
                       <td className="p-3 text-neutral-300 font-medium">

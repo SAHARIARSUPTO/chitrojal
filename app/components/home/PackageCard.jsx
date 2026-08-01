@@ -1,11 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const PackageCard = ({ packageImages = [], onClick }) => {
+const PackageCard = ({
+  packageImages = [],
+  onClick,
+  autoScroll = true,
+  intervalDuration = 3800,
+  imageClassName = "object-cover object-top",
+}) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    if (autoScroll && packageImages && packageImages.length > 1 && !isHovered) {
+      const interval = setInterval(() => {
+        setCurrentIndex((prev) => (prev + 1) % packageImages.length);
+      }, intervalDuration);
+
+      return () => clearInterval(interval);
+    }
+  }, [autoScroll, packageImages, isHovered, intervalDuration]);
 
   const prevSlide = (e) => {
     e.stopPropagation();
@@ -46,33 +63,38 @@ const PackageCard = ({ packageImages = [], onClick }) => {
   }
 
   return (
-    <div className="relative w-full h-full group" onClick={handleCardClick}>
+    <div
+      className="relative w-full h-full group cursor-pointer"
+      onClick={handleCardClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       {/* Image Slider Container */}
       <div className="relative w-full h-full rounded-3xl overflow-hidden bg-black">
         {packageImages.map((src, index) => (
           <div
             key={index}
-            className={`absolute inset-0 w-full h-full transition-opacity duration-500 ease-in-out ${
-              index === currentIndex ? "opacity-100" : "opacity-0"
+            className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${
+              index === currentIndex ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
             }`}
           >
             <Image
               src={src}
               alt={`Package image ${index + 1}`}
               fill
-              className="object-cover"
+              className={`${imageClassName} group-hover:scale-[1.02] transition-transform duration-700`}
               sizes="(max-width: 768px) 90vw, (max-width: 1200px) 50vw, 33vw"
               priority={index === 0}
             />
           </div>
         ))}
-        <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute inset-0 z-20 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
       </div>
 
       {/* Floating Left Arrow */}
       <button
         onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-black/50 text-white hover:bg-orange-500/80 border border-white/10 shadow-xl transition-all duration-300 active:scale-90"
+        className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/50 text-white hover:bg-orange-500/80 border border-white/10 shadow-xl transition-all duration-300 active:scale-90 opacity-0 group-hover:opacity-100"
         aria-label="Previous Slide"
       >
         <ChevronLeft size={20} />
@@ -81,14 +103,14 @@ const PackageCard = ({ packageImages = [], onClick }) => {
       {/* Floating Right Arrow */}
       <button
         onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-black/50 text-white hover:bg-orange-500/80 border border-white/10 shadow-xl transition-all duration-300 active:scale-90"
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/50 text-white hover:bg-orange-500/80 border border-white/10 shadow-xl transition-all duration-300 active:scale-90 opacity-0 group-hover:opacity-100"
         aria-label="Next Slide"
       >
         <ChevronRight size={20} />
       </button>
 
       {/* Pagination Dots */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex justify-center items-center gap-2">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex justify-center items-center gap-2">
         {packageImages.map((_, idx) => (
           <button
             key={idx}

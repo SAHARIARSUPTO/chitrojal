@@ -1,6 +1,14 @@
 "use client";
+
 import { useState, useEffect } from "react";
-import { FiHome, FiCamera, FiPackage, FiGrid, FiMenu, FiX } from "react-icons/fi";
+import {
+  FiGrid,
+  FiCamera,
+  FiInfo,
+  FiPhoneCall,
+  FiMenu,
+  FiX,
+} from "react-icons/fi";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,16 +21,26 @@ const Navbar = () => {
   const pathname = usePathname();
 
   const navLinks = [
-    { name: "Home", href: "/", icon: <FiHome /> },
-    { name: "Portfolio", href: "/#portfolio", icon: <FiCamera /> },
-    { name: "Packages", href: "/#packages", icon: <FiPackage /> },
-    { name: "Admin", href: "/admin", icon: <FiGrid /> },
+    { name: "সেবাসমূহ", targetId: "services", href: "/#services", icon: <FiGrid /> },
+    { name: "গ্যালারি", targetId: "gallery", href: "/#gallery", icon: <FiCamera /> },
+    { name: "আমাদের সম্পর্কে", targetId: "about", href: "/#about", icon: <FiInfo /> },
+    { name: "যোগাযোগ", targetId: "contact", href: "/#contact", icon: <FiPhoneCall /> },
   ];
 
   useEffect(() => {
-    // Close menu on route change
     setIsMenuOpen(false);
   }, [pathname]);
+
+  const handleNavClick = (e, targetId) => {
+    if (pathname === "/") {
+      const element = document.getElementById(targetId);
+      if (element) {
+        e.preventDefault();
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+        setIsMenuOpen(false);
+      }
+    }
+  };
 
   const menuVariants = {
     hidden: {
@@ -70,29 +88,18 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-10">
-            {navLinks.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`relative flex items-center gap-2 text-sm font-medium transition-colors ${
-                    isActive ? "text-orange-400" : "text-white hover:text-orange-400"
-                  }`}
-                >
-                  {item.icon}
-                  <span>{item.name}</span>
-                  {isActive && (
-                    <motion.div
-                      className="absolute bottom-[-8px] left-0 right-0 h-0.5 bg-orange-400"
-                      layoutId="underline"
-                      initial={false}
-                    />
-                  )}
-                </Link>
-              );
-            })}
+          <nav className="hidden md:flex items-center space-x-8">
+            {navLinks.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={(e) => handleNavClick(e, item.targetId)}
+                className="relative flex items-center gap-2 text-sm font-medium text-white transition-colors hover:text-orange-400"
+              >
+                {item.icon}
+                <span>{item.name}</span>
+              </Link>
+            ))}
           </nav>
 
           {/* Book Now Button - Desktop */}
@@ -133,9 +140,8 @@ const Navbar = () => {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center gap-3 py-3 px-4 rounded-lg text-white text-md font-medium transition-colors ${
-                    pathname === item.href ? "bg-orange-500/10 text-orange-400" : "hover:bg-white/5"
-                  }`}
+                  onClick={(e) => handleNavClick(e, item.targetId)}
+                  className="flex items-center gap-3 py-3 px-4 rounded-lg text-white text-md font-medium transition-colors hover:bg-white/5 hover:text-orange-400"
                 >
                   {item.icon}
                   <span>{item.name}</span>

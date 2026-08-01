@@ -1,10 +1,25 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AdminLayout from "../../../components/home/AdminLayout";
 import { FiDownload, FiCheckCircle, FiClock, FiPrinter } from "react-icons/fi";
 import Barcode from "react-barcode";
+import Image from "next/image";
+import logo from "../../../components/navbar/logo.png";
+
+type Payment = {
+  _id: string;
+  amount: number;
+  date: string;
+  method: string;
+  notes?: string;
+};
+
+type ScheduleItem = {
+  date: string;
+  shift: "Day" | "Night";
+};
 
 export default function InvoicePage() {
   const { id } = useParams();
@@ -14,23 +29,22 @@ export default function InvoicePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (id) {
-      async function fetchOrder() {
-        setLoading(true);
-        try {
-          const response = await fetch(`/api/event-managements/${id}`);
-          if (response.ok) {
-            const data = await response.json();
-            setOrder(data);
-          }
-        } catch (error) {
-          console.error("Error fetching order:", error);
-        } finally {
-          setLoading(false);
+    if (!id) return;
+
+    async function fetchOrder() {
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/event-managements/${id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setOrder(data);
         }
+      } finally {
+        setLoading(false);
       }
-      fetchOrder();
     }
+
+    fetchOrder();
   }, [id]);
 
   const handleDownloadPDF = async () => {
@@ -57,14 +71,14 @@ export default function InvoicePage() {
     }
   };
 
-  const formatBDT = (amount: number) =>
-    `BDT ${amount ? amount.toLocaleString("en-BD", { minimumFractionDigits: 2 }) : "0.00"}`;
+  const formatBDT = (amount: unknown) =>
+    `BDT ${Number(amount || 0).toLocaleString("en-BD", { minimumFractionDigits: 2 })}`;
 
   if (loading) {
     return (
       <AdminLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-orange-600"></div>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-orange-600" />
         </div>
       </AdminLayout>
     );
@@ -73,7 +87,7 @@ export default function InvoicePage() {
   if (!order) {
     return (
       <AdminLayout>
-        <div className="text-center py-20 text-slate-500 font-medium">
+        <div className="py-20 text-center font-medium text-slate-500">
           Invoice not found.
         </div>
       </AdminLayout>
@@ -82,26 +96,28 @@ export default function InvoicePage() {
 
   const isPaid = !order.dueAmount || order.dueAmount <= 0;
   const invoiceId = `INV-${String(order._id).slice(-8).toUpperCase()}`;
+  const schedule: ScheduleItem[] = Array.isArray(order.eventSchedule)
+    ? order.eventSchedule
+    : [];
+  const finalAmount = Number(order.finalAmount ?? order.totalAmount - Number(order.discountAmount || 0));
 
   return (
     <AdminLayout>
-      <div className="max-w-4xl mx-auto p-4 sm:p-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 print:hidden">
+      <div className="mx-auto max-w-5xl p-4 sm:p-8">
+        <div className="mb-6 flex flex-col items-start justify-between gap-4 print:hidden sm:flex-row sm:items-center">
           <div>
             <button
               onClick={() => router.back()}
-              className="text-sm text-slate-600 hover:text-orange-600 mb-1"
+              className="mb-1 text-sm text-slate-600 hover:text-orange-600"
             >
               &larr; Back to Invoices
             </button>
-            <h1 className="text-xl font-bold text-slate-900">
-              Invoice Preview
-            </h1>
+            <h1 className="text-xl font-bold text-slate-900">Invoice Preview</h1>
           </div>
-          <div className="flex items-center gap-3 mt-2 sm:mt-0">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => window.print()}
-              className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 px-4 py-2 rounded-lg text-sm font-semibold transition-all border border-slate-300"
+              className="flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition active:scale-95 hover:bg-slate-200"
             >
               <FiPrinter />
               Print
@@ -109,7 +125,7 @@ export default function InvoicePage() {
             <button
               onClick={handleDownloadPDF}
               disabled={downloading}
-              className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-md disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition active:scale-95 hover:bg-orange-700 disabled:opacity-50"
             >
               <FiDownload className={downloading ? "animate-bounce" : ""} />
               {downloading ? "Generating PDF..." : "Download PDF"}
@@ -117,75 +133,82 @@ export default function InvoicePage() {
           </div>
         </div>
 
-        {/* Invoice Card UI */}
-        <div className="bg-white border border-slate-200 rounded-xl shadow-lg p-6 sm:p-10 text-slate-800">
-          {/* Header & Meta */}
-          <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pb-6 border-b-2 border-orange-600">
-            <div>
-              <h2 className="text-3xl font-extrabold text-orange-600 tracking-tight">
-                CHITROJAAL
-              </h2>
-              <p className="text-xs text-slate-500 mt-1">
-                Juma Market, Mizan Road, Feni 3900, Bangladesh
-              </p>
-              <p className="text-xs text-slate-500">
-                Phone: +880 1834-258375 | Web: www.chitrojaal.com
-              </p>
-            </div>
-
-            <div className="text-left sm:text-right flex flex-col sm:items-end">
-              <h3 className="text-2xl font-bold text-slate-900">INVOICE</h3>
-
-              {/* Barcode UI */}
-              <div className="my-1 -mr-2">
-                <Barcode
-                  value={invoiceId}
-                  width={1.2}
-                  height={32}
-                  fontSize={10}
-                  margin={0}
-                  displayValue={true}
-                  lineColor="#0F172A"
-                />
+        <div className="rounded-[1.75rem] border border-white/10 bg-[#07111f] p-4 text-slate-100 shadow-[0_24px_90px_rgba(2,6,23,0.45)] sm:p-6">
+          <div className="mb-5 rounded-[1.5rem] border border-white/10 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 p-4 shadow-inner sm:p-5">
+            <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4">
+                <div className="rounded-[1.25rem] border border-white/10 bg-slate-950/90 p-3 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_18px_40px_rgba(0,0,0,0.45)]">
+                  <Image src={logo} alt="Chitrojaal logo" width={72} height={72} className="h-[72px] w-[72px] rounded-xl object-contain" priority />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.28em] text-orange-300/90">Chitrojaal</p>
+                  <h2 className="text-2xl font-black tracking-tight text-white">Invoice Preview</h2>
+                  <p className="mt-1 text-sm text-slate-300">Creative production with schedule, discount, and payment tracking.</p>
+                </div>
               </div>
-
-              <p className="text-xs text-slate-500">
-                Issue Date:{" "}
-                {new Date(order.createdAt || Date.now()).toLocaleDateString(
-                  "en-BD",
-                )}
-              </p>
-              <p className="text-xs text-slate-500">
-                Event Date:{" "}
-                {order.eventDate
-                  ? new Date(order.eventDate).toLocaleDateString("en-BD")
-                  : "N/A"}
-              </p>
-
-              <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold sm:justify-end">
-                {isPaid ? (
-                  <span className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full flex items-center gap-1">
-                    <FiCheckCircle /> PAID IN FULL
-                  </span>
-                ) : (
-                  <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full flex items-center gap-1">
-                    <FiClock /> PAYMENT PENDING
-                  </span>
-                )}
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-right backdrop-blur">
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Invoice</p>
+                <p className="text-sm font-semibold text-white">{invoiceId}</p>
               </div>
             </div>
           </div>
 
-          {/* Customer & Operational Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-6">
-            <div className="border border-slate-200 p-4 rounded-lg bg-slate-50">
-              <h4 className="text-xs font-bold text-orange-600 uppercase tracking-wider mb-2">
+          <div className="rounded-[1.5rem] border border-white/10 bg-white p-6 text-slate-800 shadow-lg sm:p-10">
+            <div className="flex flex-col justify-between gap-4 border-b-2 border-orange-600 pb-6 sm:flex-row">
+              <div>
+                <h2 className="text-3xl font-extrabold tracking-tight text-orange-600">
+                  CHITROJAAL
+                </h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  Juma Market, Mizan Road, Feni 3900, Bangladesh
+                </p>
+                <p className="text-xs text-slate-500">
+                  Phone: +880 1834-258375 | Web: www.chitrojaal.com
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:items-end">
+                <h3 className="text-2xl font-bold text-slate-900">INVOICE</h3>
+                <div className="my-1 -mr-2">
+                  <Barcode
+                    value={invoiceId}
+                    width={1.2}
+                    height={32}
+                    fontSize={10}
+                    margin={0}
+                    displayValue
+                    lineColor="#0F172A"
+                  />
+                </div>
+                <p className="text-xs text-slate-500">
+                  Issue Date: {new Date(order.createdAt || Date.now()).toLocaleDateString("en-BD")}
+                </p>
+                <p className="text-xs text-slate-500">
+                  Event Date: {order.eventDate ? new Date(order.eventDate).toLocaleDateString("en-BD") : "N/A"}
+                </p>
+                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold">
+                  {isPaid ? (
+                    <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-emerald-800">
+                      <FiCheckCircle /> PAID IN FULL
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-amber-800">
+                      <FiClock /> PAYMENT PENDING
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+          <div className="my-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-orange-600">
                 BILLED TO
               </h4>
-              <p className="font-bold text-slate-900 text-sm">
+              <p className="text-sm font-bold text-slate-900">
                 {order.customerName || "Valued Client"}
               </p>
-              <p className="text-xs text-slate-600 mt-1">
+              <p className="mt-1 text-xs text-slate-600">
                 Contact: {order.customerPhone || "N/A"}
               </p>
               <p className="text-xs text-slate-600">
@@ -196,30 +219,33 @@ export default function InvoicePage() {
               </p>
             </div>
 
-            <div className="border border-slate-200 p-4 rounded-lg bg-slate-50">
-              <h4 className="text-xs font-bold text-orange-600 uppercase tracking-wider mb-2">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-orange-600">
                 PROJECT DETAILS
               </h4>
               <p className="text-xs font-bold text-slate-900">
                 Service Package: {order.package || "Custom Production"}
               </p>
-              <p className="text-xs text-slate-600 mt-1">
-                Payment Method: {order.paymentMethod || "Bank Transfer / MFS"}
+              <p className="mt-1 text-xs text-slate-600">
+                Program: {order.eventProgramType || "Main Program"}
+                {order.otherEventName ? ` - ${order.otherEventName}` : ""}
               </p>
               <p className="text-xs text-slate-600">
-                Lead Studio Unit: Chitrojaal Media Lab
+                Discount: {formatBDT(order.discountAmount || 0)}
               </p>
               <p className="text-xs text-slate-600">
-                Coverage Area: Feni & Regional Operations
+                Final Amount: {formatBDT(finalAmount)}
+              </p>
+              <p className="text-xs text-slate-600">
+                Google Maps: {order.googleMapsLink || "N/A"}
               </p>
             </div>
           </div>
 
-          {/* Deliverables Table */}
-          <div className="overflow-x-auto my-6">
-            <table className="w-full text-left border-collapse border border-slate-200">
+          <div className="my-6 overflow-x-auto">
+            <table className="w-full border-collapse border border-slate-200 text-left">
               <thead>
-                <tr className="bg-orange-600 text-white text-xs font-bold">
+                <tr className="bg-orange-600 text-xs font-bold text-white">
                   <th className="p-3">Service & Deliverables Description</th>
                   <th className="p-3 text-center">Qty / Unit</th>
                   <th className="p-3 text-right">Unit Price</th>
@@ -232,10 +258,16 @@ export default function InvoicePage() {
                     <p className="font-bold text-slate-900">
                       {order.package || "Creative Production Package"}
                     </p>
-                    <p className="text-slate-500 mt-0.5">
-                      Includes high-resolution photographic coverage, cinematic
-                      editing, color grading, and digital gallery distribution.
-                    </p>
+                    {schedule.length > 0 ? (
+                      <p className="mt-1 text-slate-500">
+                        Schedule:{" "}
+                        {schedule
+                          .map((item) =>
+                            `${item.date ? new Date(item.date).toLocaleDateString("en-BD") : "N/A"} - ${item.shift} shift`,
+                          )
+                          .join(", ")}
+                      </p>
+                    ) : null}
                   </td>
                   <td className="p-3 text-center font-medium">1 Package</td>
                   <td className="p-3 text-right font-medium">
@@ -249,10 +281,9 @@ export default function InvoicePage() {
             </table>
           </div>
 
-          {/* Financials & Banking Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-6">
-            <div className="border border-slate-200 p-4 rounded-lg bg-white">
-              <h4 className="text-xs font-bold text-orange-600 uppercase tracking-wider mb-2">
+          <div className="my-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-orange-600">
                 PAYMENT INSTRUCTIONS & BANKING
               </h4>
               <p className="text-xs text-slate-700">
@@ -261,32 +292,30 @@ export default function InvoicePage() {
               <p className="text-xs text-slate-700">
                 Account Title: MD SALMAN HOSSAIN
               </p>
-              <p className="text-xs font-bold text-slate-900 mt-0.5">
+              <p className="mt-0.5 text-xs font-bold text-slate-900">
                 Account No: 1407348737513
               </p>
-              <p className="text-xs text-slate-700 mt-1">
+              <p className="mt-1 text-xs text-slate-700">
                 bKash / Nagad Wallet: +880 1834-258375 (Personal / Merchant)
               </p>
-              <p className="text-xs text-slate-400 mt-1">
-                Payment Ref: {invoiceId}
-              </p>
+              <p className="mt-1 text-xs text-slate-400">Payment Ref: {invoiceId}</p>
             </div>
 
-            <div className="border border-slate-200 p-4 rounded-lg bg-slate-50 flex flex-col justify-between">
+            <div className="flex flex-col justify-between rounded-lg border border-slate-200 bg-slate-50 p-4">
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between text-slate-500">
                   <span>Subtotal</span>
                   <span>{formatBDT(order.totalAmount)}</span>
                 </div>
+                <div className="flex justify-between text-emerald-600">
+                  <span>Discount Applied</span>
+                  <span>- {formatBDT(order.discountAmount || 0)}</span>
+                </div>
                 <div className="flex justify-between text-slate-500">
                   <span>Advance Paid</span>
                   <span>{formatBDT(order.paidAmount)}</span>
                 </div>
-                <div className="flex justify-between text-emerald-600">
-                  <span>Discount Applied</span>
-                  <span>- BDT 0.00</span>
-                </div>
-                <div className="border-t border-orange-600 pt-2 flex justify-between font-bold text-sm text-slate-900">
+                <div className="border-t border-orange-600 pt-2 flex justify-between text-sm font-bold text-slate-900">
                   <span className="text-orange-600">Total Due</span>
                   <span className="text-orange-600">
                     {formatBDT(order.dueAmount)}
@@ -296,44 +325,54 @@ export default function InvoicePage() {
             </div>
           </div>
 
-          {/* Terms & Conditions */}
-          <div className="border border-slate-200 p-4 rounded-lg bg-white my-6">
-            <h4 className="text-xs font-bold text-orange-600 uppercase tracking-wider mb-2">
+          {order.payments && order.payments.length > 0 ? (
+            <div className="my-6 rounded-lg border border-slate-200 bg-white p-4">
+              <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-orange-600">
+                PAYMENT HISTORY
+              </h4>
+              <div className="space-y-2">
+                {order.payments.map((payment: Payment) => (
+                  <div
+                    key={payment._id}
+                    className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-xs"
+                  >
+                    <div>
+                      <p className="font-medium text-slate-800">
+                        {new Date(payment.date).toLocaleDateString("en-BD")} - {payment.method}
+                      </p>
+                      {payment.notes ? (
+                        <p className="text-slate-500">{payment.notes}</p>
+                      ) : null}
+                    </div>
+                    <p className="font-semibold text-slate-900">
+                      {formatBDT(payment.amount)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="my-6 rounded-lg border border-slate-200 bg-white p-4">
+            <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-orange-600">
               TERMS AND CONDITIONS
             </h4>
-            <ol className="text-[11px] text-slate-800 font-semibold space-y-1 list-decimal list-inside">
+            <ul className="space-y-1 text-[10px] leading-4 font-semibold text-slate-800">
               <li>Minimum 30% advance have to be paid for booking.</li>
               <li>90% Payment must be cleared when event is finished.</li>
-              <li>
-                No work will be done outside the time specified in the package
-                details.
-              </li>
+              <li>No work will be done outside the time specified in the package details.</li>
               <li>Extra payment have to be paid for work and extra time.</li>
-              <li>
-                Images and videos captured by Chitrajol can be uploaded to their
-                own Facebook page.
-              </li>
-              <li>
-                This agreement can be cancelled before 7 days of service date
-                otherwise advance money <br />
-                <span className="font-normal text-slate-600 pl-4">
-                  will not be refunded.
-                </span>
-              </li>
-              <li>
-                During the event, client has to provide us food and a proper
-                place to Rest at night.
-              </li>
-            </ol>
+              <li>Images and videos captured by Chitrojaal can be shared across our social media channels.</li>
+              <li>Final image and video delivery will be completed within 21-28 working days after the event.</li>
+              <li>During the event, client has to provide us food and a proper place to rest at night.</li>
+            </ul>
           </div>
 
-          {/* Footer */}
-          <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center text-[11px] text-slate-400 gap-2">
-            <p>
-              Thank you for choosing Chitrojaal for your creative production.
-            </p>
-            <p>chitrojaal@gmail.com</p>
-            <p>www.chitrojaal.com</p>
+            <div className="flex flex-col items-center justify-between gap-2 border-t border-slate-200 pt-6 text-[11px] text-slate-400 sm:flex-row">
+              <p>Thank you for choosing Chitrojaal for your creative production.</p>
+              <p>chitrojaal@gmail.com</p>
+              <p>www.chitrojaal.com</p>
+            </div>
           </div>
         </div>
       </div>

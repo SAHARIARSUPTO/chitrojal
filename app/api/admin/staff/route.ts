@@ -46,9 +46,7 @@ export async function GET() {
   await mongooseConnect();
 
   try {
-    const staff = await Staff.find({
-      accessRole: { $ne: "admin" },
-    })
+    const staff = await Staff.find({})
       .sort({ createdAt: -1 })
       .select("-passwordHash");
 

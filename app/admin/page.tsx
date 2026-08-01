@@ -3,54 +3,29 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AdminLayout from "../components/home/AdminLayout";
+import UpcomingEventsPanel, {
+  UpcomingEventItem,
+} from "../components/admin/UpcomingEventsPanel";
 import {
+  FiArrowRight,
   FiCalendar,
   FiCheckCircle,
-  FiChevronLeft,
-  FiChevronRight,
-  FiClock,
+  FiClipboard,
   FiDollarSign,
   FiFileText,
-  FiPlus,
-  FiCamera,
-  FiUsers,
-  FiClipboard,
+  FiImage,
   FiLink,
+  FiPlus,
   FiTrendingUp,
+  FiUsers,
 } from "react-icons/fi";
-import {
-  addDays,
-  addMonths,
-  endOfMonth,
-  endOfWeek,
-  format,
-  isSameDay,
-  isSameMonth,
-  startOfMonth,
-  startOfWeek,
-  subMonths,
-} from "date-fns";
 
 type DashboardMetric = {
   label: string;
   value: number;
   kind: "count" | "currency";
   detail: string;
-  icon: "calendar" | "check" | "dollar" | "clock" | "users";
-};
-
-type DashboardEvent = {
-  _id: string;
-  name: string;
-  type?: string;
-  date?: string;
-  location?: string;
-  photographer?: string;
-  status?: string;
-  clientName?: string;
-  contactNumber?: string;
-  totalAmount?: number;
-  price?: number;
+  icon: "calendar" | "check" | "dollar" | "clock" | "users" | "image";
 };
 
 type StaffFeature = {
@@ -64,45 +39,52 @@ type StaffFeature = {
   active?: boolean;
 };
 
+type DashboardResponse = {
+  metrics?: DashboardMetric[];
+  upcomingEvents?: UpcomingEventItem[];
+};
+
 const iconMap = {
   calendar: FiCalendar,
   check: FiCheckCircle,
   dollar: FiDollarSign,
-  clock: FiClock,
+  clock: FiTrendingUp,
   users: FiUsers,
+  image: FiImage,
 };
 
 const featureIconMap = {
   calendar: FiCalendar,
-  camera: FiCamera,
   users: FiUsers,
   link: FiLink,
-  note: FiClipboard, // Assuming FiClipboard for 'note' if not explicitly defined
+  note: FiClipboard,
+};
+
+const metricCardLinks: Record<string, string> = {
+  "Upcoming Events": "/admin/event-managements",
+  "Events Done": "/admin/event-managements",
+  "Payment Received": "/admin/finance",
+  "Due Payment": "/admin/finance",
+  "Total Staff": "/admin/staff",
+  "Photo Library": "/admin/pose-library",
+  "Pose Library": "/admin/pose-library",
 };
 
 const formatCurrency = (value: number) => `৳${value.toLocaleString("en-BD")}`;
 
 export default function DashboardPage() {
   const [metrics, setMetrics] = useState<DashboardMetric[]>([]);
-  const [upcomingEvents, setUpcomingEvents] = useState<DashboardEvent[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEventItem[]>([]);
   const [staffFeatures, setStaffFeatures] = useState<StaffFeature[]>([]);
-  const [calendarEvents, setCalendarEvents] = useState<DashboardEvent[]>([]);
-  const [calendarLoading, setCalendarLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserRole = async () => {
-      try {
-        const response = await fetch("/api/auth/me");
-        if (response.ok) {
-          const userData = await response.json();
-          setUserRole(userData.user?.accessRole);
-        }
-      } catch (error) {
-        console.error("Failed to fetch user role", error);
+      const response = await fetch("/api/auth/me");
+      if (response.ok) {
+        const userData = await response.json();
+        setUserRole(userData.user?.accessRole);
       }
     };
     fetchUserRole();
@@ -112,104 +94,89 @@ export default function DashboardPage() {
     const loadDashboard = async () => {
       try {
         const response = await fetch("/api/admin/dashboard");
-        if (!response.ok) {
-          throw new Error("Failed to load dashboard data");
-        }
+        if (!response.ok) throw new Error("Failed to load dashboard data");
         const result = await response.json();
         if (result.success) {
-          setMetrics(result.data.metrics || []);
-          setUpcomingEvents(result.data.upcomingEvents || []);
+          const data = result.data as DashboardResponse;
+          setMetrics(data.metrics || []);
+          setUpcomingEvents(data.upcomingEvents || []);
         }
-      } catch (error) {
-        console.error("Error loading dashboard", error);
       } finally {
         setLoading(false);
       }
     };
-
     loadDashboard();
   }, []);
 
   useEffect(() => {
     const loadStaffFeatures = async () => {
-      try {
-        const response = await fetch("/api/admin/staff-features");
-        if (!response.ok) {
-          throw new Error("Failed to load staff features");
-        }
+      const response = await fetch("/api/admin/staff-features");
+      if (response.ok) {
         const result = await response.json();
         if (result.success) {
           setStaffFeatures(result.data || []);
         }
-      } catch (error) {
-        console.error("Error loading staff features", error);
       }
     };
-
     loadStaffFeatures();
   }, []);
 
-  useEffect(() => {
-    const loadCalendarEvents = async () => {
-      try {
-        const response = await fetch("/api/event-managements");
-        if (!response.ok) {
-          throw new Error("Failed to load calendar events");
-        }
-        const result = await response.json();
-        setCalendarEvents(result || []);
-      } catch (error) {
-        console.error("Error loading calendar events", error);
-      } finally {
-        setCalendarLoading(false);
-      }
-    };
-
-    loadCalendarEvents();
-  }, []);
-
-  const eventMap = useMemo(() => {
-    return calendarEvents.reduce<Record<string, DashboardEvent[]>>(
-      (map, event) => {
-        if (!event.date) return map;
-        const key = format(new Date(event.date), "yyyy-MM-dd");
-        if (!map[key]) {
-          map[key] = [];
-        }
-        map[key].push(event);
-        return map;
-      },
-      {},
-    );
-  }, [calendarEvents]);
-  
   const visibleStaffFeatures = useMemo(() => {
     if (!userRole) return [];
-    if (userRole === 'admin') return staffFeatures;
-    return staffFeatures.filter(feature => feature.audience === 'staff' || feature.audience === 'all');
+    const filteredFeatures = staffFeatures.filter(
+      (feature) =>
+        feature.title !== "Upcoming Events" &&
+        feature.title !== "Pose Library" &&
+        feature.title !== "Team Roster",
+    );
+    if (userRole === "admin") return filteredFeatures;
+    return filteredFeatures.filter(
+      (feature) => feature.audience === "staff" || feature.audience === "all",
+    );
   }, [staffFeatures, userRole]);
 
-  const selectedDateKey = format(selectedDate, "yyyy-MM-dd");
-  const selectedDayEvents = eventMap[selectedDateKey] || [];
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(monthStart);
-  const startDate = startOfWeek(monthStart);
-  const endDate = endOfWeek(monthEnd);
+  const adminPanels = [
+    {
+      title: "Booking Management",
+      description: "Open bookings, shifts, and payments.",
+      href: "/admin/event-managements",
+    },
+    {
+      title: "Invoices",
+      description: "View and download invoices.",
+      href: "/admin/invoices",
+    },
+    {
+      title: "Photo Gallery",
+      description: "Browse poses and reference boards.",
+      href: "/admin/pose-library",
+    },
+    {
+      title: "Finance",
+      description: "Check revenue and due totals.",
+      href: "/admin/finance",
+    },
+    {
+      title: "Staff",
+      description: "Manage the team and access.",
+      href: "/admin/staff",
+    },
+  ];
 
   return (
     <AdminLayout>
-      <div className="relative max-w-7xl mx-auto space-y-4 sm:space-y-6 pb-12 text-neutral-200 p-4">
-        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none translate-y-[-50%]" />
-        <div className="absolute bottom-1/4 right-0 w-[500px] h-[500px] bg-orange-500/5 rounded-full blur-[150px] pointer-events-none" />
+      <div className="relative mx-auto max-w-7xl space-y-4 p-4 pb-12 text-neutral-200 sm:space-y-6">
+        <div className="pointer-events-none absolute top-0 left-1/4 h-[400px] w-[400px] translate-y-[-50%] rounded-full bg-orange-600/10 blur-[120px]" />
+        <div className="pointer-events-none absolute right-0 bottom-1/4 h-[500px] w-[500px] rounded-full bg-orange-500/5 blur-[150px]" />
 
-        <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pb-4 border-b border-white/10">
+        <div className="relative z-10 flex flex-col items-start justify-between gap-4 border-b border-white/10 pb-4 sm:flex-row sm:items-end">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-br from-white to-neutral-400 tracking-tight">
+            <h1 className="bg-clip-text text-2xl font-bold tracking-tight text-transparent bg-gradient-to-br from-white to-neutral-400 sm:text-3xl">
               Admin Dashboard
             </h1>
-            <p className="text-sm text-neutral-400 mt-2 max-w-md leading-relaxed">
-              Monitor live event activity, payment status, and the latest client
-              orders from your database.
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-neutral-400">
+              Jump straight to the correct admin panel cards and manage event
+              workflows from one place.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -217,13 +184,13 @@ export default function DashboardPage() {
               <>
                 <Link
                   href="/admin/event-managements/new"
-                  className="flex items-center gap-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white px-4 py-2 rounded-lg text-xs font-semibold transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)]"
+                  className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-orange-600 to-orange-500 px-4 py-2 text-xs font-semibold text-white shadow-[0_0_20px_rgba(234,88,12,0.3)] transition-all hover:from-orange-500 hover:to-orange-400"
                 >
                   <FiPlus size={14} /> New Event
                 </Link>
                 <Link
                   href="/admin/invoices"
-                  className="flex items-center gap-2 bg-[#0A0A0A] border border-white/10 hover:border-orange-500/50 hover:bg-white/5 text-white px-4 py-2 rounded-lg text-xs font-semibold transition-all"
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-[#0A0A0A] px-4 py-2 text-xs font-semibold text-white transition-all hover:border-orange-500/50 hover:bg-white/5"
                 >
                   <FiFileText size={14} /> Create Invoice
                 </Link>
@@ -232,96 +199,85 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Metrics Grid */}
-        <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div className="relative z-10 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 sm:gap-4">
           {loading
-            ? Array.from({ length: 4 }).map((_, index) => (
+            ? Array.from({ length: 6 }).map((_, index) => (
                 <div
                   key={index}
-                  className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-3 sm:p-4 animate-pulse"
+                  className="animate-pulse rounded-2xl border border-white/5 bg-[#0A0A0A]/80 p-2.5 sm:p-4"
                 >
-                  <div className="h-2.5 w-16 rounded bg-white/10 mb-3" />
-                  <div className="h-7 w-16 rounded bg-white/10 mb-2" />
-                  <div className="h-2.5 w-24 rounded bg-white/10" />
+                  <div className="mb-2 h-2 w-14 rounded bg-white/10" />
+                  <div className="mb-1.5 h-6 w-14 rounded bg-white/10" />
+                  <div className="h-2 w-20 rounded bg-white/10" />
                 </div>
               ))
             : metrics.map((stat) => {
                 const Icon = iconMap[stat.icon];
+                const href = metricCardLinks[stat.label] || "/admin";
                 return (
-                  <div
+                  <Link
                     key={stat.label}
-                    className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-3 sm:p-4 hover:border-orange-500/30 transition-all duration-300 relative overflow-hidden group shadow-lg"
+                    href={href}
+                    className="group relative overflow-hidden rounded-2xl border border-white/5 bg-[#0A0A0A]/80 p-2.5 shadow-lg transition-all duration-300 hover:border-orange-500/30 sm:p-4"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] to-transparent pointer-events-none" />
-                    <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
-                      <Icon size={32} className="text-orange-500" />
-                    </div>
-
-                    <div className="flex justify-between items-start mb-3 relative z-10">
-                      <div className="p-2 bg-white/5 rounded-lg text-orange-500 border border-white/10 group-hover:bg-orange-500/10 transition-colors shadow-inner">
-                        <Icon className="w-4 h-4" />
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.04] to-transparent" />
+                    <div className="relative z-10 flex items-start justify-between gap-3">
+                      <div className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-orange-500 transition-colors group-hover:bg-orange-500/10">
+                        <Icon className="h-3.5 w-3.5" />
                       </div>
+                      <FiArrowRight className="mt-1.5 h-3.5 w-3.5 text-neutral-500 transition-transform group-hover:translate-x-0.5" />
                     </div>
-
-                    <div className="relative z-10">
-                      <h3 className="text-neutral-400 text-[9px] sm:text-[10px] uppercase tracking-widest font-bold mb-1 leading-tight">
+                    <div className="relative z-10 mt-2.5">
+                      <h3 className="mb-1 text-[8px] font-bold uppercase tracking-widest text-neutral-400 sm:text-[10px]">
                         {stat.label}
                       </h3>
-                      <p className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-300 mb-2 drop-shadow-sm break-words leading-none">
+                      <p className="mb-1.5 break-words bg-gradient-to-r from-white to-neutral-300 bg-clip-text text-lg font-black leading-none text-transparent sm:text-2xl">
                         {stat.kind === "currency"
                           ? formatCurrency(stat.value)
                           : stat.value}
                       </p>
-
-                      <div className="flex items-center text-[10px] sm:text-[11px] font-semibold text-neutral-500 leading-tight">
+                      <div className="flex items-center text-[9px] font-semibold leading-tight text-neutral-500 sm:text-[11px]">
                         <FiTrendingUp className="mr-1.5" />
                         {stat.detail}
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
         </div>
-        {/* Staff Features / Quick Links */}
+
         {visibleStaffFeatures.length > 0 && (
-          <div className="relative z-10 pt-4">
-            <h2 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">
+          <div className="relative z-10 pt-2">
+            <h2 className="mb-3 text-base font-bold text-white sm:mb-4 sm:text-lg">
               Quick Links
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4">
               {visibleStaffFeatures.map((feature) => {
                 const Icon =
-                  featureIconMap[
-                    feature.iconKey as keyof typeof featureIconMap
-                  ] || FiClipboard; // Fallback icon
-                const isPoseLibrary = feature.href === "/admin/poses";
-                const highlightClass =
-                  userRole === "staff" && isPoseLibrary
-                    ? "border-orange-500 shadow-[0_0_20px_rgba(234,88,12,0.5)]"
-                    : "";
-
+                  featureIconMap[feature.iconKey as keyof typeof featureIconMap] ||
+                  FiClipboard;
                 return (
                   <Link
                     href={feature.href}
                     key={feature._id}
-                    className={`bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-3 sm:p-4 hover:border-orange-500/30 transition-all duration-300 relative overflow-hidden group min-w-0 ${highlightClass}`}
+                    className="group relative min-w-0 overflow-hidden rounded-2xl border border-white/5 bg-[#0A0A0A]/80 p-2.5 transition-all duration-300 hover:border-orange-500/30 sm:p-4"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] to-transparent pointer-events-none" />
-                    <div className="flex items-start gap-2.5 sm:gap-3 relative z-10">
-                      <div className="shrink-0 p-2 bg-white/5 rounded-lg text-orange-500 border border-white/10 group-hover:bg-orange-500/10 transition-colors shadow-inner">
-                        <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.04] to-transparent" />
+                    <div className="relative z-10 flex items-start gap-2.5">
+                      <div className="shrink-0 rounded-lg border border-white/10 bg-white/5 p-1.5 text-orange-500 transition-colors group-hover:bg-orange-500/10">
+                        <Icon className="h-3.5 w-3.5 sm:h-5 sm:w-5" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-[11px] sm:text-sm md:text-base font-bold text-white leading-tight break-words">
+                        <h3 className="break-words text-[10px] font-bold leading-tight text-white sm:text-sm md:text-base">
                           {feature.title}
                         </h3>
-                        <p className="mt-1 text-[10px] sm:text-[11px] md:text-xs text-neutral-400 leading-snug break-words">
+                        <p className="mt-1 break-words text-[9px] leading-snug text-neutral-400 sm:text-[11px] md:text-xs">
                           {feature.description}
                         </p>
                       </div>
                     </div>
                     {feature.badge && (
-                      <span className="absolute top-3 right-3 px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full text-[10px] sm:text-[11px] font-semibold">
+                      <span className="absolute top-2.5 right-2.5 rounded-full bg-orange-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-orange-400 sm:text-[11px]">
                         {feature.badge}
                       </span>
                     )}
@@ -332,321 +288,35 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {userRole !== "staff" && (
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-          {/* Event Calendar (order-1 on mobile, order-2 on large) */}
-          <div className="md:col-span-1 space-y-6 order-1 lg:order-2">
-            <div className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-2xl shadow-2xl relative overflow-visible">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
+        <div className="relative z-10 pt-2">
+          <UpcomingEventsPanel events={upcomingEvents} compact={false} />
+        </div>
 
-              <div className="p-4 border-b border-white/5 relative z-10">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-bold text-white flex items-center gap-3">
-                      <div className="p-2 bg-orange-500/10 rounded-lg border border-orange-500/20">
-                        <FiCalendar className="text-base text-orange-500" />
-                      </div>
-                      Event Calendar
-                    </h2>
-                  </div>
-                  <div className="flex flex-col items-end gap-2 text-right">
-                    <div className="text-sm font-semibold text-white">
-                      {format(currentMonth, "MMMM yyyy")}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setCurrentMonth(subMonths(currentMonth, 1))
-                        }
-                        className="p-2 rounded-lg bg-white/5 hover:bg-orange-500/20 text-neutral-400 hover:text-orange-400 transition-all border border-transparent hover:border-orange-500/30"
-                      >
-                        <FiChevronLeft className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setCurrentMonth(addMonths(currentMonth, 1))
-                        }
-                        className="p-2 rounded-lg bg-white/5 hover:bg-orange-500/20 text-neutral-400 hover:text-orange-400 transition-all border border-transparent hover:border-orange-500/30"
-                      >
-                        <FiChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
-      </div>
-                </div>
-              </div>
-
-              <div className="p-4 relative z-10">
-                {calendarLoading ? (
-                  <div className="animate-pulse">
-                    <div className="flex justify-between items-center mb-4">
-                      <div className="h-4 bg-neutral-800 rounded w-1/3"></div>
-                      <div className="flex gap-2">
-                        <div className="h-8 w-8 bg-neutral-800 rounded-lg"></div>
-                        <div className="h-8 w-8 bg-neutral-800 rounded-lg"></div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-7 gap-1 text-center text-xs text-neutral-500 mb-3">
-                      {Array.from({ length: 7 }).map((_, index) => (
-                        <div key={index} className="h-3 bg-neutral-800 rounded w-4 mx-auto"></div>
-                      ))}
-                    </div>
-                    <div className="space-y-1">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <div key={i} className="grid grid-cols-7 gap-1">
-                          {Array.from({ length: 7 }).map((_, j) => (
-                            <div key={j} className="h-10 bg-neutral-800/50 rounded-lg"></div>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase tracking-widest text-neutral-500 mb-3">
-                      {Array.from({ length: 7 }).map((_, index) => {
-                        const dayLabel = format(
-                          addDays(startOfWeek(new Date()), index),
-                          "EE",
-                        );
-                        return <div key={index}>{dayLabel}</div>;
-                      })}
-                    </div>
-                    <div className="space-y-1">
-                      {(() => {
-                        const rows = [];
-                        let day = startDate;
-                        let days: React.ReactNode[] = [];
-                        while (day <= endDate) {
-                          for (let i = 0; i < 7; i++) {
-                            const formattedDate = format(day, "d");
-                            const dayKey = format(day, "yyyy-MM-dd");
-                            const hasEvents = Boolean(eventMap[dayKey]?.length);
-                            const cloneDay = new Date(day.getTime());
-                            const isSelected = isSameDay(
-                              cloneDay,
-                              selectedDate,
-                            );
-                            const isCurrentMonth = isSameMonth(
-                              cloneDay,
-                              monthStart,
-                            );
-                            const isToday = isSameDay(cloneDay, new Date());
-
-                            days.push(
-                              <button
-                                key={cloneDay.toString()}
-                                type="button"
-                                onClick={() => setSelectedDate(cloneDay)}
-                                className={`group relative flex h-10 w-full items-center justify-center rounded-lg transition-all duration-200 focus:outline-none active:scale-95 ${
-                                  isSelected
-                                    ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-[0_0_20px_rgba(234,88,12,0.35)]"
-                                    : isCurrentMonth
-                                    ? "bg-white/5 text-neutral-200 hover:bg-white/10"
-                                    : "bg-transparent text-neutral-500"
-                                }`}
-                                title={
-                                  hasEvents
-                                    ? `${eventMap[dayKey].length} event(s)`
-                                    : "No events"
-                                }
-                              >
-                                <span className="relative z-10 text-xs font-semibold">
-                                  {formattedDate}
-                                </span>
-                                {isToday && !isSelected ? (
-                                  <span className="absolute inset-x-1/4 bottom-1 h-0.5 rounded-full bg-orange-500/70"></span>
-                                ) : null}
-                                {hasEvents ? (
-                                  <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.35)]"></span>
-                                ) : null}
-
-                                {hasEvents ? (
-                                  <div className="pointer-events-none absolute left-1/2 top-full z-20 -translate-x-1/2 w-64 rounded-xl border border-white/10 bg-[#050505] p-3 text-left text-xs text-neutral-300 opacity-0 transition-opacity duration-200 group-hover:opacity-100 shadow-2xl">
-                                    <div className="font-semibold text-white mb-2">
-                                      Events
-                                    </div>
-                                    {eventMap[dayKey].map((event) => (
-                                      <div
-                                        key={event._id}
-                                        className="mb-2 last:mb-0"
-                                      >
-                                        <div className="font-semibold text-sm text-white">
-                                          {event.name}
-                                        </div>
-                                        <div className="text-[11px] text-neutral-400 leading-5">
-                                          {event.type || "Event"}
-                                          {event.location
-                                            ? ` • ${event.location}`
-                                            : ""}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : null}
-                              </button>,
-                            );
-                            day = addDays(day, 1);
-                          }
-
-                          rows.push(
-                            <div
-                              key={day.toString()}
-                              className="grid grid-cols-7 gap-1"
-                            >
-                              {days}
-                            </div>,
-                          );
-                          days = [];
-                        }
-                        return rows;
-                      })()}
-                    </div>
-
-                    <div className="mt-4 rounded-xl border border-white/10 bg-[#080808]/90 p-3 text-sm text-neutral-300">
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <p className="text-[11px] uppercase tracking-wider text-neutral-500">
-                            Selected date
-                          </p>
-                          <p className="mt-1 text-white font-semibold text-sm">
-                            {format(selectedDate, "MMMM d, yyyy")}
-                          </p>
-                        </div>
-                        <span className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] uppercase tracking-widest text-neutral-400">
-                          {selectedDayEvents.length} event
-                          {selectedDayEvents.length === 1 ? "" : "s"}
-                        </span>
-                      </div>
-                      {selectedDayEvents.length > 0 ? (
-                        <div className="space-y-2">
-                          {selectedDayEvents.map((event) => (
-                            <div
-                              key={event._id}
-                              className="rounded-lg bg-white/5 p-2"
-                            >
-                              <div className="font-semibold text-white text-sm">
-                                {event.name}
-                              </div>
-                              <div className="text-xs text-neutral-400 mt-1">
-                                {event.type || "Event"}
-                                {event.location ? ` · ${event.location}` : ""}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-neutral-500">
-                          No events for this day.
-                        </p>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Upcoming Events (order-2 on mobile, order-1 on large) */}
-          <div className="md:col-span-2 bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/5 rounded-2xl flex flex-col shadow-2xl overflow-hidden relative order-2 lg:order-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
-
-            <div className="p-4 border-b border-white/5 flex justify-between items-center relative z-10">
-              <div>
-                <h2 className="text-lg font-bold text-white flex items-center gap-3">
-                  <div className="p-2 bg-orange-500/10 rounded-lg border border-orange-500/20">
-                    <FiCalendar className="text-base text-orange-500" />
-                  </div>
-                  Upcoming Events
-                </h2>
-              </div>
+        <div className="relative z-10 pt-2">
+          <h2 className="mb-3 text-base font-bold text-white sm:mb-4 sm:text-lg">
+            Admin Panels
+          </h2>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-5">
+            {adminPanels.map((panel) => (
               <Link
-                href="/admin/event-managements"
-                className="text-sm font-semibold text-neutral-400 hover:text-orange-400 transition-colors"
+                key={panel.href}
+                href={panel.href}
+                className="group rounded-2xl border border-white/5 bg-[#0A0A0A]/80 p-2.5 transition-all duration-300 hover:border-orange-500/30 hover:bg-white/[0.07] sm:p-4"
               >
-                View All
+                <div className="text-[10px] font-semibold leading-tight text-white sm:text-sm">
+                  {panel.title}
+                </div>
+                <div className="mt-1 text-[9px] leading-snug text-neutral-400 sm:text-xs">
+                  {panel.description}
+                </div>
+                <div className="mt-2 inline-flex items-center gap-1 text-[9px] font-semibold text-orange-400 sm:text-xs">
+                  Open{" "}
+                  <FiArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                </div>
               </Link>
-            </div>
-
-            <div className="overflow-x-auto relative z-10">
-              <table className="w-full min-w-[640px] text-left border-collapse text-sm">
-                <thead>
-                  <tr className="bg-[#050505]/50 border-b border-white/5 text-neutral-400 uppercase tracking-wider text-xs font-semibold">
-                    <th className="p-4">Event</th>
-                    <th className="p-4">Date</th>
-                    <th className="p-4 hidden sm:table-cell">Location</th>
-                    <th className="p-4 hidden sm:table-cell">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {loading ? (
-                    Array.from({ length: 3 }).map((_, i) => (
-                      <tr key={i} className="animate-pulse">
-                        <td className="p-4">
-                          <div className="h-4 bg-neutral-800 rounded w-3/4"></div>
-                          <div className="h-3 bg-neutral-800/50 rounded w-1/2 mt-2"></div>
-                        </td>
-                        <td className="p-4">
-                          <div className="h-4 bg-neutral-800 rounded w-1/2"></div>
-                        </td>
-                        <td className="p-4 hidden sm:table-cell">
-                          <div className="h-4 bg-neutral-800 rounded w-2/3"></div>
-                        </td>
-                        <td className="p-4 hidden sm:table-cell">
-                          <div className="h-4 bg-neutral-800 rounded w-1/3"></div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : upcomingEvents.length > 0 ? (
-                    upcomingEvents.map((event) => (
-                      <tr
-                        key={event._id}
-                        className="hover:bg-white/[0.02] transition-colors group"
-                      >
-                        <td className="p-4">
-                          <div className="font-bold text-white text-sm">
-                            {event.name}
-                          </div>
-                          <div className="text-xs text-neutral-500 mt-1 font-medium">
-                            {event.type || "Event"}
-                            {event.clientName ? ` • ${event.clientName}` : ""}
-                          </div>
-                        </td>
-                        <td className="p-4 text-neutral-300 font-medium text-sm">
-                          {event.date
-                            ? new Date(event.date).toLocaleDateString("en-BD", {
-                                month: "short",
-                                day: "numeric",
-                              })
-                            : "—"}
-                        </td>
-                        <td className="p-4 text-neutral-300 font-medium text-sm hidden sm:table-cell">
-                          {event.location || "—"}
-                        </td>
-                        <td className="p-4 hidden sm:table-cell">
-                          <span className="px-2.5 py-1 rounded-lg text-xs font-bold border text-amber-400 bg-amber-400/10 border-amber-400/20">
-                            {event.status || "Pending"}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        className="p-4 text-center text-neutral-400"
-                      >
-                        No upcoming events yet.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            ))}
           </div>
         </div>
-        )}
       </div>
     </AdminLayout>
   );

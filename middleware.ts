@@ -4,7 +4,15 @@ import {
   verifySessionToken,
 } from "./lib/session";
 
-const STAFF_ALLOWED_ADMIN_PAGES = ["/admin", "/admin/events", "/admin/poses"];
+const STAFF_ALLOWED_ADMIN_PAGES = [
+  "/admin",
+  "/admin/events",
+  "/admin/event-managements",
+  "/admin/staff",
+  "/admin/poses",
+  "/admin/photo-drive",
+  "/admin/pose-library",
+];
 
 function isUnderPath(pathname: string, route: string) {
   return pathname === route || pathname.startsWith(`${route}/`);
@@ -93,18 +101,33 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin", request.url));
   }
 
-  if (isApi && isAdminOnlyApi(pathname)) {
-    return NextResponse.json(
-      { success: false, error: "Forbidden" },
-      { status: 403 },
-    );
-  }
+  if (isApi) {
+    const isStaffAllowedGet =
+      request.method === "GET" &&
+      (isUnderPath(pathname, "/api/admin/staff") ||
+        isUnderPath(pathname, "/api/staff") ||
+        isUnderPath(pathname, "/api/admin/photo-drive") ||
+        isUnderPath(pathname, "/api/photo-drive") ||
+        isUnderPath(pathname, "/api/event-managements") ||
+        isUnderPath(pathname, "/api/admin/event-managements"));
 
-  if (isApi && isReadOnlyApi(pathname) && request.method !== "GET") {
-    return NextResponse.json(
-      { success: false, error: "Forbidden" },
-      { status: 403 },
-    );
+    if (isStaffAllowedGet) {
+      return NextResponse.next();
+    }
+
+    if (isAdminOnlyApi(pathname)) {
+      return NextResponse.json(
+        { success: false, error: "Forbidden" },
+        { status: 403 },
+      );
+    }
+
+    if (isReadOnlyApi(pathname) && request.method !== "GET") {
+      return NextResponse.json(
+        { success: false, error: "Forbidden" },
+        { status: 403 },
+      );
+    }
   }
 
   return NextResponse.next();

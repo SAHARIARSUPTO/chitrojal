@@ -4,6 +4,9 @@ import Navbar from "./components/navbar/page";
 import Footer from "./components/footer/page";
 import HomeClient from "./components/home/home-client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const buildVideoThumbnailUrl = (sourceUrl: string) =>
   `/api/video-thumbnail?url=${encodeURIComponent(sourceUrl)}`;
 

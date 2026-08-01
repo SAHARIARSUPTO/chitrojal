@@ -1,9 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
-// Assuming you have these components in your project
 import Navbar from "../components/navbar/page";
 import Footer from "../components/footer/page";
 
@@ -13,6 +11,12 @@ import {
   FiCalendar,
   FiCheckCircle,
   FiAlertCircle,
+  FiPlus,
+  FiTrash2,
+  FiMapPin,
+  FiUser,
+  FiClock,
+  FiFileText,
 } from "react-icons/fi";
 import {
   format,
@@ -28,24 +32,22 @@ import {
 } from "date-fns";
 
 const bengaliEventTypes = [
-  "বিয়ে",
-  "গায়ে হলুদ",
-  "বৌভাত",
-  "জন্মদিন",
+  "বিয়ে (Wedding)",
+  "গায়ে হলুদ (Halud)",
+  "বৌভাত (Reception)",
+  "জন্মদিন (Birthday)",
   "অন্নপ্রাশন",
-  "বিবাহবার্ষিকী",
-  "কর্পোরেট ইভেন্ট",
-  "অন্যান্য",
+  "বিবাহবার্ষিকী (Anniversary)",
+  "কর্পোরেট ইভেন্ট (Corporate Event)",
+  "অন্যান্য (Other)",
 ];
 
-const packageOptions = [
-  { name: "প্যাকেজ নির্বাচন করুন", slug: "" },
-  { name: "সিলভার প্যাকেজ", slug: "silver" },
-  { name: "গোল্ড প্যাকেজ", slug: "gold" },
-  { name: "প্লাটিনাম প্যাকেজ", slug: "platinum" },
-];
+export type ScheduleEntry = {
+  date: string;
+  shift: "Day" | "Night";
+};
 
-// Premium Custom Calendar Component
+// Custom Premium Calendar Component
 interface CalendarProps {
   selectedDate: Date | null;
   onDateChange: (date: Date) => void;
@@ -154,20 +156,24 @@ const Calendar = ({ selectedDate, onDateChange }: CalendarProps) => {
 };
 
 function BookingPageContents() {
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    location: "",
-    address: "",
-    eventType: bengaliEventTypes[0],
-    selectedPackage: "",
-    bookingDays: 1,
+    customerName: "",
+    customerPhone: "",
+    customerEmail: "",
+    customerAddress: "",
     eventDate: new Date(),
-    message: "",
+    eventShift: "Day" as "Day" | "Night",
+    eventProgramType: "Main Program" as "Main Program" | "Other Event",
+    otherEventName: "",
+    eventType: bengaliEventTypes[0],
+    eventName: "",
+    packageDetails: "",
+    eventLocation: "",
     googleMapsLink: "",
-    bookingSource: "Website",
     notes: "",
+    eventSchedule: [{ date: todayStr, shift: "Day" as "Day" | "Night" }],
     agreedToTerms: false,
   });
 
@@ -176,16 +182,7 @@ function BookingPageContents() {
     success: boolean;
     message: string;
   } | null>(null);
-  const searchParams = useSearchParams();
 
-  useEffect(() => {
-    const packageSlug = searchParams.get("package");
-    if (packageSlug) {
-      setFormData((prev) => ({ ...prev, selectedPackage: packageSlug }));
-    }
-  }, [searchParams]);
-
-  // Updated to handle both text inputs and checkboxes
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -200,13 +197,60 @@ function BookingPageContents() {
   };
 
   const handleDateChange = (date: Date) => {
-    setFormData((prev) => ({ ...prev, eventDate: date }));
+    const formattedDate = format(date, "yyyy-MM-dd");
+    setFormData((prev) => {
+      const nextSchedule = [...prev.eventSchedule];
+      if (nextSchedule.length > 0) {
+        nextSchedule[0] = { ...nextSchedule[0], date: formattedDate };
+      } else {
+        nextSchedule.push({ date: formattedDate, shift: prev.eventShift });
+      }
+      return {
+        ...prev,
+        eventDate: date,
+        eventSchedule: nextSchedule,
+      };
+    });
+  };
+
+  const updateScheduleEntry = (
+    index: number,
+    field: keyof ScheduleEntry,
+    val: string,
+  ) => {
+    setFormData((prev) => {
+      const next = [...prev.eventSchedule];
+      next[index] = { ...next[index], [field]: val };
+      return { ...prev, eventSchedule: next };
+    });
+  };
+
+  const addScheduleEntry = () => {
+    setFormData((prev) => ({
+      ...prev,
+      eventSchedule: [
+        ...prev.eventSchedule,
+        { date: format(prev.eventDate, "yyyy-MM-dd"), shift: "Day" },
+      ],
+    }));
+  };
+
+  const removeScheduleEntry = (index: number) => {
+    setFormData((prev) => {
+      const filtered = prev.eventSchedule.filter((_, i) => i !== index);
+      return {
+        ...prev,
+        eventSchedule:
+          filtered.length > 0
+            ? filtered
+            : [{ date: format(prev.eventDate, "yyyy-MM-dd"), shift: "Day" }],
+      };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Extra safety check for terms
     if (!formData.agreedToTerms) {
       setSubmitStatus({
         success: false,
@@ -221,21 +265,28 @@ function BookingPageContents() {
 
     try {
       const payload = {
-        customerName: formData.name,
-        customerEmail: formData.email,
-        customerPhone: formData.phone,
-        customerAddress: formData.address || formData.location,
-        eventLocation: formData.location,
+        customerName: formData.customerName,
+        customerPhone: formData.customerPhone,
+        customerEmail: formData.customerEmail,
+        customerAddress: formData.customerAddress,
         eventDate: formData.eventDate,
-        package: formData.selectedPackage || formData.eventType,
-        packageDetails: formData.message,
-        totalAmount: 0,
-        advanceAmount: 0,
-        paidAmount: 0,
-        bookingSource: formData.bookingSource || "Website",
-        notes: formData.notes || formData.message,
+        eventShift: formData.eventShift,
+        eventProgramType: formData.eventProgramType,
+        otherEventName: formData.otherEventName,
+        eventType: formData.eventType,
+        eventName:
+          formData.eventName ||
+          `${formData.customerName} - ${formData.eventType}`,
+        package: formData.eventType || "Standard Booking",
+        packageDetails: formData.packageDetails,
+        eventLocation: formData.eventLocation,
         googleMapsLink: formData.googleMapsLink,
-        eventName: `${formData.name} - ${formData.eventType}`,
+        notes: formData.notes,
+        eventSchedule: formData.eventSchedule.map((s) => ({
+          date: s.date || format(formData.eventDate, "yyyy-MM-dd"),
+          shift: s.shift,
+        })),
+        bookingSource: "Website Booking Form",
         createdFromBooking: true,
       };
 
@@ -251,9 +302,8 @@ function BookingPageContents() {
         setSubmitStatus({
           success: true,
           message:
-            "আপনার বুকিং অনুরোধ সফলভাবে জমা হয়েছে! আমরা শীঘ্রই আপনার সাথে যোগাযোগ করব।",
+            "আপনার বুকিং অনুরোধ সফলভাবে জমা হয়েছে! আমাদের টিম শীঘ্রই আপনার সাথে যোগাযোগ করবে।",
         });
-        // Optional: Reset form fields here
       } else {
         throw new Error(result.message || "Something went wrong");
       }
@@ -264,30 +314,34 @@ function BookingPageContents() {
       }
       setSubmitStatus({
         success: false,
-        message: message,
+        message,
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const labelStyle =
+    "text-xs uppercase tracking-wider text-neutral-400 font-semibold mb-2 block";
+  const inputStyle =
+    "w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white placeholder-neutral-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner";
+
   return (
     <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8 max-w-7xl relative z-10">
       {/* Header Section */}
-      <div className="text-center mb-16">
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white via-orange-200 to-orange-600 mb-6 drop-shadow-lg tracking-tight">
-          ইভেন্ট বুকিং
+      <div className="text-center mb-14">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white via-orange-200 to-orange-600 mb-4 drop-shadow-lg tracking-tight">
+          ইভেন্ট বুকিং ফরম
         </h1>
-        <p className="text-neutral-400 text-lg md:text-xl font-medium max-w-2xl mx-auto leading-relaxed">
-          আপনার বিশেষ দিনটিকে ফ্রেমবন্দি করতে আজই আপনার পছন্দের তারিখ ও প্যাকেজ
-          নির্বাচন করুন।
+        <p className="text-neutral-400 text-base md:text-xl font-medium max-w-2xl mx-auto leading-relaxed">
+          আপনার বিশেষ দিনের ছবি ও ভিডিওগ্রাফি বুকিং করতে নিচের তথ্যগুলো দিয়ে ফরমটি পূরণ করুন।
         </p>
       </div>
 
       <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
         {/* Calendar Section */}
         <div className="lg:col-span-5 order-first lg:order-last">
-          <div className="sticky top-32 space-y-6">
+          <div className="sticky top-28 space-y-6">
             <div className="flex items-center gap-3 text-white">
               <div className="p-3 bg-orange-500/10 rounded-xl border border-orange-500/20">
                 <FiCalendar className="w-6 h-6 text-orange-500" />
@@ -295,7 +349,7 @@ function BookingPageContents() {
               <div>
                 <h3 className="text-xl font-bold">তারিখ নির্বাচন করুন</h3>
                 <p className="text-sm text-neutral-400">
-                  উপলব্ধ তারিখগুলো থেকে আপনার ইভেন্টের দিনটি বেছে নিন
+                  ক্যালেন্ডার থেকে আপনার ইভেন্টের প্রধান তারিখ নির্বাচন করুন
                 </p>
               </div>
             </div>
@@ -307,204 +361,279 @@ function BookingPageContents() {
         </div>
 
         {/* Form Section */}
-        <div className="lg:col-span-7 bg-[#0A0A0A]/60 backdrop-blur-xl border border-white/5 rounded-[2.5rem] p-6 sm:p-10 shadow-2xl relative">
+        <div className="lg:col-span-7 bg-[#0A0A0A]/70 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-6 sm:p-10 shadow-2xl relative">
           <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-white/[0.04] to-transparent pointer-events-none"></div>
 
           <form onSubmit={handleSubmit} className="relative space-y-8">
-            {/* Personal Info Grid */}
-            <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest text-neutral-400 font-semibold pl-1">
-                  আপনার নাম
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  required
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white placeholder-neutral-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner"
-                  placeholder="e.g. Supto"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest text-neutral-400 font-semibold pl-1">
-                  ইমেইল
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  required
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white placeholder-neutral-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner"
-                  placeholder="hello@example.com"
-                />
+            {/* Section 1: Personal Details */}
+            <div className="space-y-4 border-b border-white/10 pb-6">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <FiUser className="text-orange-500" /> ক্লায়েন্ট তথ্য (Customer Info)
+              </h3>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div>
+                  <label className={labelStyle}>আপনার নাম (Customer Name) *</label>
+                  <input
+                    type="text"
+                    name="customerName"
+                    required
+                    value={formData.customerName}
+                    onChange={handleInputChange}
+                    className={inputStyle}
+                    placeholder="আপনার পূর্ণ নাম"
+                  />
+                </div>
+                <div>
+                  <label className={labelStyle}>ফোন নম্বর (Phone Number) *</label>
+                  <input
+                    type="tel"
+                    name="customerPhone"
+                    required
+                    value={formData.customerPhone}
+                    onChange={handleInputChange}
+                    className={inputStyle}
+                    placeholder="+880 1XXX XXXXXX"
+                  />
+                </div>
+                <div>
+                  <label className={labelStyle}>ইমেইল (Email Address)</label>
+                  <input
+                    type="email"
+                    name="customerEmail"
+                    value={formData.customerEmail}
+                    onChange={handleInputChange}
+                    className={inputStyle}
+                    placeholder="example@mail.com"
+                  />
+                </div>
+                <div>
+                  <label className={labelStyle}>ঠিকানা (Address)</label>
+                  <input
+                    type="text"
+                    name="customerAddress"
+                    value={formData.customerAddress}
+                    onChange={handleInputChange}
+                    className={inputStyle}
+                    placeholder="আপনার বর্তমান বা স্থায়ী ঠিকানা"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest text-neutral-400 font-semibold pl-1">
-                  ফোন নম্বর
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  required
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white placeholder-neutral-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner"
-                  placeholder="+880 1XXX XXXXXX"
-                />
+            {/* Section 2: Event Details */}
+            <div className="space-y-4 border-b border-white/10 pb-6">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <FiClock className="text-orange-500" /> ইভেন্ট সংক্রান্ত বিবরণ (Event Details)
+              </h3>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div>
+                  <label className={labelStyle}>প্রধান তারিখ (Main Event Date)</label>
+                  <input
+                    type="date"
+                    value={format(formData.eventDate, "yyyy-MM-dd")}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        handleDateChange(new Date(e.target.value));
+                      }
+                    }}
+                    className={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label className={labelStyle}>প্রধান শিফট (Main Event Shift)</label>
+                  <select
+                    name="eventShift"
+                    value={formData.eventShift}
+                    onChange={handleInputChange}
+                    className={inputStyle}
+                  >
+                    <option value="Day">Day Shift (দিন)</option>
+                    <option value="Night">Night Shift (রাত)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelStyle}>প্রোগ্রাম টাইপ (Program Type)</label>
+                  <select
+                    name="eventProgramType"
+                    value={formData.eventProgramType}
+                    onChange={handleInputChange}
+                    className={inputStyle}
+                  >
+                    <option value="Main Program">Main Program (মূল প্রোগ্রাম)</option>
+                    <option value="Other Event">Other Event (অন্যান্য প্রোগ্রাম)</option>
+                  </select>
+                </div>
+                {formData.eventProgramType === "Other Event" && (
+                  <div>
+                    <label className={labelStyle}>অন্যান্য প্রোগ্রামের নাম</label>
+                    <input
+                      type="text"
+                      name="otherEventName"
+                      value={formData.otherEventName}
+                      onChange={handleInputChange}
+                      className={inputStyle}
+                      placeholder="যেমন: প্রাক-বিবাহ শুট, ঘরোয়া অনুষ্ঠান"
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className={labelStyle}>ইভেন্টের ধরন (Event Type)</label>
+                  <select
+                    name="eventType"
+                    value={formData.eventType}
+                    onChange={handleInputChange}
+                    className={inputStyle}
+                  >
+                    {bengaliEventTypes.map((type) => (
+                      <option key={type} value={type} className="bg-[#0A0A0A]">
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelStyle}>ইভেন্ট শিরোনাম (Event Title)</label>
+                  <input
+                    type="text"
+                    name="eventName"
+                    value={formData.eventName}
+                    onChange={handleInputChange}
+                    className={inputStyle}
+                    placeholder="যেমন: সুপ্ত ও তানিয়ার শুভ বিবাহ"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest text-neutral-400 font-semibold pl-1">
-                  প্যাকেজ
-                </label>
-                <select
-                  name="selectedPackage"
-                  value={formData.selectedPackage}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner appearance-none cursor-pointer"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f97316'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                    backgroundPosition: "right 1rem center",
-                    backgroundRepeat: "no-repeat",
-                    backgroundSize: "1.5em 1.5em",
-                  }}
+            </div>
+
+            {/* Multi-day Event Schedule */}
+            <div className="space-y-4 border-b border-white/10 pb-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <FiCalendar className="text-orange-500" /> ইভেন্ট শিডিউল ও সময়সূচী
+                  </h3>
+                  <p className="text-xs text-neutral-400">
+                    একাধিক দিনের ইভেন্ট হলে নিচের বোতাম চেপে অতিরিক্ত তারিখ যোগ করুন।
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={addScheduleEntry}
+                  className="inline-flex items-center gap-1 text-xs font-bold px-3 py-2 rounded-xl bg-orange-500/10 border border-orange-500/30 text-orange-400 hover:bg-orange-500/20 transition-all"
                 >
-                  {packageOptions.map((pkg) => (
-                    <option
-                      key={pkg.slug}
-                      value={pkg.slug}
-                      disabled={pkg.slug === ""}
-                      className="bg-[#0A0A0A] text-white"
+                  <FiPlus /> তারিখ যোগ করুন
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {formData.eventSchedule.map((entry, index) => (
+                  <div
+                    key={index}
+                    className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_160px_auto] gap-3 items-end bg-white/[0.02] border border-white/5 rounded-2xl p-3"
+                  >
+                    <div>
+                      <label className="text-[10px] uppercase text-neutral-500 font-semibold mb-1 block">
+                        তারিখ #{index + 1}
+                      </label>
+                      <input
+                        type="date"
+                        value={entry.date}
+                        onChange={(e) =>
+                          updateScheduleEntry(index, "date", e.target.value)
+                        }
+                        className={inputStyle}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase text-neutral-500 font-semibold mb-1 block">
+                        শিফট #{index + 1}
+                      </label>
+                      <select
+                        value={entry.shift}
+                        onChange={(e) =>
+                          updateScheduleEntry(index, "shift", e.target.value)
+                        }
+                        className={inputStyle}
+                      >
+                        <option value="Day">Day Shift</option>
+                        <option value="Night">Night Shift</option>
+                      </select>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeScheduleEntry(index)}
+                      className="px-4 py-4 rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 text-sm font-semibold transition-all"
+                      title="Remove"
                     >
-                      {pkg.name}
-                    </option>
-                  ))}
-                </select>
+                      <FiTrash2 />
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs uppercase tracking-widest text-neutral-400 font-semibold pl-1">
-                ইভেন্টের ঠিকানা
-              </label>
-              <textarea
-                name="location"
-                rows={3}
-                required
-                value={formData.location}
-                onChange={handleInputChange}
-                className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white placeholder-neutral-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner resize-none"
-                placeholder="ভেন্যু বা বাসার ঠিকানা..."
-              ></textarea>
+            {/* Section 3: Location Details */}
+            <div className="space-y-4 border-b border-white/10 pb-6">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <FiMapPin className="text-orange-500" /> অবস্থান সংক্রান্ত তথ্য (Location Details)
+              </h3>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div>
+                  <label className={labelStyle}>ভেন্যু / স্থান (Event Location) *</label>
+                  <input
+                    type="text"
+                    name="eventLocation"
+                    required
+                    value={formData.eventLocation}
+                    onChange={handleInputChange}
+                    className={inputStyle}
+                    placeholder="যেমন: গ্র্যান্ড কমিউনিটি সেন্টার, ফেনী"
+                  />
+                </div>
+                <div>
+                  <label className={labelStyle}>গুগল ম্যাপস লিংক (Google Maps Link)</label>
+                  <input
+                    type="url"
+                    name="googleMapsLink"
+                    value={formData.googleMapsLink}
+                    onChange={handleInputChange}
+                    className={inputStyle}
+                    placeholder="https://maps.google.com/..."
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className={labelStyle}>বিশেষ চাহিদা বা সার্ভিস বিবরণ (Service Details)</label>
+                  <textarea
+                    name="packageDetails"
+                    rows={3}
+                    value={formData.packageDetails}
+                    onChange={handleInputChange}
+                    className={inputStyle}
+                    placeholder="ছবি/ভিডিওগ্রাফি সংক্রান্ত কোনো বিশেষ সুবিধা বা প্রয়োজনীয় সার্ভিস লিখে জানান..."
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest text-neutral-400 font-semibold pl-1">
-                  ইভেন্টের ধরন
-                </label>
-                <select
-                  name="eventType"
-                  value={formData.eventType}
+            {/* Section 4: Special Notes */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <FiFileText className="text-orange-500" /> অতিরিক্ত নির্দেশনা (Special Notes)
+              </h3>
+              <div>
+                <label className={labelStyle}>অন্যান্য মন্তব্য বা বিশেষ বার্তা</label>
+                <textarea
+                  name="notes"
+                  rows={3}
+                  value={formData.notes}
                   onChange={handleInputChange}
-                  className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner appearance-none cursor-pointer"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f97316'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                    backgroundPosition: "right 1rem center",
-                    backgroundRepeat: "no-repeat",
-                    backgroundSize: "1.5em 1.5em",
-                  }}
-                >
-                  {bengaliEventTypes.map((type) => (
-                    <option
-                      key={type}
-                      value={type}
-                      className="bg-[#0A0A0A] text-white"
-                    >
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest text-neutral-400 font-semibold pl-1">
-                  বুকিং এর দিন সংখ্যা
-                </label>
-                <input
-                  type="number"
-                  name="bookingDays"
-                  min="1"
-                  value={formData.bookingDays}
-                  onChange={handleInputChange}
-                  className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner"
+                  className={inputStyle}
+                  placeholder="কোনো বিশেষ অনুরোধ বা মন্তব্য থাকলে এখানে লিখুন..."
                 />
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest text-neutral-400 font-semibold pl-1">
-                  Google Maps Link
-                </label>
-                <input
-                  type="text"
-                  name="googleMapsLink"
-                  value={formData.googleMapsLink}
-                  onChange={handleInputChange}
-                  className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white placeholder-neutral-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner"
-                  placeholder="https://maps.google.com/..."
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest text-neutral-400 font-semibold pl-1">
-                  বুকিং সোর্স
-                </label>
-                <input
-                  type="text"
-                  name="bookingSource"
-                  value={formData.bookingSource}
-                  onChange={handleInputChange}
-                  className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white placeholder-neutral-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner"
-                  placeholder="Website / Referral / Facebook"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs uppercase tracking-widest text-neutral-400 font-semibold pl-1">
-                অতিরিক্ত নির্দেশনা
-              </label>
-              <textarea
-                name="notes"
-                value={formData.notes}
-                onChange={handleInputChange}
-                rows={4}
-                className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white placeholder-neutral-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner"
-                placeholder="কোনো বিশেষ অনুরোধ বা মন্তব্য"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs uppercase tracking-widest text-neutral-400 font-semibold pl-1">
-                আপনার বার্তা (ঐচ্ছিক)
-              </label>
-              <textarea
-                name="message"
-                rows={4}
-                value={formData.message}
-                onChange={handleInputChange}
-                className="w-full px-5 py-4 rounded-xl border border-white/10 bg-[#050505] text-white placeholder-neutral-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner resize-none"
-                placeholder="বিশেষ কোন রিকোয়ারমেন্ট থাকলে এখানে লিখুন..."
-              ></textarea>
-            </div>
-
-            {/* Terms and Conditions Agreement Checkbox */}
+            {/* Terms Agreement Checkbox */}
             <div className="flex items-start gap-3 p-4 rounded-xl bg-orange-500/5 border border-orange-500/10">
               <div className="flex items-center h-5 mt-0.5">
                 <input
@@ -535,7 +664,7 @@ function BookingPageContents() {
                   >
                     প্রাইভেসি পলিসি
                   </Link>{" "}
-                  পড়েছি এবং সম্মতি প্রদান করছি।
+                  পড়েছি এবং সম্মতি প্রদান করছি।
                 </label>
               </div>
             </div>
@@ -558,7 +687,7 @@ function BookingPageContents() {
               </div>
             )}
 
-            {/* Premium Submit Button */}
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={isSubmitting || !formData.agreedToTerms}
@@ -587,10 +716,10 @@ function BookingPageContents() {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       ></path>
                     </svg>
-                    প্রসেস হচ্ছে...
+                    বুকিং প্রসেস হচ্ছে...
                   </>
                 ) : (
-                  "বুকিং অনুরোধ পাঠান"
+                  "বুকিং অনুরোধ জমা দিন"
                 )}
               </span>
             </button>
@@ -611,7 +740,7 @@ export default function BookingPage() {
         <div className="absolute top-20 left-10 w-[500px] h-[500px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none"></div>
         <div className="absolute bottom-0 right-10 w-[600px] h-[600px] bg-orange-500/5 rounded-full blur-[150px] pointer-events-none"></div>
 
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div className="text-center text-neutral-400 py-12">লোড হচ্ছে...</div>}>
           <BookingPageContents />
         </Suspense>
       </main>

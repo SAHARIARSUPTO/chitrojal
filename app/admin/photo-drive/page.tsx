@@ -284,7 +284,7 @@ export default function PhotoDrivePage() {
                     htmlFor="order-search"
                     className="block text-sm font-medium text-neutral-400 mb-2"
                   >
-                    Search Order
+                    Search Booking
                   </label>
                   <input
                     id="order-search"
@@ -299,7 +299,7 @@ export default function PhotoDrivePage() {
                     htmlFor="order-select"
                     className="block text-sm font-medium text-neutral-400 mb-2"
                   >
-                    Select Completed Order (Optional)
+                    Select Completed Booking (Optional)
                   </label>
                   <select
                     id="order-select"
@@ -309,7 +309,7 @@ export default function PhotoDrivePage() {
                     disabled={ordersLoading || editingLink !== null}
                   >
                     <option value="">
-                      {ordersLoading ? "Loading orders..." : "Select an order"}
+                      {ordersLoading ? "Loading bookings..." : "Select a booking"}
                     </option>
                     {filteredOrders.map((order) => (
                       <option key={order._id} value={order._id}>

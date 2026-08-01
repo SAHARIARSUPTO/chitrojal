@@ -31,8 +31,10 @@ export async function POST(request: Request) {
     await newPayment.save();
 
     order.payments.push(newPayment._id);
-    order.paidAmount = (order.paidAmount || 0) + newPayment.amount;
-    order.dueAmount = order.totalAmount - order.paidAmount;
+    order.paidAmount = Number(order.paidAmount || 0) + newPayment.amount;
+    const discountAmount = Number(order.discountAmount || 0);
+    order.finalAmount = Math.max(Number(order.totalAmount || 0) - discountAmount, 0);
+    order.dueAmount = Math.max(order.finalAmount - order.paidAmount, 0);
 
     await order.save();
 

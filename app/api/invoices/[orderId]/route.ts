@@ -4,6 +4,8 @@ import mongooseConnect from "@/lib/mongoose";
 import Order from "@/models/Order";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { readFileSync } from "fs";
+import path from "path";
 
 type RouteContext = {
   params: Promise<{ orderId?: string }> | { orderId?: string };
@@ -48,6 +50,19 @@ export async function GET(request: Request, context: RouteContext) {
     const formatBDT = (amount: number) =>
       `BDT ${amount.toLocaleString("en-BD", { minimumFractionDigits: 2 })}`;
 
+    const scheduleText = Array.isArray(order.eventSchedule)
+      ? order.eventSchedule
+          .map(
+            (item: { date?: string | Date; shift?: string }) =>
+              `${item.date ? new Date(item.date).toLocaleDateString("en-BD") : "N/A"} - ${item.shift || "Day"} shift`,
+          )
+          .join(", ")
+      : "";
+    const finalAmount = Math.max(
+      Number(order.totalAmount || 0) - Number(order.discountAmount || 0),
+      0,
+    );
+
     const isPaid = !order.dueAmount || order.dueAmount <= 0;
     const statusText = isPaid ? "PAID IN FULL" : "PAYMENT PENDING";
     const statusColor = isPaid
@@ -83,20 +98,31 @@ export async function GET(request: Request, context: RouteContext) {
     // -------------------------------------------------------------
     // 1. BRAND HEADER & INVOICE META
     // -------------------------------------------------------------
-    addText("CHITROJAAL", margin, margin + 22, {
+    const logoPath = path.join(process.cwd(), "app/components/navbar/logo.png");
+    const logoBase64 = readFileSync(logoPath, { encoding: "base64" });
+    const logoBoxX = margin;
+    const logoBoxY = margin + 2;
+    const logoBoxSize = 72;
+    doc.setFillColor(15, 23, 42);
+    doc.roundedRect(logoBoxX, logoBoxY, logoBoxSize, logoBoxSize, 10, 10, "F");
+    doc.setFillColor(2, 6, 23);
+    doc.roundedRect(logoBoxX + 4, logoBoxY + 4, logoBoxSize - 8, logoBoxSize - 8, 8, 8, "F");
+    doc.addImage(logoBase64, "PNG", logoBoxX + 8, logoBoxY + 8, logoBoxSize - 16, logoBoxSize - 16);
+
+    addText("CHITROJAAL", margin + 90, margin + 22, {
       fontSize: 24,
       color: brandColor,
       weight: "bold",
     });
     addText(
       "Juma Market, Mizan Road, Feni 3900, Bangladesh",
-      margin,
+      margin + 90,
       margin + 42,
       { fontSize: 8.5, color: mutedText },
     );
     addText(
       "Phone: +880 1834-258375 | Web: www.chitrojaal.com",
-      margin,
+      margin + 90,
       margin + 55,
       { fontSize: 8.5, color: mutedText },
     );
@@ -193,7 +219,7 @@ export async function GET(request: Request, context: RouteContext) {
       { fontSize: 8.5, color: darkText, weight: "bold" },
     );
     addText(
-      `Payment Method: ${order.paymentMethod || "Bank Transfer / MFS"}`,
+      `Program: ${order.eventProgramType || "Main Program"}${order.otherEventName ? ` - ${order.otherEventName}` : ""}`,
       rightCardX + 12,
       gridY + 46,
       { fontSize: 8, color: bodyText },
@@ -210,6 +236,14 @@ export async function GET(request: Request, context: RouteContext) {
       gridY + 70,
       { fontSize: 8, color: bodyText },
     );
+    if (scheduleText) {
+      addText(
+        `Schedule: ${scheduleText}`,
+        margin,
+        gridY + cardHeight + 10,
+        { fontSize: 8, color: mutedText },
+      );
+    }
 
     // -------------------------------------------------------------
     // 3. TABULAR DELIVERABLES DATA
@@ -229,7 +263,7 @@ export async function GET(request: Request, context: RouteContext) {
       ],
       body: [
         [
-          `${order.package || "Creative Production Package"}\nIncludes high-resolution photographic coverage, cinematic editing, color grading, and digital gallery distribution.`,
+          `${order.package || "Creative Production Package"}`,
           "1 Package",
           formatBDT(order.totalAmount || 0),
           formatBDT(order.totalAmount || 0),
@@ -327,8 +361,8 @@ export async function GET(request: Request, context: RouteContext) {
     };
 
     addSummaryRow("Subtotal", formatBDT(order.totalAmount || 0));
+    addSummaryRow("Discount Applied", `- ${formatBDT(order.discountAmount || 0)}`, false, "#16A34A");
     addSummaryRow("Advance Paid", formatBDT(order.paidAmount || 0));
-    addSummaryRow("Discount Applied", "- BDT 0.00", false, "#16A34A");
 
     // Divider Line
     doc.setDrawColor(brandColor);
@@ -344,7 +378,7 @@ export async function GET(request: Request, context: RouteContext) {
     calcY += 16;
     addSummaryRow(
       "Total Due",
-      formatBDT(order.dueAmount || 0),
+      formatBDT(order.dueAmount || finalAmount),
       true,
       brandColor,
     );
@@ -353,26 +387,29 @@ export async function GET(request: Request, context: RouteContext) {
     // 5. TERMS & CONDITIONS
     // -------------------------------------------------------------
     const termsY = bottomGridY + 112;
-    const termsHeight = 78;
+    const termsHeight = 118;
 
     drawCard(margin, termsY, contentWidth, termsHeight);
-    addText("TERMS & SERVICE AGREEMENT", margin + 12, termsY + 16, {
+    addText("TERMS AND CONDITIONS", margin + 12, termsY + 16, {
       fontSize: 8,
       color: brandColor,
       weight: "bold",
     });
 
     const policies = [
-      "1. Payment Terms: Full balance must be cleared prior to releasing high-resolution media deliverables.",
-      "2. Delivery Schedule: Soft-copy previews within 5 days; final edited 4K output delivered in 21-28 business days.",
-      "3. Copyright & Intellectual Property: Chitrojaal retains raw media rights; client receives full non-commercial publishing rights.",
-      "4. Overtime & Operational Contingencies: Additional production hours will incur standard crew hourly rates.",
+      "Minimum 30% advance have to be paid for booking.",
+      "90% Payment must be cleared when event is finished.",
+      "No work will be done outside the time specified in the package details.",
+      "Extra payment have to be paid for work and extra time.",
+      "Images and videos captured by Chitrojaal can be shared across our social media channels.",
+      "Final image and video delivery will be completed within 21-28 working days after the event.",
+      "During the event, client has to provide us food and a proper place to rest at night.",
     ];
 
-    let pY = termsY + 30;
+    let pY = termsY + 28;
     policies.forEach((policy) => {
       addText(policy, margin + 12, pY, { fontSize: 7.5, color: bodyText });
-      pY += 11;
+      pY += 10;
     });
 
     // -------------------------------------------------------------

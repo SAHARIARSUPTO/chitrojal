@@ -1,10 +1,10 @@
 "use client";
-
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import CarouselCard from "./CarouselCard";
 import PackageCard from "./PackageCard";
 import FullscreenCarousel from "./FullscreenCarousel";
-import ImageGallery from "./ImageGallery"; // Import the new gallery component
+import ImageGallery from "./ImageGallery";
 
 const BentoGridHero = ({ carouselData, packageImages }) => {
   const [fullscreen, setFullscreen] = useState({
@@ -41,11 +41,16 @@ const BentoGridHero = ({ carouselData, packageImages }) => {
 
   return (
     <>
-      <section className="w-full bg-[#040404] p-4 md:p-6 lg:p-8">
+      <section id="gallery" className="w-full bg-[#040404] p-4 md:p-6 lg:p-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 lg:gap-8 max-w-7xl mx-auto">
           {/* Left Column */}
           <div className="md:col-span-5 flex flex-col gap-4 md:gap-6 lg:gap-8">
-            <div className="aspect-[3/4]">
+            <motion.div
+              initial={{ opacity: 0, y: 35 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.1, ease: [0.25, 0.1, 0.25, 1.0] }}
+              className="aspect-[3/4]"
+            >
               <CarouselCard
                 images={carouselData.portfolio.images}
                 title={carouselData.portfolio.title}
@@ -53,12 +58,19 @@ const BentoGridHero = ({ carouselData, packageImages }) => {
                 onClick={() =>
                   openGallery(
                     carouselData.portfolio.images,
-                    carouselData.portfolio.title,
+                    carouselData.portfolio.title
                   )
                 }
+                autoScroll={true}
+                intervalDuration={3500}
               />
-            </div>
-            <div className="aspect-[3/4] md:aspect-[4/3] flex-grow">
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 35 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.25, ease: [0.25, 0.1, 0.25, 1.0] }}
+              className="aspect-[3/4] flex-grow"
+            >
               <CarouselCard
                 images={carouselData.portraitLibrary.images}
                 title={carouselData.portraitLibrary.title}
@@ -66,25 +78,39 @@ const BentoGridHero = ({ carouselData, packageImages }) => {
                 onClick={() =>
                   openGallery(
                     carouselData.portraitLibrary.images,
-                    carouselData.portraitLibrary.title,
+                    carouselData.portraitLibrary.title
                   )
                 }
                 textClassName="[writing-mode:vertical-rl] !left-auto !bottom-auto top-6 right-6 md:top-8 md:right-8 transform-none"
                 titleClassName="tracking-[0.2em]"
                 subtitleClassName="tracking-[0.2em]"
+                autoScroll={true}
+                intervalDuration={4200}
               />
-            </div>
+            </motion.div>
           </div>
 
           {/* Right Column */}
           <div className="md:col-span-7 h-full flex flex-col gap-4 md:gap-6 lg:gap-8">
-            <div className="aspect-square">
+            <motion.div
+              initial={{ opacity: 0, y: 35 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2, ease: [0.25, 0.1, 0.25, 1.0] }}
+              className="aspect-square"
+            >
               <PackageCard
                 packageImages={packageImages}
                 onClick={() => openGallery(packageImages, "Our Packages")}
+                autoScroll={true}
+                intervalDuration={3800}
               />
-            </div>
-            <div className="aspect-[4/3]">
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 35 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.35, ease: [0.25, 0.1, 0.25, 1.0] }}
+              className="aspect-[16/10]"
+            >
               <CarouselCard
                 images={carouselData.landscapeLibrary.images}
                 title={carouselData.landscapeLibrary.title}
@@ -92,11 +118,14 @@ const BentoGridHero = ({ carouselData, packageImages }) => {
                 onClick={() =>
                   openGallery(
                     carouselData.landscapeLibrary.images,
-                    carouselData.landscapeLibrary.title,
+                    carouselData.landscapeLibrary.title
                   )
                 }
+                autoScroll={true}
+                intervalDuration={4500}
+                imageClassName="object-cover object-center"
               />
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
