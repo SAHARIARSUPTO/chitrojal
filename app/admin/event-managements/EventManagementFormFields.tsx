@@ -224,44 +224,7 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
             className={inputClass}
           />
         </div>
-        <div>
-          <label className={labelClass}>Main Event Shift</label>
-          <select
-            value={form.eventSchedule[0]?.shift || "Day"}
-            onChange={(e) => updateMainShift(e.target.value)}
-            className={inputClass}
-          >
-            <option value="Day">Day Shift</option>
-            <option value="Night">Night Shift</option>
-          </select>
-        </div>
-        <div>
-          <label className={labelClass}>Event Program</label>
-          <select
-            value={form.eventProgramType}
-            onChange={(e) =>
-              updateField(
-                "eventProgramType",
-                e.target.value as EventManagementFormValues["eventProgramType"],
-              )
-            }
-            className={inputClass}
-          >
-            <option value="Main Program">Main Program</option>
-            <option value="Other Event">Other Event</option>
-          </select>
-        </div>
-        {form.eventProgramType === "Other Event" ? (
-          <div>
-            <label className={labelClass}>Other Event Name</label>
-            <input
-              value={form.otherEventName}
-              onChange={(e) => updateField("otherEventName", e.target.value)}
-              className={inputClass}
-              placeholder="Other event name"
-            />
-          </div>
-        ) : null}
+        {/* Removed Main Event Shift and Event Program fields per request */}
         <div>
           <label className={labelClass}>Event Type</label>
           <input
@@ -277,7 +240,9 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
       <section className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.02] p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h3 className="text-sm font-semibold text-white">Event Schedule Dates</h3>
+            <h3 className="text-sm font-semibold text-white">
+              Event Schedule Dates
+            </h3>
             <p className="text-xs text-neutral-400">
               Add one or more event dates with Day or Night shift.
             </p>
@@ -301,7 +266,9 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
                 <input
                   type="date"
                   value={entry.date}
-                  onChange={(e) => updateSchedule(index, "date", e.target.value)}
+                  onChange={(e) =>
+                    updateSchedule(index, "date", e.target.value)
+                  }
                   className={inputClass}
                 />
               </div>
@@ -309,7 +276,9 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
                 <label className={labelClass}>Shift #{index + 1}</label>
                 <select
                   value={entry.shift}
-                  onChange={(e) => updateSchedule(index, "shift", e.target.value)}
+                  onChange={(e) =>
+                    updateSchedule(index, "shift", e.target.value)
+                  }
                   className={inputClass}
                 >
                   <option value="Day">Day shift</option>

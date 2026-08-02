@@ -36,16 +36,22 @@ type OrderRecord = EventManagementFormValues & {
 const formatMoney = (value: unknown) =>
   `৳${Number(value || 0).toLocaleString("en-BD")}`;
 
-const mapOrderToForm = (order: Partial<OrderRecord>): EventManagementFormValues => {
+const mapOrderToForm = (
+  order: Partial<OrderRecord>,
+): EventManagementFormValues => {
   const schedule =
     order.eventSchedule && order.eventSchedule.length > 0
       ? order.eventSchedule.map((entry) => ({
-          date: entry.date ? new Date(entry.date).toISOString().slice(0, 10) : "",
+          date: entry.date
+            ? new Date(entry.date).toISOString().slice(0, 10)
+            : "",
           shift: (entry.shift === "Night" ? "Night" : "Day") as "Day" | "Night",
         }))
       : [
           {
-            date: order.eventDate ? new Date(order.eventDate).toISOString().slice(0, 10) : "",
+            date: order.eventDate
+              ? new Date(order.eventDate).toISOString().slice(0, 10)
+              : "",
             shift: "Day" as const,
           },
         ];
@@ -53,7 +59,9 @@ const mapOrderToForm = (order: Partial<OrderRecord>): EventManagementFormValues 
   const totalAmount = Number(order.totalAmount || 0);
   const discountAmount = Number(order.discountAmount || 0);
   const paidAmount = Number(order.paidAmount || 0);
-  const dueAmount = Number(order.dueAmount || Math.max(totalAmount - discountAmount - paidAmount, 0));
+  const dueAmount = Number(
+    order.dueAmount || Math.max(totalAmount - discountAmount - paidAmount, 0),
+  );
 
   return {
     ...createEmptyEventForm(),
@@ -61,12 +69,16 @@ const mapOrderToForm = (order: Partial<OrderRecord>): EventManagementFormValues 
     customerPhone: order.customerPhone || "",
     customerEmail: order.customerEmail || "",
     customerAddress: order.customerAddress || "",
-    eventDate: order.eventDate ? new Date(order.eventDate).toISOString().slice(0, 10) : "",
+    eventDate: order.eventDate
+      ? new Date(order.eventDate).toISOString().slice(0, 10)
+      : "",
     eventSchedule: schedule,
     eventLocation: order.eventLocation || "",
     eventName: order.eventName || "",
     eventType: order.eventType || "",
-    eventProgramType: (order.eventProgramType as EventManagementFormValues["eventProgramType"]) || "Main Program",
+    eventProgramType:
+      (order.eventProgramType as EventManagementFormValues["eventProgramType"]) ||
+      "Main Program",
     otherEventName: order.otherEventName || "",
     package: order.package || "",
     packageDetails: order.packageDetails || "",
@@ -104,9 +116,8 @@ export default function EventManagementsPage() {
     method: "Cash",
     notes: "",
   });
-  const [form, setForm] = useState<EventManagementFormValues>(
-    createEmptyEventForm,
-  );
+  const [form, setForm] =
+    useState<EventManagementFormValues>(createEmptyEventForm);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -217,7 +228,9 @@ export default function EventManagementsPage() {
       <div className="relative mx-auto max-w-7xl space-y-6 p-4 pb-12 text-neutral-200 sm:p-6">
         <div className="flex flex-col gap-4 border-b border-white/10 pb-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold sm:text-3xl">Booking Management</h1>
+            <h1 className="text-2xl font-bold sm:text-3xl">
+              Booking Management
+            </h1>
             <p className="mt-1 text-sm text-neutral-400">
               Manage bookings, discounts, schedules, and payments.
             </p>
@@ -239,7 +252,7 @@ export default function EventManagementsPage() {
                   <th className="p-3 sm:p-4">Event</th>
                   <th className="p-3 sm:p-4 hidden sm:table-cell">Dates</th>
                   <th className="p-3 sm:p-4 hidden md:table-cell">Package</th>
-                  <th className="p-3 sm:p-4 hidden lg:table-cell">Program</th>
+                  {/* Program column removed */}
                   <th className="p-3 sm:p-4 hidden lg:table-cell">Discount</th>
                   <th className="p-3 sm:p-4 hidden xl:table-cell">Location</th>
                   <th className="p-3 sm:p-4 hidden md:table-cell">Total</th>
@@ -251,36 +264,63 @@ export default function EventManagementsPage() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={11} className="p-5 text-center text-neutral-500">
+                    <td
+                      colSpan={11}
+                      className="p-5 text-center text-neutral-500"
+                    >
                       Loading bookings...
                     </td>
                   </tr>
                 ) : orders.length > 0 ? (
                   orders.map((order) => (
-                    <tr key={order._id} className="border-b border-white/5 hover:bg-white/5">
+                    <tr
+                      key={order._id}
+                      className="border-b border-white/5 hover:bg-white/5"
+                    >
                       <td className="p-3 sm:p-4">
-                        <div className="font-medium text-white">{order.customerName}</div>
-                        <div className="text-xs text-neutral-500">{order.customerPhone}</div>
+                        <div className="font-medium text-white">
+                          {order.customerName}
+                        </div>
+                        <div className="text-xs text-neutral-500">
+                          {order.customerPhone}
+                        </div>
                       </td>
                       <td className="p-3 sm:p-4">
-                        <div className="font-medium text-neutral-200">{order.eventName || order.eventType}</div>
+                        <div className="font-medium text-neutral-200">
+                          {order.eventName || order.eventType}
+                        </div>
                         <div className="text-xs text-neutral-500">
                           {order.eventProgramType || "Main Program"}
-                          {order.otherEventName ? ` - ${order.otherEventName}` : ""}
+                          {order.otherEventName
+                            ? ` - ${order.otherEventName}`
+                            : ""}
                         </div>
                       </td>
                       <td className="hidden p-3 text-neutral-300 sm:table-cell">
                         {order.eventSchedule?.length
                           ? order.eventSchedule
-                              .map((entry) => `${entry.date ? new Date(entry.date).toLocaleDateString() : "N/A"} - ${entry.shift}`)
+                              .map(
+                                (entry) =>
+                                  `${
+                                    entry.date
+                                      ? new Date(
+                                          entry.date,
+                                        ).toLocaleDateString()
+                                      : "N/A"
+                                  } - ${entry.shift}`,
+                              )
                               .join(", ")
                           : order.eventDate
-                            ? new Date(order.eventDate).toLocaleDateString()
-                            : "N/A"}
+                          ? new Date(order.eventDate).toLocaleDateString()
+                          : "N/A"}
                       </td>
-                      <td className="hidden p-3 text-neutral-300 md:table-cell">{order.package}</td>
-                      <td className="hidden p-3 text-neutral-300 lg:table-cell">{order.eventProgramType}</td>
-                      <td className="hidden p-3 text-neutral-300 lg:table-cell">{formatMoney(order.discountAmount)}</td>
+                      <td className="hidden p-3 text-neutral-300 md:table-cell">
+                        {order.package}
+                      </td>
+                      {/* Program cell removed */}
+                      <td className="hidden p-3 text-neutral-300 lg:table-cell">
+                        {formatMoney(order.discountAmount)}
+                      </td>
                       <td className="hidden p-3 text-neutral-300 xl:table-cell">
                         {order.googleMapsLink ? (
                           <a
@@ -295,8 +335,12 @@ export default function EventManagementsPage() {
                           "N/A"
                         )}
                       </td>
-                      <td className="hidden p-3 text-neutral-300 md:table-cell">{formatMoney(order.totalAmount)}</td>
-                      <td className="hidden p-3 text-neutral-300 md:table-cell">{formatMoney(order.dueAmount)}</td>
+                      <td className="hidden p-3 text-neutral-300 md:table-cell">
+                        {formatMoney(order.totalAmount)}
+                      </td>
+                      <td className="hidden p-3 text-neutral-300 md:table-cell">
+                        {formatMoney(order.dueAmount)}
+                      </td>
                       <td className="p-3">
                         <span
                           className={`rounded-full px-2 py-1 text-xs ${getStatusClass(
@@ -344,7 +388,10 @@ export default function EventManagementsPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={11} className="p-5 text-center text-neutral-500">
+                    <td
+                      colSpan={11}
+                      className="p-5 text-center text-neutral-500"
+                    >
                       No bookings found.
                     </td>
                   </tr>
@@ -360,8 +407,12 @@ export default function EventManagementsPage() {
           <div className="h-[92vh] w-full overflow-hidden rounded-t-[1.5rem] border border-white/10 bg-[#0A0A0A] sm:h-auto sm:max-w-5xl sm:rounded-[1.5rem]">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-4 sm:px-6">
               <div>
-                <h2 className="text-lg font-semibold text-white">Edit booking</h2>
-                <p className="text-sm text-neutral-400">Mobile-friendly form for quick updates.</p>
+                <h2 className="text-lg font-semibold text-white">
+                  Edit booking
+                </h2>
+                <p className="text-sm text-neutral-400">
+                  Mobile-friendly form for quick updates.
+                </p>
               </div>
               <button
                 onClick={() => setEditingOrder(null)}
@@ -397,11 +448,21 @@ export default function EventManagementsPage() {
             <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
               <div>
                 <h2 className="text-lg font-semibold text-white">
-                  {paymentLoading ? "Loading payments..." : `Manage payments${paymentOrder ? ` for ${paymentOrder.eventName || paymentOrder.customerName}` : ""}`}
+                  {paymentLoading
+                    ? "Loading payments..."
+                    : `Manage payments${
+                        paymentOrder
+                          ? ` for ${
+                              paymentOrder.eventName ||
+                              paymentOrder.customerName
+                            }`
+                          : ""
+                      }`}
                 </h2>
                 {!paymentLoading && paymentOrder ? (
                   <p className="text-sm text-neutral-400">
-                    Due: {formatMoney(paymentOrder.dueAmount)} | Paid: {formatMoney(paymentOrder.paidAmount)}
+                    Due: {formatMoney(paymentOrder.dueAmount)} | Paid:{" "}
+                    {formatMoney(paymentOrder.paidAmount)}
                   </p>
                 ) : null}
               </div>
@@ -470,10 +531,13 @@ export default function EventManagementsPage() {
                         >
                           <div>
                             <p className="text-sm text-white">
-                              {new Date(payment.date).toLocaleDateString()} - {payment.method}
+                              {new Date(payment.date).toLocaleDateString()} -{" "}
+                              {payment.method}
                             </p>
                             {payment.notes ? (
-                              <p className="text-xs text-neutral-400">{payment.notes}</p>
+                              <p className="text-xs text-neutral-400">
+                                {payment.notes}
+                              </p>
                             ) : null}
                           </div>
                           <p className="text-sm font-semibold text-white">

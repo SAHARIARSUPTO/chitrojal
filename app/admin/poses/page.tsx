@@ -15,6 +15,7 @@ import {
   FiTrash2,
   FiChevronLeft,
   FiChevronRight,
+  FiMoreVertical,
 } from "react-icons/fi";
 import { useNotification } from "@/hooks/useNotification";
 
@@ -255,6 +256,25 @@ export default function PosesPage() {
   const [filteredPoses, setFilteredPoses] = useState<any[]>([]);
   const [totalImages, setTotalImages] = useState(0);
   const [canManagePoses, setCanManagePoses] = useState(false);
+  const [openFolderMenu, setOpenFolderMenu] = useState<string | null>(null);
+  const folderMenuRef = useRef<HTMLDivElement | null>(null);
+
+  // Close folder menu when clicking outside
+  useEffect(() => {
+    if (!openFolderMenu) return;
+    const onDocClick = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (!folderMenuRef.current) {
+        setOpenFolderMenu(null);
+        return;
+      }
+      if (!folderMenuRef.current.contains(target)) {
+        setOpenFolderMenu(null);
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [openFolderMenu]);
 
   useEffect(() => {
     const filtered = poses.filter((pose) =>
@@ -593,16 +613,14 @@ export default function PosesPage() {
                 </button>
               ) : null}
             </div>
-          ) : (
-            canManagePoses ? (
-              <button
-                onClick={() => setIsCreateFolderModalOpen(true)}
-                className="flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:shadow-[0_0_30px_rgba(234,88,12,0.5)] transform active:scale-95 border-none w-full md:w-auto"
-              >
-                <FiFolder size={18} /> Create Folder
-              </button>
-            ) : null
-          )}
+          ) : canManagePoses ? (
+            <button
+              onClick={() => setIsCreateFolderModalOpen(true)}
+              className="flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:shadow-[0_0_30px_rgba(234,88,12,0.5)] transform active:scale-95 border-none w-full md:w-auto"
+            >
+              <FiFolder size={18} /> Create Folder
+            </button>
+          ) : null}
         </div>
 
         {selectedFolder ? (
@@ -680,36 +698,74 @@ export default function PosesPage() {
                 folders.map((folder) => (
                   <div
                     key={folder._id}
-                    className="bg-[#0A0A0A] border border-white/5 rounded-2xl p-3 sm:p-4 hover:border-orange-500/30 transition-all duration-300 relative overflow-hidden group shadow-lg"
+                    className="bg-[#0A0A0A] border border-white/5 rounded-2xl p-3 sm:p-4 hover:border-orange-500/30 transition-all duration-300 relative overflow-visible group shadow-lg"
                   >
                     <button
                       type="button"
                       onClick={() => setSelectedFolder(folder)}
                       className="w-full text-left flex items-center gap-3"
                     >
-                      <FiFolder className="text-orange-500 shrink-0" size={18} />
+                      <FiFolder
+                        className="text-orange-500 shrink-0"
+                        size={18}
+                      />
                       <h3 className="font-bold text-sm sm:text-base text-white group-hover:text-orange-400 transition-colors truncate">
                         {folder.name}
                       </h3>
                     </button>
-                    {canManagePoses ? (
-                      <div className="mt-3 flex gap-2">
+                    {/* Three-dot menu for folder actions (shows for every folder) */}
+                    <div className="absolute top-3 right-3 z-20">
+                      <div className="relative">
                         <button
                           type="button"
-                          onClick={() => handleRenameFolder(folder._id, folder.name)}
-                          className="rounded-lg border border-white/10 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-white/5"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenFolderMenu(
+                              openFolderMenu === folder._id ? null : folder._id,
+                            );
+                          }}
+                          aria-label="Folder actions"
+                          className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300"
                         >
-                          Edit
+                          <FiMoreVertical />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteFolder(folder._id)}
-                          className="rounded-lg border border-red-500/20 px-2.5 py-1.5 text-[11px] font-semibold text-red-300 hover:bg-red-500/10"
-                        >
-                          Delete
-                        </button>
+                        {openFolderMenu === folder._id && (
+                          <div
+                            ref={folderMenuRef}
+                            data-folder-menu
+                            onClick={(e) => e.stopPropagation()}
+                            className="absolute right-0 mt-2 w-44 bg-[#050505] border border-white/10 rounded-lg p-2 shadow-lg z-50"
+                          >
+                            {canManagePoses ? (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    handleRenameFolder(folder._id, folder.name);
+                                    setOpenFolderMenu(null);
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/5 rounded"
+                                >
+                                  Rename
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    handleDeleteFolder(folder._id);
+                                    setOpenFolderMenu(null);
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded"
+                                >
+                                  Delete
+                                </button>
+                              </>
+                            ) : (
+                              <div className="px-3 py-2 text-sm text-neutral-400">
+                                View only
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    ) : null}
+                    </div>
                   </div>
                 ))
               ) : (

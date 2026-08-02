@@ -104,9 +104,17 @@ export default function EventManagementDetailPage() {
     window.URL.revokeObjectURL(url);
   };
 
-  const DetailItem = ({ label, value }: { label: string; value: React.ReactNode }) => (
+  const DetailItem = ({
+    label,
+    value,
+  }: {
+    label: string;
+    value: React.ReactNode;
+  }) => (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-      <dt className="text-xs uppercase tracking-[0.18em] text-neutral-400">{label}</dt>
+      <dt className="text-xs uppercase tracking-[0.18em] text-neutral-400">
+        {label}
+      </dt>
       <dd className="mt-2 text-sm text-neutral-100">{value ?? "N/A"}</dd>
     </div>
   );
@@ -140,18 +148,18 @@ export default function EventManagementDetailPage() {
           </div>
         </div>
 
-        {loading && <p className="text-neutral-400">Loading booking details...</p>}
+        {loading && (
+          <p className="text-neutral-400">Loading booking details...</p>
+        )}
         {error && <p className="text-sm text-red-400">{error}</p>}
 
         {order ? (
           <>
             <section className="rounded-[1.5rem] border border-white/5 bg-[#0A0A0A]/80 p-4 shadow-2xl backdrop-blur-xl sm:p-6">
               <div className="mb-5">
-                <p className="text-xs uppercase tracking-[0.22em] text-orange-400">
-                  {order.eventProgramType || "Main Program"}
-                  {order.otherEventName ? ` - ${order.otherEventName}` : ""}
-                </p>
-                <h2 className="mt-2 text-2xl font-bold text-white">{order.eventName}</h2>
+                <h2 className="mt-2 text-2xl font-bold text-white">
+                  {order.eventName}
+                </h2>
                 <p className="mt-1 text-sm text-neutral-400">
                   Details for booking #{order._id.substring(0, 7)}
                 </p>
@@ -159,49 +167,111 @@ export default function EventManagementDetailPage() {
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <DetailItem label="Customer Name" value={order.customerName} />
-                <DetailItem label="Customer Phone" value={order.customerPhone} />
-                <DetailItem label="Customer Email" value={order.customerEmail} />
-                <DetailItem label="Customer Address" value={order.customerAddress} />
-                <DetailItem label="Main Event Date" value={formatDate(order.eventDate)} />
+                <DetailItem
+                  label="Customer Phone"
+                  value={order.customerPhone}
+                />
+                <DetailItem
+                  label="Customer Email"
+                  value={order.customerEmail}
+                />
+                <DetailItem
+                  label="Customer Address"
+                  value={order.customerAddress}
+                />
+                <DetailItem
+                  label="Main Event Date"
+                  value={formatDate(order.eventDate)}
+                />
                 <DetailItem
                   label="Schedule"
                   value={
                     order.eventSchedule && order.eventSchedule.length > 0
                       ? order.eventSchedule
-                          .map((item) => `${formatDate(item.date)} - ${item.shift} shift`)
+                          .map(
+                            (item) =>
+                              `${formatDate(item.date)} - ${item.shift} shift`,
+                          )
                           .join(", ")
                       : "N/A"
                   }
                 />
-                <DetailItem label="Event Location" value={order.eventLocation} />
+                <DetailItem
+                  label="Event Location"
+                  value={order.eventLocation}
+                />
                 <DetailItem label="Event Type" value={order.eventType} />
                 <DetailItem label="Status" value={order.status} />
                 <DetailItem label="Package" value={order.package} />
-                <DetailItem label="Package Details" value={order.packageDetails} />
+                <DetailItem
+                  label="Package Details"
+                  value={order.packageDetails}
+                />
                 <DetailItem label="Photographer" value={order.photographer} />
                 <DetailItem label="Duration" value={order.duration} />
-                <DetailItem label="Google Maps" value={order.googleMapsLink ? <a href={order.googleMapsLink} target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:underline">Open map</a> : "N/A"} />
+                <DetailItem
+                  label="Google Maps"
+                  value={
+                    order.googleMapsLink ? (
+                      <a
+                        href={order.googleMapsLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-orange-400 hover:underline"
+                      >
+                        Open map
+                      </a>
+                    ) : (
+                      "N/A"
+                    )
+                  }
+                />
               </div>
 
               {order.notes ? (
                 <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                  <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">Notes</p>
+                  <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">
+                    Notes
+                  </p>
                   <p className="mt-2 text-sm text-neutral-100">{order.notes}</p>
                 </div>
               ) : null}
 
               <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <DetailItem label="Total Amount" value={formatMoney(order.totalAmount)} />
-                <DetailItem label="Discount" value={formatMoney(order.discountAmount)} />
-                <DetailItem label="Advance Amount" value={formatMoney(order.advanceAmount)} />
-                <DetailItem label="Paid Amount" value={formatMoney(order.paidAmount)} />
-                <DetailItem label="Due Amount" value={formatMoney(order.dueAmount)} />
-                <DetailItem label="Final Amount" value={formatMoney(order.finalAmount ?? order.totalAmount - Number(order.discountAmount || 0))} />
+                <DetailItem
+                  label="Total Amount"
+                  value={formatMoney(order.totalAmount)}
+                />
+                <DetailItem
+                  label="Discount"
+                  value={formatMoney(order.discountAmount)}
+                />
+                <DetailItem
+                  label="Advance Amount"
+                  value={formatMoney(order.advanceAmount)}
+                />
+                <DetailItem
+                  label="Paid Amount"
+                  value={formatMoney(order.paidAmount)}
+                />
+                <DetailItem
+                  label="Due Amount"
+                  value={formatMoney(order.dueAmount)}
+                />
+                <DetailItem
+                  label="Final Amount"
+                  value={formatMoney(
+                    order.finalAmount ??
+                      order.totalAmount - Number(order.discountAmount || 0),
+                  )}
+                />
               </div>
             </section>
 
             <section className="rounded-[1.5rem] border border-white/5 bg-[#0A0A0A]/80 p-4 shadow-2xl backdrop-blur-xl sm:p-6">
-              <h3 className="mb-4 text-lg font-semibold text-white">Payment History</h3>
+              <h3 className="mb-4 text-lg font-semibold text-white">
+                Payment History
+              </h3>
               {order.payments && order.payments.length > 0 ? (
                 <div className="space-y-3">
                   {order.payments.map((payment) => (
@@ -214,7 +284,9 @@ export default function EventManagementDetailPage() {
                           {formatDate(payment.date)} - {payment.method}
                         </p>
                         {payment.notes ? (
-                          <p className="mt-1 text-xs text-neutral-400">{payment.notes}</p>
+                          <p className="mt-1 text-xs text-neutral-400">
+                            {payment.notes}
+                          </p>
                         ) : null}
                       </div>
                       <p className="text-sm font-semibold text-white">
@@ -272,15 +344,18 @@ function AddPaymentModal({
     setIsSaving(true);
 
     try {
-      const response = await fetch(`/api/event-managements/${orderId}/payments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: Number(amount),
-          method,
-          notes,
-        }),
-      });
+      const response = await fetch(
+        `/api/event-managements/${orderId}/payments`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: Number(amount),
+            method,
+            notes,
+          }),
+        },
+      );
 
       if (response.ok) {
         onSuccess();
@@ -301,7 +376,10 @@ function AddPaymentModal({
       <div className="w-full max-w-md rounded-t-[1.5rem] border border-white/10 bg-[#0A0A0A] p-4 sm:rounded-[1.5rem] sm:p-6">
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
           <h2 className="text-xl font-semibold text-white">Add Payment</h2>
-          <button onClick={onClose} className="rounded-lg border border-white/10 p-2 text-neutral-300">
+          <button
+            onClick={onClose}
+            className="rounded-lg border border-white/10 p-2 text-neutral-300"
+          >
             <FiX />
           </button>
         </div>

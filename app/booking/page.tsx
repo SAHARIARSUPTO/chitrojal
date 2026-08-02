@@ -125,8 +125,8 @@ const Calendar = ({ selectedDate, onDateChange }: CalendarProps) => {
                 !isCurrentMonth
                   ? "text-neutral-700 hover:text-neutral-400"
                   : isSelected
-                    ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white font-bold shadow-[0_0_20px_rgba(234,88,12,0.4)] scale-110"
-                    : "text-neutral-300 hover:bg-white/10 hover:text-white"
+                  ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white font-bold shadow-[0_0_20px_rgba(234,88,12,0.4)] scale-110"
+                  : "text-neutral-300 hover:bg-white/10 hover:text-white"
               }`}
             >
               {formattedDate}
@@ -164,8 +164,6 @@ function BookingPageContents() {
     customerEmail: "",
     customerAddress: "",
     eventDate: new Date(),
-    eventShift: "Day" as "Day" | "Night",
-    eventProgramType: "Main Program" as "Main Program" | "Other Event",
     otherEventName: "",
     eventType: bengaliEventTypes[0],
     eventName: "",
@@ -203,7 +201,7 @@ function BookingPageContents() {
       if (nextSchedule.length > 0) {
         nextSchedule[0] = { ...nextSchedule[0], date: formattedDate };
       } else {
-        nextSchedule.push({ date: formattedDate, shift: prev.eventShift });
+        nextSchedule.push({ date: formattedDate, shift: "Day" });
       }
       return {
         ...prev,
@@ -270,8 +268,6 @@ function BookingPageContents() {
         customerEmail: formData.customerEmail,
         customerAddress: formData.customerAddress,
         eventDate: formData.eventDate,
-        eventShift: formData.eventShift,
-        eventProgramType: formData.eventProgramType,
         otherEventName: formData.otherEventName,
         eventType: formData.eventType,
         eventName:
@@ -334,7 +330,8 @@ function BookingPageContents() {
           ইভেন্ট বুকিং ফরম
         </h1>
         <p className="text-neutral-400 text-base md:text-xl font-medium max-w-2xl mx-auto leading-relaxed">
-          আপনার বিশেষ দিনের ছবি ও ভিডিওগ্রাফি বুকিং করতে নিচের তথ্যগুলো দিয়ে ফরমটি পূরণ করুন।
+          আপনার বিশেষ দিনের ছবি ও ভিডিওগ্রাফি বুকিং করতে নিচের তথ্যগুলো দিয়ে
+          ফরমটি পূরণ করুন।
         </p>
       </div>
 
@@ -368,11 +365,14 @@ function BookingPageContents() {
             {/* Section 1: Personal Details */}
             <div className="space-y-4 border-b border-white/10 pb-6">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <FiUser className="text-orange-500" /> ক্লায়েন্ট তথ্য (Customer Info)
+                <FiUser className="text-orange-500" /> ক্লায়েন্ট তথ্য (Customer
+                Info)
               </h3>
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
-                  <label className={labelStyle}>আপনার নাম (Customer Name) *</label>
+                  <label className={labelStyle}>
+                    আপনার নাম (Customer Name) *
+                  </label>
                   <input
                     type="text"
                     name="customerName"
@@ -384,7 +384,9 @@ function BookingPageContents() {
                   />
                 </div>
                 <div>
-                  <label className={labelStyle}>ফোন নম্বর (Phone Number) *</label>
+                  <label className={labelStyle}>
+                    ফোন নম্বর (Phone Number) *
+                  </label>
                   <input
                     type="tel"
                     name="customerPhone"
@@ -423,11 +425,14 @@ function BookingPageContents() {
             {/* Section 2: Event Details */}
             <div className="space-y-4 border-b border-white/10 pb-6">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <FiClock className="text-orange-500" /> ইভেন্ট সংক্রান্ত বিবরণ (Event Details)
+                <FiClock className="text-orange-500" /> ইভেন্ট সংক্রান্ত বিবরণ
+                (Event Details)
               </h3>
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
-                  <label className={labelStyle}>প্রধান তারিখ (Main Event Date)</label>
+                  <label className={labelStyle}>
+                    প্রধান তারিখ (Main Event Date)
+                  </label>
                   <input
                     type="date"
                     value={format(formData.eventDate, "yyyy-MM-dd")}
@@ -439,45 +444,11 @@ function BookingPageContents() {
                     className={inputStyle}
                   />
                 </div>
+                {/* Removed Main Event Shift and Program Type inputs per request */}
                 <div>
-                  <label className={labelStyle}>প্রধান শিফট (Main Event Shift)</label>
-                  <select
-                    name="eventShift"
-                    value={formData.eventShift}
-                    onChange={handleInputChange}
-                    className={inputStyle}
-                  >
-                    <option value="Day">Day Shift (দিন)</option>
-                    <option value="Night">Night Shift (রাত)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className={labelStyle}>প্রোগ্রাম টাইপ (Program Type)</label>
-                  <select
-                    name="eventProgramType"
-                    value={formData.eventProgramType}
-                    onChange={handleInputChange}
-                    className={inputStyle}
-                  >
-                    <option value="Main Program">Main Program (মূল প্রোগ্রাম)</option>
-                    <option value="Other Event">Other Event (অন্যান্য প্রোগ্রাম)</option>
-                  </select>
-                </div>
-                {formData.eventProgramType === "Other Event" && (
-                  <div>
-                    <label className={labelStyle}>অন্যান্য প্রোগ্রামের নাম</label>
-                    <input
-                      type="text"
-                      name="otherEventName"
-                      value={formData.otherEventName}
-                      onChange={handleInputChange}
-                      className={inputStyle}
-                      placeholder="যেমন: প্রাক-বিবাহ শুট, ঘরোয়া অনুষ্ঠান"
-                    />
-                  </div>
-                )}
-                <div>
-                  <label className={labelStyle}>ইভেন্টের ধরন (Event Type)</label>
+                  <label className={labelStyle}>
+                    ইভেন্টের ধরন (Event Type)
+                  </label>
                   <select
                     name="eventType"
                     value={formData.eventType}
@@ -492,7 +463,9 @@ function BookingPageContents() {
                   </select>
                 </div>
                 <div>
-                  <label className={labelStyle}>ইভেন্ট শিরোনাম (Event Title)</label>
+                  <label className={labelStyle}>
+                    ইভেন্ট শিরোনাম (Event Title)
+                  </label>
                   <input
                     type="text"
                     name="eventName"
@@ -510,10 +483,12 @@ function BookingPageContents() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <FiCalendar className="text-orange-500" /> ইভেন্ট শিডিউল ও সময়সূচী
+                    <FiCalendar className="text-orange-500" /> ইভেন্ট শিডিউল ও
+                    সময়সূচী
                   </h3>
                   <p className="text-xs text-neutral-400">
-                    একাধিক দিনের ইভেন্ট হলে নিচের বোতাম চেপে অতিরিক্ত তারিখ যোগ করুন।
+                    একাধিক দিনের ইভেন্ট হলে নিচের বোতাম চেপে অতিরিক্ত তারিখ যোগ
+                    করুন।
                   </p>
                 </div>
                 <button
@@ -575,11 +550,14 @@ function BookingPageContents() {
             {/* Section 3: Location Details */}
             <div className="space-y-4 border-b border-white/10 pb-6">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <FiMapPin className="text-orange-500" /> অবস্থান সংক্রান্ত তথ্য (Location Details)
+                <FiMapPin className="text-orange-500" /> অবস্থান সংক্রান্ত তথ্য
+                (Location Details)
               </h3>
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
-                  <label className={labelStyle}>ভেন্যু / স্থান (Event Location) *</label>
+                  <label className={labelStyle}>
+                    ভেন্যু / স্থান (Event Location) *
+                  </label>
                   <input
                     type="text"
                     name="eventLocation"
@@ -591,7 +569,9 @@ function BookingPageContents() {
                   />
                 </div>
                 <div>
-                  <label className={labelStyle}>গুগল ম্যাপস লিংক (Google Maps Link)</label>
+                  <label className={labelStyle}>
+                    গুগল ম্যাপস লিংক (Google Maps Link)
+                  </label>
                   <input
                     type="url"
                     name="googleMapsLink"
@@ -602,7 +582,9 @@ function BookingPageContents() {
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className={labelStyle}>বিশেষ চাহিদা বা সার্ভিস বিবরণ (Service Details)</label>
+                  <label className={labelStyle}>
+                    বিশেষ চাহিদা বা সার্ভিস বিবরণ (Service Details)
+                  </label>
                   <textarea
                     name="packageDetails"
                     rows={3}
@@ -618,10 +600,13 @@ function BookingPageContents() {
             {/* Section 4: Special Notes */}
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <FiFileText className="text-orange-500" /> অতিরিক্ত নির্দেশনা (Special Notes)
+                <FiFileText className="text-orange-500" /> অতিরিক্ত নির্দেশনা
+                (Special Notes)
               </h3>
               <div>
-                <label className={labelStyle}>অন্যান্য মন্তব্য বা বিশেষ বার্তা</label>
+                <label className={labelStyle}>
+                  অন্যান্য মন্তব্য বা বিশেষ বার্তা
+                </label>
                 <textarea
                   name="notes"
                   rows={3}
@@ -740,7 +725,13 @@ export default function BookingPage() {
         <div className="absolute top-20 left-10 w-[500px] h-[500px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none"></div>
         <div className="absolute bottom-0 right-10 w-[600px] h-[600px] bg-orange-500/5 rounded-full blur-[150px] pointer-events-none"></div>
 
-        <Suspense fallback={<div className="text-center text-neutral-400 py-12">লোড হচ্ছে...</div>}>
+        <Suspense
+          fallback={
+            <div className="text-center text-neutral-400 py-12">
+              লোড হচ্ছে...
+            </div>
+          }
+        >
           <BookingPageContents />
         </Suspense>
       </main>
