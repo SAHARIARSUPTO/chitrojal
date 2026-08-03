@@ -9,6 +9,7 @@ import {
   FiTrash2,
   FiPrinter,
   FiDollarSign,
+  FiEye,
   FiX,
 } from "react-icons/fi";
 import EventManagementFormFields, {
@@ -230,7 +231,132 @@ export default function EventManagementsPage() {
           </Link>
         </div>
 
-        <div className="overflow-hidden rounded-[1.5rem] border border-white/5 bg-[#0A0A0A]/80 shadow-2xl backdrop-blur-xl">
+        {/* Mobile View: Cards Layout */}
+        <div className="space-y-4 sm:hidden">
+          {loading ? (
+            <div className="rounded-2xl border border-white/5 bg-[#0A0A0A]/80 p-6 text-center text-neutral-400">
+              Loading bookings...
+            </div>
+          ) : orders.length > 0 ? (
+            orders.map((order) => (
+              <div
+                key={order._id}
+                className="rounded-2xl border border-white/10 bg-[#0A0A0A]/90 p-4 shadow-xl space-y-3"
+              >
+                <div className="flex items-start justify-between gap-2 border-b border-white/10 pb-3">
+                  <div>
+                    <h3 className="font-bold text-white text-base">
+                      {order.customerName}
+                    </h3>
+                    <p className="text-xs text-neutral-400">{order.customerPhone}</p>
+                  </div>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusClass(
+                      order.status || "Pending",
+                      Number(order.dueAmount || 0),
+                    )}`}
+                  >
+                    {order.status || "Pending"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold block">
+                      Event
+                    </span>
+                    <span className="font-medium text-neutral-200">
+                      {order.eventName || order.eventType || "Event"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold block">
+                      Program
+                    </span>
+                    <span className="text-neutral-300">
+                      {order.eventProgramType || "Main Program"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold block">
+                      Total
+                    </span>
+                    <span className="font-bold text-white">
+                      {formatMoney(order.totalAmount)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold block">
+                      Due
+                    </span>
+                    <span className="font-bold text-orange-400">
+                      {formatMoney(order.dueAmount)}
+                    </span>
+                  </div>
+                </div>
+
+                {order.eventSchedule?.length ? (
+                  <div className="text-xs text-neutral-400 pt-1">
+                    <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold block">
+                      Dates
+                    </span>
+                    {order.eventSchedule
+                      .map(
+                        (entry) =>
+                          `${entry.date ? new Date(entry.date).toLocaleDateString() : "N/A"} (${entry.shift})`,
+                      )
+                      .join(", ")}
+                  </div>
+                ) : null}
+
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/10">
+                  <Link
+                    href={`/admin/event-managements/${order._id}`}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-orange-500/30 bg-orange-500/10 px-3 py-2 text-xs font-bold text-orange-400 transition hover:bg-orange-500/20"
+                  >
+                    <FiEye size={14} /> View Details
+                  </Link>
+                  <button
+                    onClick={() => openPayment(order._id)}
+                    className="rounded-xl border border-white/10 bg-white/5 p-2 text-neutral-300 hover:text-white"
+                    title="Manage Payments"
+                  >
+                    <FiDollarSign size={14} />
+                  </button>
+                  <Link
+                    href={`/admin/invoices/${order._id}`}
+                    target="_blank"
+                    className="rounded-xl border border-white/10 bg-white/5 p-2 text-neutral-300 hover:text-white"
+                    title="Print Invoice"
+                  >
+                    <FiPrinter size={14} />
+                  </Link>
+                  <button
+                    onClick={() => openEdit(order)}
+                    className="rounded-xl border border-white/10 bg-white/5 p-2 text-neutral-300 hover:text-white"
+                    title="Edit"
+                  >
+                    <FiEdit2 size={14} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(order._id)}
+                    className="rounded-xl border border-red-500/20 bg-red-500/10 p-2 text-red-300 hover:text-red-200"
+                    title="Delete"
+                  >
+                    <FiTrash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="rounded-2xl border border-dashed border-white/10 p-6 text-center text-neutral-500">
+              No bookings found.
+            </div>
+          )}
+        </div>
+
+        {/* Desktop View: Table Layout */}
+        <div className="hidden sm:block overflow-hidden rounded-[1.5rem] border border-white/5 bg-[#0A0A0A]/80 shadow-2xl backdrop-blur-xl">
           <div className="overflow-x-auto">
             <table className="min-w-[980px] w-full text-left text-xs sm:text-sm">
               <thead className="border-b border-white/10">
@@ -309,6 +435,13 @@ export default function EventManagementsPage() {
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-2">
+                          <Link
+                            href={`/admin/event-managements/${order._id}`}
+                            className="rounded-lg border border-orange-500/30 bg-orange-500/10 p-2 text-orange-400 hover:bg-orange-500/20 hover:text-orange-300"
+                            title="View Details"
+                          >
+                            <FiEye size={14} />
+                          </Link>
                           <Link
                             href={`/admin/invoices/${order._id}`}
                             className="rounded-lg border border-white/10 bg-white/5 p-2 text-neutral-300 hover:text-white"

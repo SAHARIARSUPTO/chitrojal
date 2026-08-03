@@ -471,7 +471,7 @@ export async function GET(request: Request, context: RouteContext) {
     return new NextResponse(pdfBuffer, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="invoice-${order._id}.pdf"`,
+        "Content-Disposition": `inline; filename="invoice-${order._id}.pdf"`,
       },
     });
   } catch (error) {

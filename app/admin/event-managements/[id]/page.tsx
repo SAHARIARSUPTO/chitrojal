@@ -162,7 +162,7 @@ export default function EventManagementDetailPage() {
                 <DetailItem label="Customer Phone" value={order.customerPhone} />
                 <DetailItem label="Customer Email" value={order.customerEmail} />
                 <DetailItem label="Customer Address" value={order.customerAddress} />
-                <DetailItem label="Main Event Date" value={formatDate(order.eventDate)} />
+                <DetailItem label="Event Date" value={formatDate(order.eventDate)} />
                 <DetailItem
                   label="Schedule"
                   value={

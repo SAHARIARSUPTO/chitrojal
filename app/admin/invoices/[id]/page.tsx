@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AdminLayout from "../../../components/home/AdminLayout";
-import { FiDownload, FiCheckCircle, FiClock, FiPrinter } from "react-icons/fi";
+import { FiDownload, FiCheckCircle, FiClock, FiPrinter, FiFileText } from "react-icons/fi";
 import Barcode from "react-barcode";
 import Image from "next/image";
 import logo from "../../../components/navbar/logo.png";
@@ -47,11 +47,22 @@ export default function InvoicePage() {
     fetchOrder();
   }, [id]);
 
+  const handlePreviewPDF = () => {
+    if (!order?._id) return;
+    window.open(`/api/invoices/${order._id}`, "_blank");
+  };
+
   const handleDownloadPDF = async () => {
     if (!order?._id) return;
     setDownloading(true);
 
     try {
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        window.open(`/api/invoices/${order._id}`, "_blank");
+        return;
+      }
+
       const response = await fetch(`/api/invoices/${order._id}`);
       if (!response.ok) throw new Error("Failed to generate PDF");
 
@@ -66,6 +77,7 @@ export default function InvoicePage() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error downloading PDF:", error);
+      window.open(`/api/invoices/${order._id}`, "_blank");
     } finally {
       setDownloading(false);
     }
@@ -114,7 +126,14 @@ export default function InvoicePage() {
             </button>
             <h1 className="text-xl font-bold text-slate-900">Invoice Preview</h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={handlePreviewPDF}
+              className="flex items-center gap-2 rounded-lg border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-sm font-semibold text-orange-600 transition active:scale-95 hover:bg-orange-500/20"
+            >
+              <FiFileText />
+              Open PDF
+            </button>
             <button
               onClick={() => window.print()}
               className="flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition active:scale-95 hover:bg-slate-200"

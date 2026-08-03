@@ -37,9 +37,10 @@ export async function POST(request: Request) {
     }
 
     const parsedEventDate = new Date(eventDate);
-    const formattedSchedule = eventSchedule.map((s: { date: string | Date; shift?: string }) => ({
+    const formattedSchedule = eventSchedule.map((s: { date: string | Date; shift?: string; packageName?: string }) => ({
       date: new Date(s.date || eventDate),
       shift: s.shift === "Night" ? "Night" : "Day",
+      packageName: s.packageName || "",
     }));
 
     const newOrder = await Order.create({
