@@ -52,17 +52,22 @@ export async function GET(request: Request) {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const [allOrders, completedEventsCount, orderSummaries, totalStaff, totalPoses] =
+    const [allOrders, completedEventsCount, orderSummaries, totalStaff, totalPoses, allPoses] =
       await Promise.all([
         Order.find({}).lean(),
-        Event.countDocuments({ status: "Completed" }),
+        Order.countDocuments({ status: "Completed" }),
         Order.find(
           {},
           "dueAmount paidAmount totalAmount eventDate eventSchedule eventName customerName status",
         ).lean(),
         Staff.countDocuments(),
         Pose.countDocuments(),
+        Pose.find({}).select("imageUrls").lean(),
       ]);
+
+    const galleryImages = (allPoses as Array<{ imageUrls?: string[] }>).flatMap(
+      (p) => p.imageUrls || [],
+    );
 
     const normalizedOrders = (allOrders as OrderLike[])
       .map(normalizeOrder)
@@ -142,10 +147,10 @@ export async function GET(request: Request) {
         icon: "users",
       },
       {
-        label: "Photo Library",
+        label: "Photo Gallery",
         value: totalPoses,
         kind: "count",
-        detail: `${totalPoses} pose reference${totalPoses === 1 ? "" : "s"}`,
+        detail: `${totalPoses} photo reference${totalPoses === 1 ? "" : "s"}`,
         icon: "image",
       },
     ].filter((metric) =>
@@ -156,6 +161,7 @@ export async function GET(request: Request) {
       success: true,
       data: {
         metrics,
+        galleryImages,
         accessRole: role || "admin",
         upcomingEvents: upcomingEvents.map((event) => ({
           ...event,

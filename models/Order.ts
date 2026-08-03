@@ -16,6 +16,7 @@ const OrderSchema = new mongoose.Schema(
           default: "Day",
         },
         packageName: { type: String },
+        amount: { type: Number, default: 0 },
       },
     ],
     eventLocation: { type: String },

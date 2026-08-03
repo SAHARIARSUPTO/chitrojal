@@ -77,10 +77,8 @@ const HomeClient = ({ services, carouselData, videoData, packageImages }) => {
       <section className="py-12 border-b border-white/5">
         <div className="container mx-auto px-4">
           <div className="flex flex-wrap justify-center items-center gap-y-8 md:gap-y-0">
-            <StatItem number="১০+" text="হ্যাপি ক্লায়েন্ট" />
-            <StatItem number="৫০+" text="ইভেন্ট কভারড" />
-            <StatItem number="০৫+" text="বছরের অভিজ্ঞতা" />
-            <StatItem number="১০০%" text="স্যাটিসফ্যাকশন" />
+            <StatItem number="১০০০+" text="ইভেন্ট কাভারড" />
+            <StatItem number="১৩+" text="বছরের অভিজ্ঞতা" />
           </div>
         </div>
       </section>

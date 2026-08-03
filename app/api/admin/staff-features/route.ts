@@ -14,8 +14,8 @@ const DEFAULT_FEATURES = [
     order: 1,
   },
   {
-    title: "Pose Library",
-    description: "Browse approved poses and reference boards.",
+    title: "Photo Gallery",
+    description: "Browse approved photos and reference boards.",
     href: "/admin/pose-library",
     iconKey: "camera",
     badge: "Read only",

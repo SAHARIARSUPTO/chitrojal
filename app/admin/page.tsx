@@ -21,6 +21,8 @@ import {
   FiUsers,
 } from "react-icons/fi";
 
+import { motion, AnimatePresence } from "framer-motion";
+
 type DashboardMetric = {
   label: string;
   value: number;
@@ -43,6 +45,7 @@ type StaffFeature = {
 type DashboardResponse = {
   metrics?: DashboardMetric[];
   upcomingEvents?: UpcomingEventItem[];
+  galleryImages?: string[];
 };
 
 const iconMap = {
@@ -67,16 +70,199 @@ const metricCardLinks: Record<string, string> = {
   "Payment Received": "/admin/finance",
   "Due Payment": "/admin/finance",
   "Total Staff": "/admin/staff",
+  "Photo Gallery": "/admin/pose-library",
   "Photo Library": "/admin/pose-library",
   "Pose Library": "/admin/pose-library",
 };
 
 const formatCurrency = (value: number) => `৳${value.toLocaleString("en-BD")}`;
 
+const FadeSlideshowImage = ({
+  images,
+  intervalDuration = 3500,
+  alt = "Gallery Image",
+}: {
+  images: string[];
+  intervalDuration?: number;
+  alt?: string;
+}) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (!images || images.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % images.length);
+    }, intervalDuration);
+    return () => clearInterval(timer);
+  }, [images, intervalDuration]);
+
+  if (!images || images.length === 0) return null;
+  const currentImage = images[currentIndex] || images[0];
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-2xl">
+      <AnimatePresence mode="popLayout">
+        <motion.div
+          key={currentImage}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.9, ease: "easeInOut" }}
+          className="absolute inset-0"
+        >
+          <Image
+            src={currentImage}
+            alt={alt}
+            fill
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+            className="object-cover"
+          />
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const metricThemeMap: Record<
+  string,
+  {
+    border: string;
+    bg: string;
+    iconBg: string;
+    iconText: string;
+    accentText: string;
+    glow: string;
+  }
+> = {
+  "Upcoming Events": {
+    border: "border-sky-500/30 hover:border-sky-400/70",
+    bg: "bg-gradient-to-br from-sky-950/50 via-blue-950/25 to-[#0A0A0A]",
+    iconBg: "border-sky-500/30 bg-sky-500/20 group-hover:bg-sky-500/30",
+    iconText: "text-sky-400",
+    accentText: "text-sky-400",
+    glow: "shadow-[0_0_20px_rgba(56,189,248,0.15)]",
+  },
+  "Events Done": {
+    border: "border-emerald-500/30 hover:border-emerald-400/70",
+    bg: "bg-gradient-to-br from-emerald-950/50 via-teal-950/25 to-[#0A0A0A]",
+    iconBg: "border-emerald-500/30 bg-emerald-500/20 group-hover:bg-emerald-500/30",
+    iconText: "text-emerald-400",
+    accentText: "text-emerald-400",
+    glow: "shadow-[0_0_20px_rgba(52,211,153,0.15)]",
+  },
+  "Payment Received": {
+    border: "border-green-500/30 hover:border-green-400/70",
+    bg: "bg-gradient-to-br from-green-950/50 via-emerald-950/25 to-[#0A0A0A]",
+    iconBg: "border-green-500/30 bg-green-500/20 group-hover:bg-green-500/30",
+    iconText: "text-green-400",
+    accentText: "text-green-400",
+    glow: "shadow-[0_0_20px_rgba(34,197,94,0.15)]",
+  },
+  "Due Payment": {
+    border: "border-amber-500/30 hover:border-amber-400/70",
+    bg: "bg-gradient-to-br from-amber-950/50 via-orange-950/25 to-[#0A0A0A]",
+    iconBg: "border-amber-500/30 bg-amber-500/20 group-hover:bg-amber-500/30",
+    iconText: "text-amber-400",
+    accentText: "text-amber-400",
+    glow: "shadow-[0_0_20px_rgba(251,191,36,0.15)]",
+  },
+  "Total Staff": {
+    border: "border-purple-500/30 hover:border-purple-400/70",
+    bg: "bg-gradient-to-br from-purple-950/50 via-fuchsia-950/25 to-[#0A0A0A]",
+    iconBg: "border-purple-500/30 bg-purple-500/20 group-hover:bg-purple-500/30",
+    iconText: "text-purple-400",
+    accentText: "text-purple-400",
+    glow: "shadow-[0_0_20px_rgba(192,132,252,0.15)]",
+  },
+  "Photo Gallery": {
+    border: "border-orange-500/40 hover:border-orange-400/70",
+    bg: "bg-gradient-to-br from-orange-950/50 via-amber-950/25 to-[#0A0A0A]",
+    iconBg: "border-orange-500/30 bg-orange-500/20 group-hover:bg-orange-500/30",
+    iconText: "text-orange-400",
+    accentText: "text-orange-400",
+    glow: "shadow-[0_0_25px_rgba(234,88,12,0.2)]",
+  },
+};
+
+const panelThemeMap: Record<
+  string,
+  {
+    border: string;
+    bg: string;
+    titleColor: string;
+    arrowColor: string;
+    glow: string;
+  }
+> = {
+  "Booking Management": {
+    border: "border-cyan-500/30 hover:border-cyan-400/70",
+    bg: "bg-gradient-to-br from-cyan-950/50 via-blue-950/30 to-[#0A0A0A]",
+    titleColor: "text-cyan-200 group-hover:text-cyan-100",
+    arrowColor: "text-cyan-400",
+    glow: "shadow-[0_0_25px_rgba(6,182,212,0.18)]",
+  },
+  Invoices: {
+    border: "border-indigo-500/30 hover:border-indigo-400/70",
+    bg: "bg-gradient-to-br from-indigo-950/50 via-purple-950/30 to-[#0A0A0A]",
+    titleColor: "text-indigo-200 group-hover:text-indigo-100",
+    arrowColor: "text-indigo-400",
+    glow: "shadow-[0_0_25px_rgba(99,102,241,0.18)]",
+  },
+  "Photo Gallery": {
+    border: "border-orange-500/40 hover:border-orange-400/70",
+    bg: "bg-gradient-to-br from-orange-950/50 via-amber-950/30 to-[#0A0A0A]",
+    titleColor: "text-orange-200 group-hover:text-orange-100",
+    arrowColor: "text-orange-400",
+    glow: "shadow-[0_0_25px_rgba(234,88,12,0.2)]",
+  },
+  Finance: {
+    border: "border-emerald-500/30 hover:border-emerald-400/70",
+    bg: "bg-gradient-to-br from-emerald-950/50 via-teal-950/30 to-[#0A0A0A]",
+    titleColor: "text-emerald-200 group-hover:text-emerald-100",
+    arrowColor: "text-emerald-400",
+    glow: "shadow-[0_0_25px_rgba(16,185,129,0.18)]",
+  },
+  Staff: {
+    border: "border-rose-500/30 hover:border-rose-400/70",
+    bg: "bg-gradient-to-br from-rose-950/50 via-pink-950/30 to-[#0A0A0A]",
+    titleColor: "text-rose-200 group-hover:text-rose-100",
+    arrowColor: "text-rose-400",
+    glow: "shadow-[0_0_25px_rgba(244,63,94,0.18)]",
+  },
+};
+
+const quickLinkThemes = [
+  {
+    border: "border-cyan-500/30 hover:border-cyan-400/70",
+    bg: "bg-gradient-to-br from-cyan-950/40 via-blue-950/20 to-[#0A0A0A]",
+    iconBg: "border-cyan-500/30 bg-cyan-500/20 text-cyan-400",
+    titleColor: "text-cyan-200",
+  },
+  {
+    border: "border-purple-500/30 hover:border-purple-400/70",
+    bg: "bg-gradient-to-br from-purple-950/40 via-fuchsia-950/20 to-[#0A0A0A]",
+    iconBg: "border-purple-500/30 bg-purple-500/20 text-purple-400",
+    titleColor: "text-purple-200",
+  },
+  {
+    border: "border-emerald-500/30 hover:border-emerald-400/70",
+    bg: "bg-gradient-to-br from-emerald-950/40 via-teal-950/20 to-[#0A0A0A]",
+    iconBg: "border-emerald-500/30 bg-emerald-500/20 text-emerald-400",
+    titleColor: "text-emerald-200",
+  },
+  {
+    border: "border-amber-500/30 hover:border-amber-400/70",
+    bg: "bg-gradient-to-br from-amber-950/40 via-orange-950/20 to-[#0A0A0A]",
+    iconBg: "border-amber-500/30 bg-amber-500/20 text-amber-400",
+    titleColor: "text-amber-200",
+  },
+];
+
 export default function DashboardPage() {
   const [metrics, setMetrics] = useState<DashboardMetric[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEventItem[]>([]);
   const [staffFeatures, setStaffFeatures] = useState<StaffFeature[]>([]);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
 
@@ -101,6 +287,7 @@ export default function DashboardPage() {
           const data = result.data as DashboardResponse;
           setMetrics(data.metrics || []);
           setUpcomingEvents(data.upcomingEvents || []);
+          setGalleryImages(data.galleryImages || []);
         }
       } finally {
         setLoading(false);
@@ -128,6 +315,8 @@ export default function DashboardPage() {
       (feature) =>
         feature.title !== "Upcoming Events" &&
         feature.title !== "Pose Library" &&
+        feature.title !== "Photo Gallery" &&
+        feature.title !== "Photo Library" &&
         feature.title !== "Team Roster",
     );
     if (userRole === "admin") return filteredFeatures;
@@ -226,30 +415,51 @@ export default function DashboardPage() {
             : metrics.map((stat) => {
                 const Icon = iconMap[stat.icon];
                 const href = metricCardLinks[stat.label] || "/admin";
+                const isGallery = stat.label === "Photo Gallery" || stat.label === "Photo Library";
+                const hasImages = isGallery && galleryImages.length > 0;
+                const theme = metricThemeMap[stat.label] || {
+                  border: "border-white/10 hover:border-orange-500/50",
+                  bg: "bg-[#0A0A0A]/80",
+                  iconBg: "border-white/10 bg-white/5 text-orange-500",
+                  iconText: "text-orange-500",
+                  accentText: "text-orange-400",
+                  glow: "shadow-lg",
+                };
+
                 return (
                   <Link
                     key={stat.label}
                     href={href}
-                    className="group relative overflow-hidden rounded-2xl border border-white/5 bg-[#0A0A0A]/80 p-2.5 shadow-lg transition-all duration-300 hover:border-orange-500/30 sm:p-4"
+                    className={`group relative overflow-hidden rounded-2xl border ${theme.border} ${
+                      hasImages ? "shadow-[0_0_25px_rgba(234,88,12,0.2)]" : `${theme.bg} ${theme.glow}`
+                    } p-2.5 shadow-lg transition-all duration-300 sm:p-4`}
                   >
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.04] to-transparent" />
+                    {hasImages ? (
+                      <>
+                        <FadeSlideshowImage images={galleryImages} alt="Photo Gallery" intervalDuration={3500} />
+                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
+                      </>
+                    ) : (
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.04] to-transparent" />
+                    )}
+
                     <div className="relative z-10 flex items-start justify-between gap-3">
-                      <div className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-orange-500 transition-colors group-hover:bg-orange-500/10">
+                      <div className={`rounded-lg border p-1.5 transition-colors ${hasImages ? "border-white/10 bg-black/40 backdrop-blur-md text-orange-400" : `${theme.iconBg}`}`}>
                         <Icon className="h-3.5 w-3.5" />
                       </div>
-                      <FiArrowRight className="mt-1.5 h-3.5 w-3.5 text-neutral-500 transition-transform group-hover:translate-x-0.5" />
+                      <FiArrowRight className={`mt-1.5 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 ${hasImages ? "text-white/80" : theme.iconText}`} />
                     </div>
-                    <div className="relative z-10 mt-2.5">
-                      <h3 className="mb-1 text-[8px] font-bold uppercase tracking-widest text-neutral-400 sm:text-[10px]">
+                    <div className={`relative z-10 mt-2.5 ${hasImages ? "rounded-xl bg-black/40 backdrop-blur-md border border-white/10 p-2 sm:p-2.5 text-white/90" : ""}`}>
+                      <h3 className="mb-1 text-[8px] font-bold uppercase tracking-widest text-neutral-300 sm:text-[10px]">
                         {stat.label}
                       </h3>
-                      <p className="mb-1.5 break-words bg-gradient-to-r from-white to-neutral-300 bg-clip-text text-lg font-black leading-none text-transparent sm:text-2xl">
+                      <p className="mb-1.5 break-words text-lg font-black leading-none text-white sm:text-2xl drop-shadow-sm">
                         {stat.kind === "currency"
                           ? formatCurrency(stat.value)
                           : stat.value}
                       </p>
-                      <div className="flex items-center text-[9px] font-semibold leading-tight text-neutral-500 sm:text-[11px]">
-                        <FiTrendingUp className="mr-1.5" />
+                      <div className="flex items-center text-[9px] font-semibold leading-tight text-neutral-300 sm:text-[11px]">
+                        <FiTrendingUp className={`mr-1.5 ${hasImages ? "text-orange-400" : theme.accentText}`} />
                         {stat.detail}
                       </div>
                     </div>
@@ -264,23 +474,25 @@ export default function DashboardPage() {
               Quick Links
             </h2>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4">
-              {visibleStaffFeatures.map((feature) => {
+              {visibleStaffFeatures.map((feature, idx) => {
                 const Icon =
                   featureIconMap[feature.iconKey as keyof typeof featureIconMap] ||
                   FiClipboard;
+                const theme = quickLinkThemes[idx % quickLinkThemes.length];
+
                 return (
                   <Link
                     href={feature.href}
                     key={feature._id}
-                    className="group relative min-w-0 overflow-hidden rounded-2xl border border-white/5 bg-[#0A0A0A]/80 p-2.5 transition-all duration-300 hover:border-orange-500/30 sm:p-4"
+                    className={`group relative min-w-0 overflow-hidden rounded-2xl border ${theme.border} ${theme.bg} p-2.5 transition-all duration-300 shadow-lg sm:p-4`}
                   >
                     <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.04] to-transparent" />
                     <div className="relative z-10 flex items-start gap-2.5">
-                      <div className="shrink-0 rounded-lg border border-white/10 bg-white/5 p-1.5 text-orange-500 transition-colors group-hover:bg-orange-500/10">
+                      <div className={`shrink-0 rounded-lg border p-1.5 transition-colors ${theme.iconBg}`}>
                         <Icon className="h-3.5 w-3.5 sm:h-5 sm:w-5" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="break-words text-[10px] font-bold leading-tight text-white sm:text-sm md:text-base">
+                        <h3 className={`break-words text-[10px] font-bold leading-tight ${theme.titleColor} sm:text-sm md:text-base`}>
                           {feature.title}
                         </h3>
                         <p className="mt-1 break-words text-[9px] leading-snug text-neutral-400 sm:text-[11px] md:text-xs">
@@ -309,24 +521,49 @@ export default function DashboardPage() {
             Admin Panels
           </h2>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-5">
-            {adminPanels.map((panel) => (
-              <Link
-                key={panel.href}
-                href={panel.href}
-                className="group rounded-2xl border border-white/5 bg-[#0A0A0A]/80 p-2.5 transition-all duration-300 hover:border-orange-500/30 hover:bg-white/[0.07] sm:p-4"
-              >
-                <div className="text-[10px] font-semibold leading-tight text-white sm:text-sm">
-                  {panel.title}
-                </div>
-                <div className="mt-1 text-[9px] leading-snug text-neutral-400 sm:text-xs">
-                  {panel.description}
-                </div>
-                <div className="mt-2 inline-flex items-center gap-1 text-[9px] font-semibold text-orange-400 sm:text-xs">
-                  Open{" "}
-                  <FiArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-                </div>
-              </Link>
-            ))}
+            {adminPanels.map((panel) => {
+              const isGalleryPanel = panel.title === "Photo Gallery";
+              const hasPanelImages = isGalleryPanel && galleryImages.length > 0;
+              const theme = panelThemeMap[panel.title] || {
+                border: "border-white/10 hover:border-orange-500/50",
+                bg: "bg-[#0A0A0A]/80",
+                titleColor: "text-white",
+                arrowColor: "text-orange-400",
+                glow: "shadow-lg",
+              };
+
+              return (
+                <Link
+                  key={panel.href}
+                  href={panel.href}
+                  className={`group relative overflow-hidden rounded-2xl border ${theme.border} ${
+                    hasPanelImages
+                      ? "shadow-[0_0_25px_rgba(234,88,12,0.2)]"
+                      : `${theme.bg} ${theme.glow}`
+                  } p-2.5 transition-all duration-300 hover:bg-white/[0.07] sm:p-4 flex flex-col justify-between`}
+                >
+                  {hasPanelImages && (
+                    <>
+                      <FadeSlideshowImage images={galleryImages} alt="Photo Gallery" intervalDuration={4000} />
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
+                    </>
+                  )}
+
+                  <div className={`relative z-10 ${hasPanelImages ? "rounded-xl bg-black/40 backdrop-blur-md border border-white/10 p-2 sm:p-2.5 text-white/90" : ""}`}>
+                    <div className={`text-[10px] font-semibold leading-tight sm:text-sm transition-colors drop-shadow-sm ${hasPanelImages ? "text-white group-hover:text-orange-300" : theme.titleColor}`}>
+                      {panel.title}
+                    </div>
+                    <div className={`mt-1 text-[9px] leading-snug sm:text-xs ${hasPanelImages ? "text-white/80" : "text-neutral-400"}`}>
+                      {panel.description}
+                    </div>
+                  </div>
+                  <div className={`relative z-10 mt-2 inline-flex items-center gap-1 text-[9px] font-semibold sm:text-xs ${hasPanelImages ? "text-orange-400" : theme.arrowColor}`}>
+                    Open{" "}
+                    <FiArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>

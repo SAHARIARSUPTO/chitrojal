@@ -23,6 +23,7 @@ import {
   FiX,
 } from "react-icons/fi";
 import { useNotification } from "@/hooks/useNotification";
+import { useMobileBackHandler } from "@/hooks/useMobileBackHandler";
 
 interface StaffMember {
   id: string;
@@ -41,6 +42,15 @@ export default function StaffPage() {
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
+
+  // Mobile Hardware Back Button Interceptor for Staff Modals
+  useMobileBackHandler({
+    active: isModalOpen || Boolean(editingStaff),
+    onBack: () => {
+      setIsModalOpen(false);
+      setEditingStaff(null);
+    },
+  });
   const [loadingStaff, setLoadingStaff] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");

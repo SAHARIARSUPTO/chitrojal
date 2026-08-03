@@ -147,7 +147,7 @@ const QuotesShowcase = () => {
 
           <div className="space-y-2 relative z-10">
             <h4 className="text-2xl sm:text-3xl font-bold text-white">
-              আপনার বিশেষ মুহূর্তটি কি ফ্রেমে বন্ধি করতে চান?
+              আপনার বিশেষ মুহূর্তটি কি ফ্রেমে বন্দি করতে চান?
             </h4>
             <p className="text-neutral-400 text-sm sm:text-base">
               ChitroJaal-এর সাথে আপনার ভালোবাসার গল্পগুলো অমর করে রাখুন।

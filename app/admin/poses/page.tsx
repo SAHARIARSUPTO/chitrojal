@@ -18,6 +18,7 @@ import {
   FiMoreVertical,
 } from "react-icons/fi";
 import { useNotification } from "@/hooks/useNotification";
+import { useMobileBackHandler } from "@/hooks/useMobileBackHandler";
 
 const wrap = (min: number, max: number, v: number) => {
   const rangeSize = max - min;
@@ -50,6 +51,57 @@ const swipePower = (offset: number, velocity: number) => {
   return Math.abs(offset) * velocity;
 };
 
+import { motion, AnimatePresence } from "framer-motion";
+
+const FadeSlideshowImage = ({
+  images,
+  intervalDuration = 3500,
+  alt = "Gallery Image",
+}: {
+  images: string[];
+  intervalDuration?: number;
+  alt?: string;
+}) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (!images || images.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % images.length);
+    }, intervalDuration);
+    return () => clearInterval(timer);
+  }, [images, intervalDuration]);
+
+  if (!images || images.length === 0) {
+    return null;
+  }
+
+  const currentImage = images[currentIndex] || images[0];
+
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <AnimatePresence mode="popLayout">
+        <motion.div
+          key={currentImage}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.9, ease: "easeInOut" }}
+          className="absolute inset-0"
+        >
+          <Image
+            src={currentImage}
+            alt={alt}
+            fill
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+            className="object-cover"
+          />
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+};
+
 function PoseCard({
   pose,
   onOpenView,
@@ -61,42 +113,47 @@ function PoseCard({
   onDelete: (poseId: string) => void;
   canDelete: boolean;
 }) {
+  const images = pose.imageUrls || [];
+
   return (
     <div
-      className="relative group rounded-[1.5rem] overflow-hidden border border-white/5 bg-[#0A0A0A] shadow-lg aspect-square"
+      className="relative group rounded-[1.5rem] overflow-hidden border border-white/10 bg-[#050505] shadow-xl aspect-square cursor-pointer transition-all duration-300 hover:border-orange-500/40 hover:shadow-orange-500/10"
       onClick={() => onOpenView(pose)}
     >
-      <Image
-        src={pose.imageUrls[0]}
-        alt={pose.name}
-        fill
-        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-        className="object-cover group-hover:scale-105 transition-transform duration-300"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-      <div className="absolute inset-0 p-4 flex flex-col justify-between">
-        <div>
-          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <button className="p-2 rounded-lg bg-black/50 hover:bg-white/20 text-white transition-colors">
-              <FiEye size={16} />
+      <FadeSlideshowImage images={images} alt={pose.name} intervalDuration={3500} />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/40 pointer-events-none"></div>
+
+      <div className="absolute inset-0 p-3 sm:p-4 flex flex-col justify-between z-10 pointer-events-none">
+        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
+          <button className="p-2 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 hover:bg-white/20 text-white transition-colors">
+            <FiEye size={16} />
+          </button>
+          {canDelete ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(pose._id);
+              }}
+              className="p-2 rounded-xl bg-red-500/60 backdrop-blur-md border border-white/10 hover:bg-red-500 text-white transition-colors"
+            >
+              <FiTrash2 size={16} />
             </button>
-            {canDelete ? (
-              <button
-                onClick={() => onDelete(pose._id)}
-                className="p-2 rounded-lg bg-red-500/80 hover:bg-red-500 text-white transition-colors"
-              >
-                <FiTrash2 size={16} />
-              </button>
-            ) : null}
-          </div>
+          ) : null}
         </div>
-        <div className="text-white">
-          <h3 className="font-bold text-sm truncate">{pose.name}</h3>
-          <div className="flex items-center gap-4 text-xs text-neutral-400 mt-1">
+        <div className="rounded-xl bg-black/40 backdrop-blur-md border border-white/10 p-2.5 sm:p-3 text-white/90 shadow-md">
+          <h3 className="font-bold text-xs sm:text-sm truncate text-white/95 drop-shadow-sm">
+            {pose.name}
+          </h3>
+          <div className="flex items-center justify-between text-[11px] text-white/75 mt-1 font-medium">
             <div className="flex items-center gap-1.5">
-              <FiImage size={12} />
-              <span>{pose.imageUrls.length} Photos</span>
+              <FiImage size={12} className="text-orange-400" />
+              <span>{images.length} Photos</span>
             </div>
+            {pose.category && (
+              <span className="bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-orange-500/30">
+                {pose.category}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -104,7 +161,111 @@ function PoseCard({
   );
 }
 
-import { motion, AnimatePresence } from "framer-motion";
+function FolderCard({
+  folder,
+  onSelect,
+  canManagePoses,
+  onRename,
+  onDelete,
+  openFolderMenu,
+  setOpenFolderMenu,
+  folderMenuRef,
+}: {
+  folder: any;
+  onSelect: (folder: any) => void;
+  canManagePoses: boolean;
+  onRename: (id: string, name: string) => void;
+  onDelete: (id: string) => void;
+  openFolderMenu: string | null;
+  setOpenFolderMenu: (id: string | null) => void;
+  folderMenuRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const images = folder.imageUrls || [];
+  const hasImages = images.length > 0;
+
+  return (
+    <div
+      onClick={() => onSelect(folder)}
+      className="group relative rounded-[1.5rem] overflow-hidden border border-white/10 bg-[#050505] shadow-xl aspect-[4/3] sm:aspect-square cursor-pointer transition-all duration-300 hover:border-orange-500/40 hover:shadow-orange-500/10 flex flex-col justify-between"
+    >
+      {hasImages ? (
+        <FadeSlideshowImage images={images} alt={folder.name} intervalDuration={4000} />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0F0F0F] via-[#0A0A0A] to-black flex items-center justify-center">
+          <FiFolder className="text-orange-500/30 w-16 h-16 group-hover:scale-110 transition-transform duration-300" />
+        </div>
+      )}
+
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/40 pointer-events-none"></div>
+
+      <div className="relative z-10 p-3 sm:p-4 flex items-center justify-between pointer-events-none">
+        <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full pointer-events-auto">
+          <FiFolder className="text-orange-400 shrink-0" size={14} />
+          <span className="text-[11px] font-semibold text-white/90">Folder</span>
+        </div>
+
+        <div className="relative pointer-events-auto">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenFolderMenu(openFolderMenu === folder._id ? null : folder._id);
+            }}
+            aria-label="Folder actions"
+            className="p-2 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 hover:bg-white/20 text-neutral-200 transition-colors"
+          >
+            <FiMoreVertical size={16} />
+          </button>
+          {openFolderMenu === folder._id && (
+            <div
+              ref={folderMenuRef}
+              data-folder-menu
+              onClick={(e) => e.stopPropagation()}
+              className="absolute right-0 mt-2 w-44 bg-[#0A0A0A]/95 backdrop-blur-md border border-white/10 rounded-xl p-2 shadow-2xl z-50"
+            >
+              {canManagePoses ? (
+                <>
+                  <button
+                    onClick={() => {
+                      onRename(folder._id, folder.name);
+                      setOpenFolderMenu(null);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs font-semibold text-white hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    Rename
+                  </button>
+                  <button
+                    onClick={() => {
+                      onDelete(folder._id);
+                      setOpenFolderMenu(null);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                  >
+                    Delete
+                  </button>
+                </>
+              ) : (
+                <div className="px-3 py-2 text-xs text-neutral-400">Read only</div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="relative z-10 p-3 sm:p-4 pointer-events-none">
+        <div className="rounded-xl bg-black/40 backdrop-blur-md border border-white/10 p-2.5 sm:p-3 text-white/90 shadow-md">
+          <h3 className="font-bold text-sm sm:text-base text-white/95 group-hover:text-orange-400 transition-colors truncate drop-shadow-sm">
+            {folder.name}
+          </h3>
+          <div className="flex items-center gap-1.5 text-[11px] text-white/75 mt-1 font-medium">
+            <FiImage size={12} className="text-orange-400" />
+            <span>{folder.totalPhotos || images.length || 0} Photos inside</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const FullscreenImageViewer = ({
   isOpen,
@@ -258,6 +419,27 @@ export default function PosesPage() {
   const [canManagePoses, setCanManagePoses] = useState(false);
   const [openFolderMenu, setOpenFolderMenu] = useState<string | null>(null);
   const folderMenuRef = useRef<HTMLDivElement | null>(null);
+
+  // Mobile Back Button handlers for in-page states
+  useMobileBackHandler({
+    active: isViewOpen,
+    onBack: () => setIsViewOpen(false),
+  });
+
+  useMobileBackHandler({
+    active: isUploadOpen,
+    onBack: () => setIsUploadOpen(false),
+  });
+
+  useMobileBackHandler({
+    active: isCreateFolderModalOpen,
+    onBack: () => setIsCreateFolderModalOpen(false),
+  });
+
+  useMobileBackHandler({
+    active: Boolean(selectedFolder && !isViewOpen && !isUploadOpen && !isCreateFolderModalOpen),
+    onBack: () => setSelectedFolder(null),
+  });
 
   // Close folder menu when clicking outside
   useEffect(() => {
@@ -584,10 +766,10 @@ export default function PosesPage() {
         <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-white/10">
           <div>
             <h1 className="text-2xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white to-neutral-400 tracking-tight flex items-center gap-3">
-              <FiImage className="text-orange-500" /> Pose Library
+              <FiImage className="text-orange-500" /> Photo Gallery
             </h1>
             <p className="text-neutral-400 mt-2 text-xs sm:text-sm max-w-md leading-relaxed">
-              Curate, manage, and reference photography poses and mood boards
+              Curate, manage, and reference photo galleries and mood boards
               for your shoots.
             </p>
             {!canManagePoses ? (
@@ -696,77 +878,17 @@ export default function PosesPage() {
                 ))
               ) : folders.length > 0 ? (
                 folders.map((folder) => (
-                  <div
+                  <FolderCard
                     key={folder._id}
-                    className="bg-[#0A0A0A] border border-white/5 rounded-2xl p-3 sm:p-4 hover:border-orange-500/30 transition-all duration-300 relative overflow-visible group shadow-lg"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setSelectedFolder(folder)}
-                      className="w-full text-left flex items-center gap-3"
-                    >
-                      <FiFolder
-                        className="text-orange-500 shrink-0"
-                        size={18}
-                      />
-                      <h3 className="font-bold text-sm sm:text-base text-white group-hover:text-orange-400 transition-colors truncate">
-                        {folder.name}
-                      </h3>
-                    </button>
-                    {/* Three-dot menu for folder actions (shows for every folder) */}
-                    <div className="absolute top-3 right-3 z-20">
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenFolderMenu(
-                              openFolderMenu === folder._id ? null : folder._id,
-                            );
-                          }}
-                          aria-label="Folder actions"
-                          className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300"
-                        >
-                          <FiMoreVertical />
-                        </button>
-                        {openFolderMenu === folder._id && (
-                          <div
-                            ref={folderMenuRef}
-                            data-folder-menu
-                            onClick={(e) => e.stopPropagation()}
-                            className="absolute right-0 mt-2 w-44 bg-[#050505] border border-white/10 rounded-lg p-2 shadow-lg z-50"
-                          >
-                            {canManagePoses ? (
-                              <>
-                                <button
-                                  onClick={() => {
-                                    handleRenameFolder(folder._id, folder.name);
-                                    setOpenFolderMenu(null);
-                                  }}
-                                  className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/5 rounded"
-                                >
-                                  Rename
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    handleDeleteFolder(folder._id);
-                                    setOpenFolderMenu(null);
-                                  }}
-                                  className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded"
-                                >
-                                  Delete
-                                </button>
-                              </>
-                            ) : (
-                              <div className="px-3 py-2 text-sm text-neutral-400">
-                                View only
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                    folder={folder}
+                    onSelect={(selected) => setSelectedFolder(selected)}
+                    canManagePoses={canManagePoses}
+                    onRename={handleRenameFolder}
+                    onDelete={handleDeleteFolder}
+                    openFolderMenu={openFolderMenu}
+                    setOpenFolderMenu={setOpenFolderMenu}
+                    folderMenuRef={folderMenuRef}
+                  />
                 ))
               ) : (
                 <div className="flex flex-col items-center justify-center py-20 relative z-10 text-center px-4 bg-[#0A0A0A]/50 rounded-[2rem] border border-white/5 col-span-full">

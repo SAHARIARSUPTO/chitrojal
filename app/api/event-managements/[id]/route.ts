@@ -7,12 +7,18 @@ const normalizeSchedule = (schedule: unknown, fallbackDate?: string | Date) => {
     return schedule
       .map((item) => {
         if (!item || typeof item !== "object") return null;
-        const entry = item as { date?: string | Date; shift?: string; packageName?: string };
+        const entry = item as {
+          date?: string | Date;
+          shift?: string;
+          packageName?: string;
+          amount?: number | string;
+        };
         if (!entry.date) return null;
         return {
           date: new Date(entry.date),
           shift: entry.shift === "Night" ? "Night" : "Day",
           packageName: entry.packageName || "",
+          amount: Number(entry.amount || 0),
         };
       })
       .filter(Boolean);
@@ -24,6 +30,7 @@ const normalizeSchedule = (schedule: unknown, fallbackDate?: string | Date) => {
         date: new Date(fallbackDate),
         shift: "Day",
         packageName: "",
+        amount: 0,
       },
     ];
   }

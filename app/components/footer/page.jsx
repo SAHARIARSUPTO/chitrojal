@@ -185,22 +185,31 @@ const Footer = () => {
         </div>
 
         {/* Bottom Copyright Bar */}
-        <div className="border-t border-white/10 py-6 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-neutral-500">
-          <p className="text-xs text-neutral-400">
-            &copy; {new Date().getFullYear()}{" "}
-            <span className="text-white font-medium">ChitroJaal</span>.
-            সর্বস্বত্ব সংরক্ষিত।{" "}
-            <span className="text-orange-500 font-medium">
-              <Link
+        <div className="border-t border-white/10 py-6 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-neutral-400">
+          <div className="flex flex-col sm:flex-row items-center gap-2 text-center sm:text-left">
+            <p>
+              &copy; {new Date().getFullYear()}{" "}
+              <span className="text-white font-semibold">ChitroJal (চিত্রজাল)</span>.
+              Feni Photography Agency. All rights reserved.
+            </p>
+            <span className="hidden sm:inline text-neutral-600">|</span>
+            <p className="text-neutral-400">
+              CEO & Founder: <span className="text-white font-medium">Salman H Choudhury</span>
+            </p>
+            <span className="hidden sm:inline text-neutral-600">|</span>
+            <p className="text-neutral-400">
+              Engineered & Developed by{" "}
+              <a
                 href="https://dev-sahariarsupto.vercel.app/"
                 target="_blank"
                 rel="noopener noreferrer"
+                className="text-orange-400 font-semibold hover:underline"
               >
-                Created by MD. SAHARIAR HOSEN
-              </Link>
-            </span>
-          </p>
-          <div className="flex gap-6">
+                MD. SAHARIAR HOSEN SUPTO
+              </a>
+            </p>
+          </div>
+          <div className="flex gap-6 shrink-0">
             <Link
               href="/privacy"
               className="hover:text-orange-400 transition-colors"

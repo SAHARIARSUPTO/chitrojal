@@ -50,18 +50,6 @@ export async function GET(request: Request, context: RouteContext) {
     const formatBDT = (amount: number) =>
       `BDT ${amount.toLocaleString("en-BD", { minimumFractionDigits: 2 })}`;
 
-    const scheduleText = Array.isArray(order.eventSchedule)
-      ? order.eventSchedule
-          .map(
-            (item: { date?: string | Date; shift?: string }) =>
-              `${
-                item.date
-                  ? new Date(item.date).toLocaleDateString("en-BD")
-                  : "N/A"
-              } - ${item.shift || "Day"} shift`,
-          )
-          .join(", ")
-      : "";
     const finalAmount = Math.max(
       Number(order.totalAmount || 0) - Number(order.discountAmount || 0),
       0,
@@ -281,37 +269,51 @@ export async function GET(request: Request, context: RouteContext) {
       gridY + 70,
       { fontSize: 8, color: bodyText },
     );
-    if (scheduleText) {
-      addText(`Schedule: ${scheduleText}`, margin, gridY + cardHeight + 10, {
-        fontSize: 8,
-        color: mutedText,
-      });
-    }
-
-    // -------------------------------------------------------------
     // 3. TABULAR DELIVERABLES DATA
     // -------------------------------------------------------------
     const tableY = gridY + cardHeight + 15;
 
+    const formatDateStr = (d?: string | Date) => {
+      if (!d) return "N/A";
+      const dateObj = new Date(d);
+      return isNaN(dateObj.getTime())
+        ? String(d)
+        : dateObj.toLocaleDateString("en-BD");
+    };
+
+    const tableRows =
+      Array.isArray(order.eventSchedule) && order.eventSchedule.length > 0
+        ? order.eventSchedule.map(
+            (item: {
+              date?: string | Date;
+              shift?: string;
+              packageName?: string;
+              amount?: number;
+            }) => [
+              item.packageName || order.package || "Creative Production Package",
+              formatDateStr(item.date || order.eventDate),
+              item.shift || "Day",
+              formatBDT(
+                item.amount && Number(item.amount) > 0
+                  ? Number(item.amount)
+                  : (order.totalAmount || 0) / order.eventSchedule.length,
+              ),
+            ],
+          )
+        : [
+            [
+              order.package || "Creative Production Package",
+              formatDateStr(order.eventDate),
+              "Day",
+              formatBDT(order.totalAmount || 0),
+            ],
+          ];
+
     autoTable(doc, {
       startY: tableY,
       margin: { left: margin, right: margin },
-      head: [
-        [
-          "Service & Deliverables Description",
-          "Qty / Unit",
-          "Unit Price",
-          "Total Amount",
-        ],
-      ],
-      body: [
-        [
-          `${order.package || "Creative Production Package"}`,
-          "1 Package",
-          formatBDT(order.totalAmount || 0),
-          formatBDT(order.totalAmount || 0),
-        ],
-      ],
+      head: [["Description", "Date", "Shift", "Amount per Shift"]],
+      body: tableRows,
       styles: {
         font: "helvetica",
         fontSize: 8.5,
@@ -326,9 +328,9 @@ export async function GET(request: Request, context: RouteContext) {
       },
       columnStyles: {
         0: { cellWidth: "auto" },
-        1: { cellWidth: 70, halign: "center" },
-        2: { cellWidth: 100, halign: "right" },
-        3: { cellWidth: 100, halign: "right" },
+        1: { cellWidth: 90, halign: "center" },
+        2: { cellWidth: 70, halign: "center" },
+        3: { cellWidth: 120, halign: "right" },
       },
       theme: "grid",
     });

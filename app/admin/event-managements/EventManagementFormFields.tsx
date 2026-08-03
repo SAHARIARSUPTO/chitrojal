@@ -6,6 +6,7 @@ export type EventScheduleEntry = {
   date: string;
   shift: "Day" | "Night";
   packageName?: string;
+  amount?: string;
 };
 
 export type EventManagementFormValues = {
@@ -38,6 +39,7 @@ export const createEmptyScheduleEntry = (): EventScheduleEntry => ({
   date: "",
   shift: "Day",
   packageName: "",
+  amount: "",
 });
 
 export const createEmptyEventForm = (): EventManagementFormValues => ({
@@ -78,6 +80,32 @@ const labelClass =
   "text-[11px] uppercase tracking-[0.18em] font-semibold text-neutral-400 mb-1.5 block";
 
 export default function EventManagementFormFields({ form, setForm }: Props) {
+  const calculateTotalAndDue = (
+    schedule: EventScheduleEntry[],
+    prevTotal: string,
+    discountStr: string,
+    paidStr: string,
+    advanceStr: string,
+  ) => {
+    const hasAnyScheduleAmount = schedule.some(
+      (s) => s.amount !== undefined && s.amount !== "" && !isNaN(Number(s.amount)),
+    );
+    let totalAmount = prevTotal;
+    if (hasAnyScheduleAmount) {
+      const sum = schedule.reduce(
+        (acc, s) => acc + (Number(s.amount) || 0),
+        0,
+      );
+      totalAmount = sum > 0 ? sum.toString() : prevTotal;
+    }
+    const totalNum = Number(totalAmount || 0);
+    const discountNum = Number(discountStr || 0);
+    const paidNum = Number(paidStr || advanceStr || 0);
+    const dueAmount = Math.max(totalNum - discountNum - paidNum, 0).toString();
+
+    return { totalAmount, dueAmount };
+  };
+
   const updateField = (
     name: keyof EventManagementFormValues,
     value: string,
@@ -125,11 +153,20 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
       } as EventScheduleEntry;
 
       const eventDate = eventSchedule[0]?.date || prev.eventDate;
+      const { totalAmount, dueAmount } = calculateTotalAndDue(
+        eventSchedule,
+        prev.totalAmount,
+        prev.discountAmount,
+        prev.paidAmount,
+        prev.advanceAmount,
+      );
 
       return {
         ...prev,
         eventDate,
         eventSchedule,
+        totalAmount,
+        dueAmount,
       };
     });
   };
@@ -165,10 +202,20 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
       );
       const nextSchedule =
         eventSchedule.length > 0 ? eventSchedule : [createEmptyScheduleEntry()];
+      const { totalAmount, dueAmount } = calculateTotalAndDue(
+        nextSchedule,
+        prev.totalAmount,
+        prev.discountAmount,
+        prev.paidAmount,
+        prev.advanceAmount,
+      );
+
       return {
         ...prev,
         eventSchedule: nextSchedule,
         eventDate: nextSchedule[0]?.date || prev.eventDate,
+        totalAmount,
+        dueAmount,
       };
     });
   };
@@ -226,7 +273,6 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
             className={inputClass}
           />
         </div>
-        {/* Removed Main Event Shift and Event Program fields per request */}
         <div>
           <label className={labelClass}>Event Type</label>
           <input
@@ -246,7 +292,7 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
               Event Schedule Dates
             </h3>
             <p className="text-xs text-neutral-400">
-              Add one or more event dates with shift and package name.
+              Add one or more event dates with shift, package name, and amount.
             </p>
           </div>
           <button
@@ -260,8 +306,8 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
         <div className="space-y-3">
           {form.eventSchedule.map((entry, index) => (
             <div
-              key={`${index}-${entry.date || "empty"}`}
-              className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1.2fr)_140px_minmax(0,1.5fr)_auto]"
+              key={index}
+              className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1.2fr)_130px_minmax(0,1.4fr)_130px_auto]"
             >
               <div>
                 <label className={labelClass}>Date #{index + 1}</label>
@@ -291,9 +337,24 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
                 <label className={labelClass}>Package Name #{index + 1}</label>
                 <input
                   value={entry.packageName || ""}
-                  onChange={(e) => updateSchedule(index, "packageName", e.target.value)}
+                  onChange={(e) =>
+                    updateSchedule(index, "packageName", e.target.value)
+                  }
                   className={inputClass}
                   placeholder="Package name for event"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Amount #{index + 1} (BDT)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={entry.amount || ""}
+                  onChange={(e) =>
+                    updateSchedule(index, "amount", e.target.value)
+                  }
+                  className={inputClass}
+                  placeholder="Amount (BDT)"
                 />
               </div>
               <div className="flex items-end">

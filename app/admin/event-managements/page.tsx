@@ -47,6 +47,8 @@ const mapOrderToForm = (
             ? new Date(entry.date).toISOString().slice(0, 10)
             : "",
           shift: (entry.shift === "Night" ? "Night" : "Day") as "Day" | "Night",
+          packageName: entry.packageName || "",
+          amount: entry.amount ? String(entry.amount) : "",
         }))
       : [
           {
@@ -54,6 +56,8 @@ const mapOrderToForm = (
               ? new Date(order.eventDate).toISOString().slice(0, 10)
               : "",
             shift: "Day" as const,
+            packageName: "",
+            amount: "",
           },
         ];
 
@@ -105,11 +109,24 @@ const getStatusClass = (status: string, dueAmount: number) => {
   return "bg-yellow-500/10 text-yellow-400";
 };
 
+import { useMobileBackHandler } from "@/hooks/useMobileBackHandler";
+
 export default function EventManagementsPage() {
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingOrder, setEditingOrder] = useState<OrderRecord | null>(null);
   const [paymentOrder, setPaymentOrder] = useState<OrderRecord | null>(null);
+
+  // Mobile Back Button Interceptor for Modals
+  useMobileBackHandler({
+    active: Boolean(editingOrder),
+    onBack: () => setEditingOrder(null),
+  });
+
+  useMobileBackHandler({
+    active: Boolean(paymentOrder),
+    onBack: () => setPaymentOrder(null),
+  });
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
   const [newPayment, setNewPayment] = useState({
