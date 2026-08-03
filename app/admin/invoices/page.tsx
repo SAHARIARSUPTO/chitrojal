@@ -58,8 +58,9 @@ export default function InvoicesPage() {
 
   const filteredInvoices = useMemo(() => {
     return records.filter((invoice) => {
-      const query =
-        `${invoice.customerName} ${invoice.package || ""} ${invoice.customerPhone || ""}`.toLowerCase();
+      const query = `${invoice.customerName} ${invoice.package || ""} ${
+        invoice.customerPhone || ""
+      }`.toLowerCase();
       const matchesSearch = query.includes(searchTerm.toLowerCase());
       const status =
         invoice.dueAmount && invoice.dueAmount > 0 ? "Pending" : "Paid";
@@ -141,7 +142,11 @@ export default function InvoicesPage() {
                     {stat.label}
                   </h3>
                   <p
-                    className={`text-xl font-black ${stat.color === "text-white" ? "text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-300" : stat.color}`}
+                    className={`text-xl font-black ${
+                      stat.color === "text-white"
+                        ? "text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-300"
+                        : stat.color
+                    }`}
                   >
                     {stat.value}
                   </p>
@@ -210,9 +215,10 @@ export default function InvoicesPage() {
                           {invoice.package || "Package"}
                         </div>
                         <div className="text-xs text-neutral-500">
-                          {invoice.eventProgramType || "Main Program"}
                           {invoice.discountAmount
-                            ? ` - Discount ${formatCurrency(invoice.discountAmount)}`
+                            ? ` - Discount ${formatCurrency(
+                                invoice.discountAmount,
+                              )}`
                             : ""}
                         </div>
                       </td>
@@ -231,7 +237,11 @@ export default function InvoicesPage() {
                       </td>
                       <td className="p-3">
                         <span
-                          className={`px-2 py-1 text-xs rounded-lg font-bold border inline-block ${status === "Paid" ? "text-emerald-400 bg-emerald-400/10 border-emerald-400/20" : "text-amber-400 bg-amber-400/10 border-amber-400/20"}`}
+                          className={`px-2 py-1 text-xs rounded-lg font-bold border inline-block ${
+                            status === "Paid"
+                              ? "text-emerald-400 bg-emerald-400/10 border-emerald-400/20"
+                              : "text-amber-400 bg-amber-400/10 border-amber-400/20"
+                          }`}
                         >
                           {status}
                         </span>

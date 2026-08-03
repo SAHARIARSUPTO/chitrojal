@@ -54,7 +54,11 @@ export async function GET(request: Request, context: RouteContext) {
       ? order.eventSchedule
           .map(
             (item: { date?: string | Date; shift?: string }) =>
-              `${item.date ? new Date(item.date).toLocaleDateString("en-BD") : "N/A"} - ${item.shift || "Day"} shift`,
+              `${
+                item.date
+                  ? new Date(item.date).toLocaleDateString("en-BD")
+                  : "N/A"
+              } - ${item.shift || "Day"} shift`,
           )
           .join(", ")
       : "";
@@ -102,27 +106,69 @@ export async function GET(request: Request, context: RouteContext) {
     const logoBase64 = readFileSync(logoPath, { encoding: "base64" });
     const logoBoxX = margin;
     const logoBoxY = margin + 2;
-    const logoBoxSize = 72;
+    // Moderate logo size so it fits and doesn't crowd the header
+    const logoBoxSize = 64;
     doc.setFillColor(15, 23, 42);
     doc.roundedRect(logoBoxX, logoBoxY, logoBoxSize, logoBoxSize, 10, 10, "F");
     doc.setFillColor(2, 6, 23);
-    doc.roundedRect(logoBoxX + 4, logoBoxY + 4, logoBoxSize - 8, logoBoxSize - 8, 8, 8, "F");
-    doc.addImage(logoBase64, "PNG", logoBoxX + 8, logoBoxY + 8, logoBoxSize - 16, logoBoxSize - 16);
-
-    addText("CHITROJAAL", margin + 90, margin + 22, {
+    doc.roundedRect(
+      logoBoxX + 4,
+      logoBoxY + 4,
+      logoBoxSize - 8,
+      logoBoxSize - 8,
+      8,
+      8,
+      "F",
+    );
+    // Slightly inset logo area and balanced header text.
+    // Preserve original aspect ratio by reading PNG IHDR width/height from the buffer.
+    const logoBuf = Buffer.from(logoBase64, "base64");
+    let drawWidth = logoBoxSize - 16;
+    let drawHeight = logoBoxSize - 16;
+    try {
+      // PNG IHDR chunk: width at bytes 16-19, height at 20-23 (big-endian)
+      if (
+        logoBuf.length >= 24 &&
+        logoBuf.toString("ascii", 12, 16) === "IHDR"
+      ) {
+        const imgW = logoBuf.readUInt32BE(16);
+        const imgH = logoBuf.readUInt32BE(20);
+        if (imgW > 0 && imgH > 0) {
+          const boxW = logoBoxSize - 16;
+          const boxH = logoBoxSize - 16;
+          const ratio = imgW / imgH;
+          // Fit by width first, then constrain by height if needed
+          drawWidth = boxW;
+          drawHeight = Math.round(boxW / ratio);
+          if (drawHeight > boxH) {
+            drawHeight = boxH;
+            drawWidth = Math.round(boxH * ratio);
+          }
+        }
+      }
+    } catch (err) {
+      // fallback - use square area
+      drawWidth = logoBoxSize - 16;
+      drawHeight = logoBoxSize - 16;
+    }
+    const drawX = logoBoxX + 8 + (logoBoxSize - 16 - drawWidth) / 2;
+    const drawY = logoBoxY + 8 + (logoBoxSize - 16 - drawHeight) / 2;
+    doc.addImage(logoBase64, "PNG", drawX, drawY, drawWidth, drawHeight);
+    const headerTextX = logoBoxX + logoBoxSize + 14;
+    addText("CHITROJAAL", headerTextX, margin + 22, {
       fontSize: 24,
       color: brandColor,
       weight: "bold",
     });
     addText(
       "Juma Market, Mizan Road, Feni 3900, Bangladesh",
-      margin + 90,
+      headerTextX,
       margin + 42,
       { fontSize: 8.5, color: mutedText },
     );
     addText(
       "Phone: +880 1834-258375 | Web: www.chitrojaal.com",
-      margin + 90,
+      headerTextX,
       margin + 55,
       { fontSize: 8.5, color: mutedText },
     );
@@ -141,13 +187,19 @@ export async function GET(request: Request, context: RouteContext) {
       { fontSize: 8.5, color: bodyText, weight: "bold", align: "right" },
     );
     addText(
-      `Issue Date: ${new Date(order.createdAt || Date.now()).toLocaleDateString("en-BD")}`,
+      `Issue Date: ${new Date(order.createdAt || Date.now()).toLocaleDateString(
+        "en-BD",
+      )}`,
       pageWidth - margin,
       margin + 48,
       { fontSize: 8, color: mutedText, align: "right" },
     );
     addText(
-      `Event Date: ${order.eventDate ? new Date(order.eventDate).toLocaleDateString("en-BD") : "N/A"}`,
+      `Event Date: ${
+        order.eventDate
+          ? new Date(order.eventDate).toLocaleDateString("en-BD")
+          : "N/A"
+      }`,
       pageWidth - margin,
       margin + 60,
       { fontSize: 8, color: mutedText, align: "right" },
@@ -197,12 +249,16 @@ export async function GET(request: Request, context: RouteContext) {
       fontSize: 8,
       color: bodyText,
     });
-    addText(
-      `Address: ${order.customerAddress || "N/A"}`,
-      margin + 12,
-      gridY + 70,
-      { fontSize: 8, color: bodyText },
-    );
+    // Wrap long customer addresses to avoid overflow inside the billed card
+    const addressLines: string[] = (order.customerAddress || "N/A").match(
+      /.{1,60}(?:\s|$)/g,
+    ) || ["N/A"];
+    addressLines.slice(0, 3).forEach((line: string, i: number) => {
+      addText(line.trim(), margin + 12, gridY + 70 + i * 10, {
+        fontSize: 8,
+        color: bodyText,
+      });
+    });
 
     // Card 2: Operational & Project Context
     const rightCardX = margin + cardWidth + 16;
@@ -218,18 +274,7 @@ export async function GET(request: Request, context: RouteContext) {
       gridY + 32,
       { fontSize: 8.5, color: darkText, weight: "bold" },
     );
-    addText(
-      `Program: ${order.eventProgramType || "Main Program"}${order.otherEventName ? ` - ${order.otherEventName}` : ""}`,
-      rightCardX + 12,
-      gridY + 46,
-      { fontSize: 8, color: bodyText },
-    );
-    addText(
-      `Lead Studio Unit: Chitrojaal Media Lab`,
-      rightCardX + 12,
-      gridY + 58,
-      { fontSize: 8, color: bodyText },
-    );
+    // Program and Lead Studio Unit lines removed per request
     addText(
       `Coverage Area: Feni & Regional Operations`,
       rightCardX + 12,
@@ -237,12 +282,10 @@ export async function GET(request: Request, context: RouteContext) {
       { fontSize: 8, color: bodyText },
     );
     if (scheduleText) {
-      addText(
-        `Schedule: ${scheduleText}`,
-        margin,
-        gridY + cardHeight + 10,
-        { fontSize: 8, color: mutedText },
-      );
+      addText(`Schedule: ${scheduleText}`, margin, gridY + cardHeight + 10, {
+        fontSize: 8,
+        color: mutedText,
+      });
     }
 
     // -------------------------------------------------------------
@@ -323,8 +366,9 @@ export async function GET(request: Request, context: RouteContext) {
       color: darkText,
       weight: "bold",
     });
+    // Use 'Personal' wording only for bKash/Nagad
     addText(
-      "bKash / Nagad Wallet: +880 1834-258375 (Personal / Merchant)",
+      "bKash / Nagad Wallet: +880 1834-258375 (Personal)",
       margin + 12,
       bottomGridY + 71,
       { fontSize: 8, color: bodyText },
@@ -361,7 +405,12 @@ export async function GET(request: Request, context: RouteContext) {
     };
 
     addSummaryRow("Subtotal", formatBDT(order.totalAmount || 0));
-    addSummaryRow("Discount Applied", `- ${formatBDT(order.discountAmount || 0)}`, false, "#16A34A");
+    addSummaryRow(
+      "Discount Applied",
+      `- ${formatBDT(order.discountAmount || 0)}`,
+      false,
+      "#16A34A",
+    );
     addSummaryRow("Advance Paid", formatBDT(order.paidAmount || 0));
 
     // Divider Line
@@ -464,6 +513,18 @@ export async function GET(request: Request, context: RouteContext) {
       color: mutedText,
       align: "right",
     });
+
+    // Very subtle marketing line for developer attribution
+    addText(
+      "System designed and developed by Sahariar Hosen Supto",
+      pageWidth / 2,
+      footerY + 12,
+      {
+        fontSize: 6,
+        color: "#9CA3AF",
+        align: "center",
+      },
+    );
 
     // Buffer Generation
     const pdfBuffer = Buffer.from(doc.output("arraybuffer"));

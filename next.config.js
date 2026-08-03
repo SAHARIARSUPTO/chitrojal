@@ -6,7 +6,8 @@ const nextConfig = {
         protocol: "https",
         hostname: "res.cloudinary.com",
         port: "",
-        pathname: "/an4awbat/**",
+        // allow all cloudinary image paths used by the app
+        pathname: "/**",
       },
     ],
   },
