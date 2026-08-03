@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     canonical: siteUrl,
   },
   openGraph: {
-    title: "চিত্রজাল (ChitroJaal) - Cinematic Wedding Photography & Films in Bangladesh",
+    title: "চিত্রজাল (ChitroJaal) - Premium Wedding Photography & Cinematography in Bangladesh",
     description:
       "ChitroJaal (চিত্রজাল) is Feni's premier photography agency, founded by CEO Salman H Choudhury and developed by MD. SAHARIAR HOSEN SUPTO. Capture your special wedding moments beautifully in Feni & Bangladesh.",
     url: siteUrl,
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "চিত্রজাল (ChitroJaal) - Cinematic Wedding Photography & Films in Bangladesh",
+    title: "চিত্রজাল (ChitroJaal) - Premium Wedding Photography & Cinematography in Bangladesh",
     description:
       "ChitroJaal (চিত্রজাল) is Feni's premier photography agency, founded by CEO Salman H Choudhury and developed by MD. SAHARIAR HOSEN SUPTO.",
     images: [`${siteUrl}/logo.png`],
