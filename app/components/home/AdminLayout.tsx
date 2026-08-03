@@ -13,6 +13,8 @@ import {
   FiLink,
   FiLogOut,
   FiBriefcase,
+  FiKey,
+  FiBook,
 } from "react-icons/fi";
 import Image from "next/image";
 
@@ -24,6 +26,8 @@ const navItems = [
   { href: "/admin/photo-drive", icon: FiLink, label: "Photo Link" },
   { href: "/admin/pose-library", icon: FiCamera, label: "Photo Gallery" },
   { href: "/admin/staff", icon: FiUsers, label: "Staffs" },
+  { href: "/admin/change-password", icon: FiKey, label: "Change Password" },
+  { href: "/admin/user-manual", icon: FiBook, label: "User Manual" },
 ];
 
 const MenuSkeleton = () => (
@@ -65,22 +69,22 @@ function SidebarContent({
 }) {
   return (
     <div className="flex h-full flex-col bg-[#050505] border-r border-white/5">
-      <div className="flex h-16 items-center px-6 border-b border-white/5">
+      <div className="flex h-20 items-center px-5 border-b border-white/5 bg-gradient-to-b from-orange-500/[0.03] to-transparent">
         <Link
           href="/admin"
-          className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
+          className="flex items-center gap-3 transition-transform duration-200 hover:scale-[1.02]"
           onClick={onClose}
         >
-          <div className="p-1.5 bg-orange-500/10 rounded-lg border border-orange-500/20">
-            <FiCamera className="h-5 w-5 text-orange-500" />
+          <div className="relative flex items-center justify-center rounded-xl border border-orange-500/30 bg-gradient-to-br from-orange-500/20 via-neutral-900 to-black p-2 shadow-[0_0_15px_rgba(249,115,22,0.15)]">
+            <Image
+              src="/logo.png"
+              alt="ChitroJaal Logo"
+              width={110}
+              height={32}
+              className="h-8 w-auto object-contain"
+              priority
+            />
           </div>
-          <Image
-            src="/logo.png"
-            alt="ChitroJal Logo"
-            width={100}
-            height={26}
-            className="h-7 w-auto"
-          />
         </Link>
       </div>
       <div className="flex-1 overflow-y-auto py-4 scrollbar-thin scrollbar-thumb-neutral-800 scrollbar-track-transparent">
@@ -118,15 +122,15 @@ function SidebarContent({
         </nav>
       </div>
       <div className="p-4 border-t border-white/5">
-        <div className="flex items-center gap-3 p-2 rounded-xl bg-[#0A0A0A] border border-white/5">
-          <div className="h-9 w-9 rounded-full bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center text-white font-bold text-sm shadow-md">
+        <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-gradient-to-r from-[#0A0A0A] to-[#121212] border border-orange-500/20 shadow-md">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white font-extrabold text-sm shadow-md border border-white/10">
             {user ? user.name.charAt(0).toUpperCase() : ""}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">
+            <p className="text-sm font-bold text-white truncate">
               {user ? user.name : "Loading..."}
             </p>
-            <p className="text-xs text-neutral-400 truncate capitalize">
+            <p className="text-[11px] text-orange-400 font-medium truncate capitalize">
               {user ? `${user.accessRole} account` : ""}
             </p>
           </div>
@@ -193,6 +197,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     "/admin/photo-drive",
     "/admin/pose-library",
     "/admin/staff",
+    "/admin/user-manual",
   ];
 
   const visibleNavItems =
@@ -254,13 +259,35 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             >
               <FiMenu size={24} />
             </button>
-            <div className="min-w-0">
-              <p className="text-sm sm:text-base font-semibold text-white truncate">
-                {user ? user.name : "Loading..."}
-              </p>
-              <p className="text-[11px] sm:text-xs text-neutral-400 truncate capitalize">
-                {user ? `${user.accessRole} account` : ""}
-              </p>
+            <div className="flex items-center gap-3 min-w-0">
+              <Link href="/admin" className="md:hidden flex items-center shrink-0">
+                <Image
+                  src="/logo.png"
+                  alt="ChitroJaal Logo"
+                  width={90}
+                  height={24}
+                  className="h-6 w-auto object-contain"
+                />
+              </Link>
+              {user ? (
+                <div className="flex items-center gap-3 rounded-full border border-orange-500/30 bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-transparent py-1.5 px-3.5 shadow-[0_0_20px_rgba(249,115,22,0.15)]">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-amber-600 font-extrabold text-white text-xs shadow-md border border-white/20">
+                    {user.name ? user.name.charAt(0).toUpperCase() : "A"}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black tracking-wide text-white sm:text-sm truncate">
+                        {user.name}
+                      </span>
+                      <span className="rounded-md border border-orange-500/40 bg-orange-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-orange-300">
+                        {user.accessRole}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-8 w-32 animate-pulse rounded-full bg-neutral-800" />
+              )}
             </div>
           </div>
           <button
@@ -272,7 +299,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         </header>
         <main className="flex-1 p-2 sm:p-4 lg:p-8 overflow-x-hidden">{children}</main>
         <footer className="border-t border-white/5 bg-[#050505] p-4 text-center text-xs text-neutral-500">
-          &copy; {new Date().getFullYear()} ChitroJal. All rights reserved.
+          &copy; {new Date().getFullYear()} ChitroJaal. All rights reserved.
         </footer>
       </div>
       <div className="fixed bottom-0 left-0 right-0 h-16 bg-[#050505] border-t border-white/10 z-40 md:hidden">

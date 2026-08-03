@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import AdminLayout from "../components/home/AdminLayout";
 import UpcomingEventsPanel, {
   UpcomingEventItem,
@@ -170,14 +171,25 @@ export default function DashboardPage() {
         <div className="pointer-events-none absolute right-0 bottom-1/4 h-[500px] w-[500px] rounded-full bg-orange-500/5 blur-[150px]" />
 
         <div className="relative z-10 flex flex-col items-start justify-between gap-4 border-b border-white/10 pb-4 sm:flex-row sm:items-end">
-          <div>
-            <h1 className="bg-clip-text text-2xl font-bold tracking-tight text-transparent bg-gradient-to-br from-white to-neutral-400 sm:text-3xl">
-              Admin Dashboard
-            </h1>
-            <p className="mt-2 max-w-md text-sm leading-relaxed text-neutral-400">
-              Jump straight to the correct admin panel cards and manage event
-              workflows from one place.
-            </p>
+          <div className="flex items-center gap-3.5">
+            <div className="hidden sm:flex h-12 items-center justify-center rounded-xl border border-orange-500/25 bg-gradient-to-br from-orange-500/15 to-neutral-900 px-3 shadow-[0_0_15px_rgba(249,115,22,0.1)]">
+              <Image
+                src="/logo.png"
+                alt="ChitroJaal Logo"
+                width={80}
+                height={28}
+                className="h-6 w-auto object-contain"
+              />
+            </div>
+            <div>
+              <h1 className="bg-clip-text text-2xl font-bold tracking-tight text-transparent bg-gradient-to-br from-white to-neutral-400 sm:text-3xl">
+                Admin Dashboard
+              </h1>
+              <p className="mt-1 max-w-md text-xs sm:text-sm leading-relaxed text-neutral-400">
+                Jump straight to the correct admin panel cards and manage event
+                workflows from one place.
+              </p>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             {userRole === "admin" && (

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AdminLayout from "../../../components/home/AdminLayout";
-import { FiDownload, FiCheckCircle, FiClock, FiPrinter, FiFileText } from "react-icons/fi";
+import { FiDownload, FiCheckCircle, FiClock, FiFileText } from "react-icons/fi";
 import Barcode from "react-barcode";
 import Image from "next/image";
 import logo from "../../../components/navbar/logo.png";
@@ -109,6 +109,15 @@ export default function InvoicePage() {
     }
   };
 
+  const handlePreviewPDF = () => {
+    if (!order?._id) return;
+    if (pdfUrl) {
+      window.open(pdfUrl, "_blank");
+    } else {
+      window.open(`/api/invoices/${order._id}`, "_blank");
+    }
+  };
+
   const formatBDT = (amount: unknown) =>
     `BDT ${Number(amount || 0).toLocaleString("en-BD", {
       minimumFractionDigits: 2,
@@ -167,13 +176,6 @@ export default function InvoicePage() {
               Open PDF
             </button>
             <button
-              onClick={() => window.print()}
-              className="flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition active:scale-95 hover:bg-slate-200"
-            >
-              <FiPrinter />
-              Print
-            </button>
-            <button
               onClick={handleDownloadPDF}
               disabled={downloading}
               className="flex items-center gap-2 rounded-lg bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition active:scale-95 hover:bg-orange-700 disabled:opacity-50"
@@ -191,7 +193,7 @@ export default function InvoicePage() {
                 <div className="rounded-[1.25rem] border border-white/10 bg-slate-950/90 p-3 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_18px_40px_rgba(0,0,0,0.45)]">
                   <Image
                     src={logo}
-                    alt="Chitrojaal logo"
+                    alt="ChitroJaal logo"
                     width={110}
                     height={80}
                     className=" rounded-xl object-contain"
@@ -200,7 +202,7 @@ export default function InvoicePage() {
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.28em] text-orange-300/90">
-                    Chitrojaal
+                    ChitroJaal
                   </p>
                   <h2 className="text-2xl font-black tracking-tight text-white">
                     Invoice Preview

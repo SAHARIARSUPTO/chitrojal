@@ -3,11 +3,12 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiLock, FiLogIn, FiUser } from "react-icons/fi";
+import Image from "next/image";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [loginId, setLoginId] = useState("admin");
-  const [password, setPassword] = useState("admin123");
+  const [loginId, setLoginId] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -47,16 +48,27 @@ export default function AdminLoginPage() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(249,115,22,0.18),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(249,115,22,0.12),transparent_30%)]" />
       <div className="relative z-10 w-full max-w-md rounded-[2rem] border border-white/10 bg-[#0A0A0A]/90 p-8 shadow-2xl backdrop-blur-xl">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-500/20 bg-orange-500/10">
-            <FiLock className="text-orange-500" size={26} />
+          <div className="mx-auto mb-4 flex w-fit items-center justify-center rounded-2xl border border-orange-500/30 bg-gradient-to-b from-orange-500/10 to-transparent p-4 shadow-[0_0_25px_rgba(249,115,22,0.15)]">
+            <Image
+              src="/logo.png"
+              alt="ChitroJaal Logo"
+              width={140}
+              height={40}
+              className="h-10 w-auto object-contain drop-shadow-md"
+              priority
+            />
           </div>
-          <h1 className="text-3xl font-bold">Admin Login</h1>
-          <p className="mt-2 text-sm text-neutral-400">
-            Sign in to access the admin dashboard.
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-orange-400">
+            <FiLock size={12} />
+            <span>Admin Portal</span>
+          </div>
+          <h1 className="mt-3 text-2xl font-extrabold text-white">Sign In</h1>
+          <p className="mt-1 text-xs text-neutral-400">
+            Enter your credentials to access the admin dashboard.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
           <div>
             <label className="mb-2 block text-sm font-medium text-neutral-300">
               Login ID
@@ -67,8 +79,8 @@ export default function AdminLoginPage() {
                 value={loginId}
                 onChange={(e) => setLoginId(e.target.value)}
                 className="w-full bg-transparent outline-none"
-                placeholder="admin"
-                autoComplete="username"
+                placeholder="Enter Login ID"
+                autoComplete="off"
               />
             </div>
           </div>
@@ -84,8 +96,8 @@ export default function AdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-transparent outline-none"
-                placeholder="you password"
-                autoComplete="current-password"
+                placeholder="Enter password"
+                autoComplete="new-password"
               />
             </div>
           </div>
