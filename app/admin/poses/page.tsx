@@ -153,16 +153,24 @@ const FullscreenImageViewer = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex h-screen min-h-screen w-screen flex-col items-center justify-between bg-black/95 p-2 sm:p-4 backdrop-blur-md">
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 bg-black/90 transition-opacity"
         onClick={onClose}
       ></div>
-      <div className="relative z-10 w-full max-w-4xl flex flex-col gap-4">
-        <div
-          className="relative rounded-2xl overflow-hidden shadow-2xl bg-[#050505] border border-white/10 flex justify-center items-center"
-          style={{ aspectRatio: "16/9" }}
+
+      <div className="absolute top-4 right-4 z-30">
+        <button
+          onClick={onClose}
+          className="rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-orange-500/80"
+          title="Close Full Screen"
         >
+          <FiX size={28} />
+        </button>
+      </div>
+
+      <div className="relative z-10 flex h-full min-h-[85vh] w-full flex-1 flex-col items-center justify-center">
+        <div className="relative flex h-full w-full flex-1 items-center justify-center overflow-hidden">
           <AnimatePresence initial={false} custom={direction}>
             <motion.img
               key={page} // Use page as key to trigger re-render on paginate
@@ -180,34 +188,26 @@ const FullscreenImageViewer = ({
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={1}
               onDragEnd={handleDragEnd}
-              className="absolute w-full h-full object-contain"
+              className="max-h-[88vh] max-w-[95vw] object-contain shadow-2xl rounded-lg"
             />
           </AnimatePresence>
-          <div className="absolute top-4 right-4 z-20">
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl bg-black/50 hover:bg-white/20 text-white transition-colors"
-            >
-              <FiX size={24} />
-            </button>
-          </div>
 
           {images.length > 1 && (
             <>
-              <div className="absolute top-1/2 left-4 transform -translate-y-1/2 z-20">
+              <div className="absolute top-1/2 left-2 z-20 -translate-y-1/2 sm:left-6">
                 <button
                   onClick={() => paginate(-1)}
-                  className="p-3 rounded-full bg-black/50 hover:bg-white/20 text-white transition-colors"
+                  className="rounded-full bg-black/60 p-3.5 text-white transition-colors hover:bg-orange-500/80"
                 >
-                  <FiChevronLeft size={24} />
+                  <FiChevronLeft size={28} />
                 </button>
               </div>
-              <div className="absolute top-1/2 right-4 transform -translate-y-1/2 z-20">
+              <div className="absolute top-1/2 right-2 z-20 -translate-y-1/2 sm:right-6">
                 <button
                   onClick={() => paginate(1)}
-                  className="p-3 rounded-full bg-black/50 hover:bg-white/20 text-white transition-colors"
+                  className="rounded-full bg-black/60 p-3.5 text-white transition-colors hover:bg-orange-500/80"
                 >
-                  <FiChevronRight size={24} />
+                  <FiChevronRight size={28} />
                 </button>
               </div>
             </>
@@ -215,7 +215,7 @@ const FullscreenImageViewer = ({
         </div>
 
         {images.length > 1 && (
-          <div className="flex justify-center items-center gap-2">
+          <div className="z-20 mt-3 flex items-center justify-center gap-2 pb-2">
             {images.map((_, i) => (
               <button
                 key={i}
@@ -223,8 +223,8 @@ const FullscreenImageViewer = ({
                   const newDirection = i > imageIndex ? 1 : -1;
                   setPage([i, newDirection]);
                 }}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  i === imageIndex ? "bg-white" : "bg-white/50 hover:bg-white"
+                className={`h-2.5 rounded-full transition-all ${
+                  i === imageIndex ? "w-6 bg-orange-500" : "w-2.5 bg-white/40 hover:bg-white"
                 }`}
               />
             ))}

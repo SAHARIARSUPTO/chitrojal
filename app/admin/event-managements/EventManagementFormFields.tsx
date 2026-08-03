@@ -5,6 +5,7 @@ import React from "react";
 export type EventScheduleEntry = {
   date: string;
   shift: "Day" | "Night";
+  packageName?: string;
 };
 
 export type EventManagementFormValues = {
@@ -36,6 +37,7 @@ export type EventManagementFormValues = {
 export const createEmptyScheduleEntry = (): EventScheduleEntry => ({
   date: "",
   shift: "Day",
+  packageName: "",
 });
 
 export const createEmptyEventForm = (): EventManagementFormValues => ({
@@ -216,7 +218,7 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
       {/* Main Event Date & Type Details */}
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
-          <label className={labelClass}>Main Event Date</label>
+          <label className={labelClass}>Event Date</label>
           <input
             type="date"
             value={form.eventDate}
@@ -231,7 +233,7 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
             value={form.eventType}
             onChange={(e) => updateField("eventType", e.target.value)}
             className={inputClass}
-            placeholder="e.g. Wedding, Reception, Halud"
+            placeholder="Wedding, Birthday, Corporate"
           />
         </div>
       </section>
@@ -244,7 +246,7 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
               Event Schedule Dates
             </h3>
             <p className="text-xs text-neutral-400">
-              Add one or more event dates with Day or Night shift.
+              Add one or more event dates with shift and package name.
             </p>
           </div>
           <button
@@ -252,14 +254,14 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
             onClick={addSchedule}
             className="rounded-lg border border-orange-500/30 bg-orange-500/10 px-3 py-2 text-xs font-semibold text-orange-300 transition hover:bg-orange-500/20"
           >
-            + Add Date
+            + Add Event
           </button>
         </div>
         <div className="space-y-3">
           {form.eventSchedule.map((entry, index) => (
             <div
               key={`${index}-${entry.date || "empty"}`}
-              className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_160px_auto]"
+              className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1.2fr)_140px_minmax(0,1.5fr)_auto]"
             >
               <div>
                 <label className={labelClass}>Date #{index + 1}</label>
@@ -285,6 +287,15 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
                   <option value="Night">Night shift</option>
                 </select>
               </div>
+              <div>
+                <label className={labelClass}>Package Name #{index + 1}</label>
+                <input
+                  value={entry.packageName || ""}
+                  onChange={(e) => updateSchedule(index, "packageName", e.target.value)}
+                  className={inputClass}
+                  placeholder="Package name for event"
+                />
+              </div>
               <div className="flex items-end">
                 <button
                   type="button"
@@ -301,22 +312,13 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
 
       {/* Package & Event Information */}
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div>
+        <div className="md:col-span-2">
           <label className={labelClass}>Event Name</label>
           <input
             value={form.eventName}
             onChange={(e) => updateField("eventName", e.target.value)}
             className={inputClass}
             placeholder="Event name"
-          />
-        </div>
-        <div>
-          <label className={labelClass}>Package Name</label>
-          <input
-            value={form.package}
-            onChange={(e) => updateField("package", e.target.value)}
-            className={inputClass}
-            placeholder="Package name"
           />
         </div>
         <div className="md:col-span-2">

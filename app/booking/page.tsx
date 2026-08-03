@@ -45,6 +45,7 @@ const bengaliEventTypes = [
 export type ScheduleEntry = {
   date: string;
   shift: "Day" | "Night";
+  packageName?: string;
 };
 
 // Custom Premium Calendar Component
@@ -171,7 +172,9 @@ function BookingPageContents() {
     eventLocation: "",
     googleMapsLink: "",
     notes: "",
-    eventSchedule: [{ date: todayStr, shift: "Day" as "Day" | "Night" }],
+    eventSchedule: [
+      { date: todayStr, shift: "Day" as "Day" | "Night", packageName: "" },
+    ] as ScheduleEntry[],
     agreedToTerms: false,
   });
 
@@ -228,7 +231,7 @@ function BookingPageContents() {
       ...prev,
       eventSchedule: [
         ...prev.eventSchedule,
-        { date: format(prev.eventDate, "yyyy-MM-dd"), shift: "Day" },
+        { date: format(prev.eventDate, "yyyy-MM-dd"), shift: "Day", packageName: "" },
       ],
     }));
   };
@@ -241,7 +244,7 @@ function BookingPageContents() {
         eventSchedule:
           filtered.length > 0
             ? filtered
-            : [{ date: format(prev.eventDate, "yyyy-MM-dd"), shift: "Day" }],
+            : [{ date: format(prev.eventDate, "yyyy-MM-dd"), shift: "Day", packageName: "" }],
       };
     });
   };
@@ -273,7 +276,7 @@ function BookingPageContents() {
         eventName:
           formData.eventName ||
           `${formData.customerName} - ${formData.eventType}`,
-        package: formData.eventType || "Standard Booking",
+        package: formData.eventSchedule[0]?.packageName || formData.eventType || "Standard Booking",
         packageDetails: formData.packageDetails,
         eventLocation: formData.eventLocation,
         googleMapsLink: formData.googleMapsLink,
@@ -281,6 +284,7 @@ function BookingPageContents() {
         eventSchedule: formData.eventSchedule.map((s) => ({
           date: s.date || format(formData.eventDate, "yyyy-MM-dd"),
           shift: s.shift,
+          packageName: s.packageName || "",
         })),
         bookingSource: "Website Booking Form",
         createdFromBooking: true,
@@ -455,6 +459,9 @@ function BookingPageContents() {
                     onChange={handleInputChange}
                     className={inputStyle}
                   >
+                    <option value="" disabled className="bg-[#0A0A0A] text-neutral-500">
+                      Wedding, Birthday, Corporate
+                    </option>
                     {bengaliEventTypes.map((type) => (
                       <option key={type} value={type} className="bg-[#0A0A0A]">
                         {type}
@@ -504,7 +511,7 @@ function BookingPageContents() {
                 {formData.eventSchedule.map((entry, index) => (
                   <div
                     key={index}
-                    className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_160px_auto] gap-3 items-end bg-white/[0.02] border border-white/5 rounded-2xl p-3"
+                    className="grid grid-cols-1 sm:grid-cols-[minmax(0,1.2fr)_130px_minmax(0,1.5fr)_auto] gap-3 items-end bg-white/[0.02] border border-white/5 rounded-2xl p-3"
                   >
                     <div>
                       <label className="text-[10px] uppercase text-neutral-500 font-semibold mb-1 block">
@@ -533,6 +540,20 @@ function BookingPageContents() {
                         <option value="Day">Day Shift</option>
                         <option value="Night">Night Shift</option>
                       </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase text-neutral-500 font-semibold mb-1 block">
+                        প্যাকেজের নাম (Package Name) #{index + 1}
+                      </label>
+                      <input
+                        type="text"
+                        value={entry.packageName || ""}
+                        onChange={(e) =>
+                          updateScheduleEntry(index, "packageName", e.target.value)
+                        }
+                        className={inputStyle}
+                        placeholder="যেমন: গোল্ড প্যাকেজ, সিলভার প্যাকেজ"
+                      />
                     </div>
                     <button
                       type="button"

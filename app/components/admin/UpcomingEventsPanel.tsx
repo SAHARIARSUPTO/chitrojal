@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { FiCalendar, FiChevronRight, FiMapPin } from "react-icons/fi";
+import { FiCalendar, FiChevronLeft, FiChevronRight, FiMapPin } from "react-icons/fi";
 import { formatDateKey, parseDateValue } from "@/lib/date-utils";
 
 type EventScheduleEntry = {
@@ -83,9 +83,22 @@ export default function UpcomingEventsPanel({
       );
   }, [events]);
 
-  const activeMonth = new Date();
-  const monthStart = new Date(activeMonth.getFullYear(), activeMonth.getMonth(), 1);
-  const monthEnd = new Date(activeMonth.getFullYear(), activeMonth.getMonth() + 1, 0);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const prevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  };
+
+  const resetToday = () => {
+    setCurrentMonth(new Date());
+  };
+
+  const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+  const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
   const startPadding = monthStart.getDay();
   const daysInMonth = monthEnd.getDate();
 
@@ -106,8 +119,8 @@ export default function UpcomingEventsPanel({
     ...Array.from({ length: startPadding }, () => null),
     ...Array.from({ length: daysInMonth }, (_, index) => {
       const date = new Date(
-        activeMonth.getFullYear(),
-        activeMonth.getMonth(),
+        currentMonth.getFullYear(),
+        currentMonth.getMonth(),
         index + 1,
       );
       return date;
@@ -136,9 +149,38 @@ export default function UpcomingEventsPanel({
         </div>
 
         <div className="mt-4">
-          <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-neutral-500">
-            <span>{formatMonth(monthStart)}</span>
-            <span>{normalizedEvents.length} events</span>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={prevMonth}
+                className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-neutral-300 transition-colors hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-white"
+                title="Previous Month"
+              >
+                <FiChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="text-sm font-bold tracking-wide text-white">
+                {formatMonth(monthStart)}
+              </span>
+              <button
+                type="button"
+                onClick={nextMonth}
+                className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-neutral-300 transition-colors hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-white"
+                title="Next Month"
+              >
+                <FiChevronRight className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={resetToday}
+                className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-semibold text-orange-400 transition-colors hover:bg-orange-500/10"
+              >
+                Today
+              </button>
+            </div>
+            <span className="text-xs font-semibold text-neutral-400">
+              {normalizedEvents.length} total events
+            </span>
           </div>
           <div className="grid grid-cols-7 gap-1">
             {weekdayLabels.map((label) => (
