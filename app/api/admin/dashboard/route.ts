@@ -153,9 +153,7 @@ export async function GET(request: Request) {
         detail: `${totalPoses} photo reference${totalPoses === 1 ? "" : "s"}`,
         icon: "image",
       },
-    ].filter((metric) =>
-      role === "staff" ? !FINANCE_METRIC_LABELS.includes(metric.label) : true,
-    );
+    ];
 
     return NextResponse.json({
       success: true,

@@ -51,6 +51,7 @@ export default function PhotoDrivePage() {
   });
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userLoading, setUserLoading] = useState(true);
+  const isAdmin = userRole === "admin";
 
   const loadLinks = async (contact?: string) => {
     setLoading(true);
@@ -261,8 +262,7 @@ export default function PhotoDrivePage() {
 
   return (
     <AdminLayout>
-      {userRole === "admin" ? (
-        <div className="max-w-7xl mx-auto space-y-8 pb-12 text-neutral-200">
+      <div className="max-w-7xl mx-auto space-y-8 pb-12 text-neutral-200">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6">
             <div>
               <h1 className="text-3xl font-bold">Photo Drive Links</h1>
@@ -273,11 +273,12 @@ export default function PhotoDrivePage() {
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-8">
-            <div className="rounded-[1.5rem] border border-white/10 bg-[#0A0A0A]/80 p-6">
-              <h2 className="text-xl font-semibold mb-4">
-                {editingLink ? "Edit Link" : "Create Link"}
-              </h2>
+          <div className={`grid ${isAdmin ? "lg:grid-cols-[1.1fr_0.9fr]" : "grid-cols-1"} gap-8`}>
+            {isAdmin && (
+              <div className="rounded-[1.5rem] border border-white/10 bg-[#0A0A0A]/80 p-6">
+                <h2 className="text-xl font-semibold mb-4">
+                  {editingLink ? "Edit Link" : "Create Link"}
+                </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label
@@ -383,10 +384,11 @@ export default function PhotoDrivePage() {
                 >
                   <FiPlus /> {editingLink ? "Update link" : "Save link"}
                 </button>
-              </form>
-            </div>
+                </form>
+              </div>
+            )}
 
-            <div className="rounded-[1.5rem] border border-white/10 bg-[#0A0A0A]/80 p-6">
+            <div className="rounded-[1.5rem] border border-white/10 bg-[#0A0A0A]/80 p-6 flex flex-col h-full">
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-4">
                 <h2 className="text-xl font-semibold">Saved Links</h2>
                 <div className="relative w-full sm:w-auto">
@@ -429,22 +431,24 @@ export default function PhotoDrivePage() {
                             )}
                           </p>
                         </div>
-                        <div className="flex gap-2 flex-shrink-0">
-                          <button
-                            onClick={() => handleEdit(link)}
-                            className="rounded-lg border border-white/10 p-2"
-                            title="Edit"
-                          >
-                            <FiEdit2 />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(link._id)}
-                            className="rounded-lg border border-white/10 p-2"
-                            title="Delete"
-                          >
-                            <FiTrash2 />
-                          </button>
-                        </div>
+                        {isAdmin && (
+                          <div className="flex gap-2 flex-shrink-0">
+                            <button
+                              onClick={() => handleEdit(link)}
+                              className="rounded-lg border border-white/10 p-2"
+                              title="Edit"
+                            >
+                              <FiEdit2 />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(link._id)}
+                              className="rounded-lg border border-white/10 p-2"
+                              title="Delete"
+                            >
+                              <FiTrash2 />
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-4 mt-3">
                         <a
@@ -475,114 +479,6 @@ export default function PhotoDrivePage() {
             </div>
           </div>
         </div>
-      ) : (
-        <StaffPhotoDriveView
-          loadLinks={loadLinks}
-          loading={loading}
-          links={links}
-          handleCopy={handleCopy}
-        />
-      )}
     </AdminLayout>
-  );
-}
-
-function StaffPhotoDriveView({
-  loadLinks,
-  loading,
-  links,
-  handleCopy,
-}: {
-  loadLinks: (contact?: string) => void;
-  loading: boolean;
-  links: DriveLink[];
-  handleCopy: (link: string, id: string) => void;
-}) {
-  const [staffSearchTerm, setStaffSearchTerm] = useState("");
-
-  const handleStaffSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    loadLinks(staffSearchTerm);
-  };
-
-  return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-12 text-neutral-200">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Search Photo Drive Links</h1>
-          <p className="text-sm text-neutral-400 mt-2">
-            Search for client photo drive links by their phone number.
-          </p>
-        </div>
-      </div>
-      <div className="rounded-[1.5rem] border border-white/10 bg-[#0A0A0A]/80 p-6">
-        <form onSubmit={handleStaffSearch} className="flex items-center gap-4 mb-4">
-          <div className="relative w-full">
-            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
-            <input
-              type="text"
-              placeholder="Enter client's phone number..."
-              value={staffSearchTerm}
-              onChange={(e) => setStaffSearchTerm(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-[#050505] pl-10 pr-4 py-3 text-sm"
-            />
-          </div>
-          <button
-            type="submit"
-            className="flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-3 font-semibold text-white"
-          >
-            <FiSearch /> Search
-          </button>
-        </form>
-
-        {loading ? (
-          <p className="text-sm text-neutral-400">Loading links...</p>
-        ) : links.length === 0 ? (
-          <p className="text-sm text-neutral-400">No links found for this phone number.</p>
-        ) : (
-          <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-transparent">
-            {links.map((link) => (
-              <div
-                key={link._id}
-                className="rounded-xl border border-white/10 bg-[#050505] p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0 pr-2">
-                    <h3 className="font-semibold text-white truncate text-sm sm:text-base">
-                      {link.title}
-                    </h3>
-                    <p className="text-[11px] sm:text-xs text-neutral-400 mt-1 truncate">
-                      {link.eventName && <span>{link.eventName} &bull; </span>}
-                      {link.clientName && <span>{link.clientName} &bull; </span>}
-                      {link.contactNumber && <span>{link.contactNumber}</span>}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 mt-3">
-                  <a
-                    href={link.link}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-2 text-sm text-orange-400 hover:text-orange-300 transition-colors"
-                  >
-                    <FiLink /> Open link
-                  </a>
-                  <button
-                    id={`copy-btn-${link._id}`}
-                    onClick={() => handleCopy(link.link, link._id)}
-                    className="flex items-center gap-2 text-sm text-neutral-400 hover:text-white transition-colors"
-                  >
-                    <FiCopy /> Copy
-                  </button>
-                </div>
-                {link.notes ? (
-                  <p className="mt-2 text-sm text-neutral-400">{link.notes}</p>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
   );
 }

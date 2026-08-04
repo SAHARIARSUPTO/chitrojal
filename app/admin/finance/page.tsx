@@ -60,6 +60,23 @@ export default function FinancePage() {
     vendor: "",
     notes: "",
   });
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const isAdmin = userRole === "admin";
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const response = await fetch("/api/auth/me");
+        if (response.ok) {
+          const userData = await response.json();
+          setUserRole(userData.user?.accessRole);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user role", error);
+      }
+    };
+    fetchUserRole();
+  }, []);
 
   const loadSummary = async (selectedMonth = month) => {
     setLoading(true);
@@ -418,12 +435,14 @@ export default function FinancePage() {
               <FiDownload /> Export PDF
             </button>
 
-            <button
-              onClick={handleResetFinance}
-              className="flex items-center gap-2 rounded-xl bg-red-600/80 hover:bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition-all active:scale-95"
-            >
-              <FiRefreshCw /> Reset Month
-            </button>
+            {isAdmin && (
+              <button
+                onClick={handleResetFinance}
+                className="flex items-center gap-2 rounded-xl bg-red-600/80 hover:bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition-all active:scale-95"
+              >
+                <FiRefreshCw /> Reset Month
+              </button>
+            )}
           </div>
         </div>
 
@@ -476,8 +495,9 @@ export default function FinancePage() {
         {/* Main Operational Grid */}
         <div className="grid lg:grid-cols-[1fr_1fr] gap-6">
           {/* Record / Edit Expense Box */}
-          <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4 sm:p-6 backdrop-blur-md">
-            <div className="flex justify-between items-center mb-6">
+          {isAdmin ? (
+            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4 sm:p-6 backdrop-blur-md">
+              <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 {editingExpense ? (
                   <>
@@ -597,6 +617,9 @@ export default function FinancePage() {
               </button>
             </form>
           </div>
+          ) : (
+            <div></div>
+          )}
 
           {/* Recent Expenses List */}
           <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4 sm:p-6 backdrop-blur-md flex flex-col justify-between">
@@ -636,20 +659,24 @@ export default function FinancePage() {
                           {new Date(expense.date).toLocaleDateString("en-BD")}
                         </p>
                         <div className="mt-2 flex justify-end gap-1">
-                          <button
-                            onClick={() => handleEdit(expense)}
-                            className="rounded-md border border-white/10 p-1.5 text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
-                            title="Edit"
-                          >
-                            <FiEdit2 className="text-xs" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(expense._id)}
-                            className="rounded-md border border-white/10 p-1.5 text-red-400 hover:bg-red-500/20 transition-colors"
-                            title="Delete"
-                          >
-                            <FiTrash2 className="text-xs" />
-                          </button>
+                          {isAdmin && (
+                            <>
+                              <button
+                                onClick={() => handleEdit(expense)}
+                                className="rounded-md border border-white/10 p-1.5 text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+                                title="Edit"
+                              >
+                                <FiEdit2 className="text-xs" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(expense._id)}
+                                className="rounded-md border border-white/10 p-1.5 text-red-400 hover:bg-red-500/20 transition-colors"
+                                title="Delete"
+                              >
+                                <FiTrash2 className="text-xs" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>

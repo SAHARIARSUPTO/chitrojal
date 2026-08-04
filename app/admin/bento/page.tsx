@@ -149,6 +149,24 @@ export default function BentoGridAdminPage() {
   const [saving, setSaving] = useState(false);
   const [deletingPath, setDeletingPath] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const isAdmin = userRole === "admin";
+
+  // Fetch user role
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const response = await fetch("/api/auth/me");
+        if (response.ok) {
+          const userData = await response.json();
+          setUserRole(userData.user?.accessRole);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user role", error);
+      }
+    };
+    fetchUserRole();
+  }, []);
   
   // Custom dropdown state
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -359,14 +377,16 @@ export default function BentoGridAdminPage() {
               <FiRefreshCw className={loading ? "animate-spin" : ""} size={14} />
               Refresh
             </button>
-            <button
-              onClick={handleSaveAll}
-              disabled={saving}
-              className="inline-flex items-center gap-2 rounded-xl border border-orange-500/40 bg-gradient-to-r from-orange-600 to-amber-600 px-4 py-2 text-xs font-bold text-white shadow-[0_0_20px_rgba(234,88,12,0.25)] transition hover:from-orange-500 hover:to-amber-500 disabled:opacity-50"
-            >
-              {saving ? <FiRefreshCw className="animate-spin" size={14} /> : <FiSave size={14} />}
-              Save All Settings
-            </button>
+            {isAdmin && (
+              <button
+                onClick={handleSaveAll}
+                disabled={saving}
+                className="inline-flex items-center gap-2 rounded-xl border border-orange-500/40 bg-gradient-to-r from-orange-600 to-amber-600 px-4 py-2 text-xs font-bold text-white shadow-[0_0_20px_rgba(234,88,12,0.25)] transition hover:from-orange-500 hover:to-amber-500 disabled:opacity-50"
+              >
+                {saving ? <FiRefreshCw className="animate-spin" size={14} /> : <FiSave size={14} />}
+                Save All Settings
+              </button>
+            )}
           </div>
         </div>
 
@@ -602,37 +622,41 @@ export default function BentoGridAdminPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleFileUpload}
-                className="hidden"
-                id="bento-file-input"
-              />
-              <label
-                htmlFor="bento-file-input"
-                className={`inline-flex items-center gap-2 cursor-pointer rounded-xl border border-orange-500/30 bg-orange-500/10 px-4 py-2.5 text-xs font-bold text-orange-300 transition hover:bg-orange-500/20 hover:border-orange-500/50 shadow-md ${
-                  uploading ? "opacity-50 pointer-events-none" : ""
-                }`}
-              >
-                {uploading ? (
-                  <FiRefreshCw className="animate-spin" size={16} />
-                ) : (
-                  <FiUploadCloud size={16} />
-                )}
-                <span>{uploading ? "Uploading..." : "Upload Photos"}</span>
-              </label>
+              {isAdmin && (
+                <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="bento-file-input"
+                  />
+                  <label
+                    htmlFor="bento-file-input"
+                    className={`inline-flex items-center gap-2 cursor-pointer rounded-xl border border-orange-500/30 bg-orange-500/10 px-4 py-2.5 text-xs font-bold text-orange-300 transition hover:bg-orange-500/20 hover:border-orange-500/50 shadow-md ${
+                      uploading ? "opacity-50 pointer-events-none" : ""
+                    }`}
+                  >
+                    {uploading ? (
+                      <FiRefreshCw className="animate-spin" size={16} />
+                    ) : (
+                      <FiUploadCloud size={16} />
+                    )}
+                    <span>{uploading ? "Uploading..." : "Upload Photos"}</span>
+                  </label>
 
-              <button
-                onClick={handleSaveAll}
-                disabled={saving}
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/10 px-4 py-2.5 text-xs font-bold text-white hover:bg-white/20 disabled:opacity-50"
-              >
-                <FiSave size={14} />
-                Save Changes
-              </button>
+                  <button
+                    onClick={handleSaveAll}
+                    disabled={saving}
+                    className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/10 px-4 py-2.5 text-xs font-bold text-white hover:bg-white/20 disabled:opacity-50"
+                  >
+                    <FiSave size={14} />
+                    Save Changes
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -655,12 +679,14 @@ export default function BentoGridAdminPage() {
               <p className="mt-1 max-w-sm text-xs text-neutral-400">
                 Upload photos to save them locally into <code className="text-orange-400">public/{activeCategory.id}</code> and feature them on the Bento grid.
               </p>
-              <label
-                htmlFor="bento-file-input"
-                className="mt-4 inline-flex items-center gap-2 cursor-pointer rounded-xl bg-orange-600 px-4 py-2 text-xs font-bold text-white shadow-lg hover:bg-orange-500"
-              >
-                <FiUploadCloud size={14} /> Upload First Photo
-              </label>
+              {isAdmin && (
+                <label
+                  htmlFor="bento-file-input"
+                  className="mt-4 inline-flex items-center gap-2 cursor-pointer rounded-xl bg-orange-600 px-4 py-2 text-xs font-bold text-white shadow-lg hover:bg-orange-500"
+                >
+                  <FiUploadCloud size={14} /> Upload First Photo
+                </label>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
@@ -679,36 +705,38 @@ export default function BentoGridAdminPage() {
                     </div>
 
                     {/* Controls Overlay */}
-                    <div className="absolute top-3 right-3 z-20 flex items-center gap-1 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
-                      <button
-                        onClick={() => moveImage(index, "up")}
-                        disabled={index === 0}
-                        title="Move Left / Up in Sequence"
-                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/20 bg-black/70 text-white hover:bg-orange-600 disabled:opacity-30 backdrop-blur-md"
-                      >
-                        <FiArrowUp size={14} />
-                      </button>
-                      <button
-                        onClick={() => moveImage(index, "down")}
-                        disabled={index === activeImages.length - 1}
-                        title="Move Right / Down in Sequence"
-                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/20 bg-black/70 text-white hover:bg-orange-600 disabled:opacity-30 backdrop-blur-md"
-                      >
-                        <FiArrowDown size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteImage(src)}
-                        disabled={isDeleting}
-                        title="Delete photo locally"
-                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-red-500/30 bg-red-950/80 text-red-300 hover:bg-red-600 hover:text-white backdrop-blur-md"
-                      >
-                        {isDeleting ? (
-                          <FiRefreshCw className="animate-spin" size={12} />
-                        ) : (
-                          <FiTrash2 size={13} />
-                        )}
-                      </button>
-                    </div>
+                    {isAdmin && (
+                      <div className="absolute top-3 right-3 z-20 flex items-center gap-1 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
+                        <button
+                          onClick={() => moveImage(index, "up")}
+                          disabled={index === 0}
+                          title="Move Left / Up in Sequence"
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/20 bg-black/70 text-white hover:bg-orange-600 disabled:opacity-30 backdrop-blur-md"
+                        >
+                          <FiArrowUp size={14} />
+                        </button>
+                        <button
+                          onClick={() => moveImage(index, "down")}
+                          disabled={index === activeImages.length - 1}
+                          title="Move Right / Down in Sequence"
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/20 bg-black/70 text-white hover:bg-orange-600 disabled:opacity-30 backdrop-blur-md"
+                        >
+                          <FiArrowDown size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteImage(src)}
+                          disabled={isDeleting}
+                          title="Delete photo locally"
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-red-500/30 bg-red-950/80 text-red-300 hover:bg-red-600 hover:text-white backdrop-blur-md"
+                        >
+                          {isDeleting ? (
+                            <FiRefreshCw className="animate-spin" size={12} />
+                          ) : (
+                            <FiTrash2 size={13} />
+                          )}
+                        </button>
+                      </div>
+                    )}
 
                     {/* Image Preview Container */}
                     <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-neutral-900">

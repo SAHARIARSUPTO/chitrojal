@@ -62,6 +62,23 @@ export default function EventManagementDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPaymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const isAdmin = userRole === "admin";
+
+  useEffect(() => {
+    async function fetchUserRole() {
+      try {
+        const res = await fetch("/api/auth/me");
+        if (res.ok) {
+          const data = await res.json();
+          setUserRole(data.user?.accessRole || null);
+        }
+      } catch (err) {
+        console.error("Failed to fetch user role:", err);
+      }
+    }
+    fetchUserRole();
+  }, []);
 
   async function fetchOrder() {
     if (!id) return;
@@ -139,12 +156,14 @@ export default function EventManagementDetailPage() {
             >
               <FiDownload /> Invoice
             </button>
-            <button
-              onClick={() => setPaymentModalOpen(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-600 to-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-orange-500 hover:to-orange-400"
-            >
-              <FiDollarSign /> Add Payment
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setPaymentModalOpen(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-600 to-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-orange-500 hover:to-orange-400"
+              >
+                <FiDollarSign /> Add Payment
+              </button>
+            )}
           </div>
         </div>
 
@@ -305,7 +324,7 @@ export default function EventManagementDetailPage() {
         ) : null}
       </div>
 
-      {isPaymentModalOpen && order ? (
+      {isAdmin && isPaymentModalOpen && order ? (
         <AddPaymentModal
           orderId={order._id}
           onClose={() => setPaymentModalOpen(false)}

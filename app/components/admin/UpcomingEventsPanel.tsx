@@ -38,7 +38,67 @@ type NormalizedUpcomingEvent = UpcomingEventItem & {
   shift: string;
 };
 
-const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const weekdayHeaders = [
+  { label: "Sun", textColor: "text-rose-400" },
+  { label: "Mon", textColor: "text-sky-400" },
+  { label: "Tue", textColor: "text-purple-400" },
+  { label: "Wed", textColor: "text-emerald-400" },
+  { label: "Thu", textColor: "text-indigo-400" },
+  { label: "Fri", textColor: "text-cyan-400" },
+  { label: "Sat", textColor: "text-fuchsia-400" },
+];
+
+const dayColorThemes = [
+  {
+    // Sun - Rose
+    border: "border-rose-500/30 hover:border-rose-400/70",
+    bg: "bg-gradient-to-br from-rose-950/40 via-rose-900/15 to-[#0A0A0A]",
+    dayNum: "text-rose-200 font-bold",
+    glow: "hover:shadow-[0_0_16px_rgba(244,63,94,0.22)]",
+  },
+  {
+    // Mon - Sky
+    border: "border-sky-500/30 hover:border-sky-400/70",
+    bg: "bg-gradient-to-br from-sky-950/40 via-blue-950/15 to-[#0A0A0A]",
+    dayNum: "text-sky-200 font-bold",
+    glow: "hover:shadow-[0_0_16px_rgba(56,189,248,0.22)]",
+  },
+  {
+    // Tue - Purple
+    border: "border-purple-500/30 hover:border-purple-400/70",
+    bg: "bg-gradient-to-br from-purple-950/40 via-purple-900/15 to-[#0A0A0A]",
+    dayNum: "text-purple-200 font-bold",
+    glow: "hover:shadow-[0_0_16px_rgba(168,85,247,0.22)]",
+  },
+  {
+    // Wed - Emerald
+    border: "border-emerald-500/30 hover:border-emerald-400/70",
+    bg: "bg-gradient-to-br from-emerald-950/40 via-emerald-900/15 to-[#0A0A0A]",
+    dayNum: "text-emerald-200 font-bold",
+    glow: "hover:shadow-[0_0_16px_rgba(16,185,129,0.22)]",
+  },
+  {
+    // Thu - Indigo
+    border: "border-indigo-500/30 hover:border-indigo-400/70",
+    bg: "bg-gradient-to-br from-indigo-950/40 via-indigo-900/15 to-[#0A0A0A]",
+    dayNum: "text-indigo-200 font-bold",
+    glow: "hover:shadow-[0_0_16px_rgba(99,102,241,0.22)]",
+  },
+  {
+    // Fri - Cyan
+    border: "border-cyan-500/30 hover:border-cyan-400/70",
+    bg: "bg-gradient-to-br from-cyan-950/40 via-teal-900/15 to-[#0A0A0A]",
+    dayNum: "text-cyan-200 font-bold",
+    glow: "hover:shadow-[0_0_16px_rgba(6,182,212,0.22)]",
+  },
+  {
+    // Sat - Fuchsia
+    border: "border-fuchsia-500/30 hover:border-fuchsia-400/70",
+    bg: "bg-gradient-to-br from-fuchsia-950/40 via-pink-900/15 to-[#0A0A0A]",
+    dayNum: "text-fuchsia-200 font-bold",
+    glow: "hover:shadow-[0_0_16px_rgba(217,70,239,0.22)]",
+  },
+];
 
 const formatDay = (date: Date) =>
   new Intl.DateTimeFormat("en", { day: "numeric" }).format(date);
@@ -131,12 +191,15 @@ export default function UpcomingEventsPanel({
 
   return (
     <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-      <div className="rounded-2xl border border-white/5 bg-[#0A0A0A]/80 p-4 shadow-2xl sm:p-5">
-        <div className="flex items-start justify-between gap-3">
+      {/* Calendar View Panel */}
+      <div className="relative overflow-hidden rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-950/25 via-[#0D0D0D] to-[#070707] p-4 shadow-[0_0_35px_rgba(234,88,12,0.12)] sm:p-5">
+        <div className="pointer-events-none absolute -top-12 -right-12 h-44 w-44 rounded-full bg-orange-500/10 blur-3xl" />
+        
+        <div className="relative z-10 flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="rounded-lg border border-orange-500/20 bg-orange-500/10 p-2 text-orange-500">
-                <FiCalendar />
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-orange-500/30 bg-orange-500/20 text-orange-400 shadow-[0_0_15px_rgba(234,88,12,0.3)]">
+                <FiCalendar size={18} />
               </span>
               <div>
                 <h2 className="text-base font-bold text-white sm:text-lg">{title}</h2>
@@ -148,24 +211,24 @@ export default function UpcomingEventsPanel({
           </div>
         </div>
 
-        <div className="mt-4">
+        <div className="relative z-10 mt-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={prevMonth}
-                className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-neutral-300 transition-colors hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-white"
+                className="rounded-xl border border-white/15 bg-white/5 p-2 text-neutral-200 transition-all hover:border-orange-500/50 hover:bg-orange-500/20 hover:text-white"
                 title="Previous Month"
               >
                 <FiChevronLeft className="h-4 w-4" />
               </button>
-              <span className="text-sm font-bold tracking-wide text-white">
+              <span className="text-sm font-black tracking-wide text-white px-1">
                 {formatMonth(monthStart)}
               </span>
               <button
                 type="button"
                 onClick={nextMonth}
-                className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-neutral-300 transition-colors hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-white"
+                className="rounded-xl border border-white/15 bg-white/5 p-2 text-neutral-200 transition-all hover:border-orange-500/50 hover:bg-orange-500/20 hover:text-white"
                 title="Next Month"
               >
                 <FiChevronRight className="h-4 w-4" />
@@ -173,62 +236,92 @@ export default function UpcomingEventsPanel({
               <button
                 type="button"
                 onClick={resetToday}
-                className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-semibold text-orange-400 transition-colors hover:bg-orange-500/10"
+                className="rounded-xl border border-orange-500/40 bg-orange-500/20 px-3 py-1 text-[11px] font-bold text-orange-300 shadow-[0_0_10px_rgba(234,88,12,0.2)] transition-all hover:bg-orange-500/30 hover:text-white"
               >
                 Today
               </button>
             </div>
-            <span className="text-xs font-semibold text-neutral-400">
+            <span className="rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-xs font-bold text-orange-400">
               {normalizedEvents.length} total events
             </span>
           </div>
-          <div className="grid grid-cols-7 gap-1">
-            {weekdayLabels.map((label) => (
+
+          <div className="grid grid-cols-7 gap-1.5">
+            {weekdayHeaders.map((header) => (
               <div
-                key={label}
-                className="pb-2 text-center text-[10px] font-semibold uppercase tracking-wider text-neutral-500"
+                key={header.label}
+                className={`pb-2 text-center text-[10px] font-extrabold uppercase tracking-wider ${header.textColor}`}
               >
-                {label}
+                {header.label}
               </div>
             ))}
             {calendarCells.map((date, index) => {
               if (!date) {
-                return <div key={`blank-${index}`} className="min-h-16 rounded-xl bg-white/[0.02]" />;
+                const blankTheme = dayColorThemes[index % 7];
+                return (
+                  <div
+                    key={`blank-${index}`}
+                    className={`min-h-16 rounded-xl border ${blankTheme.border} ${blankTheme.bg} opacity-20`}
+                  />
+                );
               }
 
               const dayEvents = eventMap.get(formatDateKey(date)) || [];
               const primaryEvent = dayEvents[0];
               const isToday = formatDateKey(date) === formatDateKey(new Date());
+              const hasEvents = dayEvents.length > 0;
+              const dayTheme = dayColorThemes[date.getDay()];
+
+              if (hasEvents) {
+                return (
+                  <div
+                    key={date.toISOString()}
+                    className="relative z-10 min-h-16 rounded-xl border border-orange-400 bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 p-2 text-white shadow-[0_0_20px_rgba(234,88,12,0.55)] ring-2 ring-orange-300/80 transition-all duration-200 transform hover:scale-[1.03]"
+                  >
+                    <div className="flex items-start justify-between gap-1.5">
+                      <span className="text-xs font-black text-white drop-shadow-md">
+                        {formatDay(date)}
+                      </span>
+                      <span className="rounded-full border border-white/40 bg-black/40 px-1.5 py-0.2 text-[9px] font-black text-white backdrop-blur-sm shadow-md">
+                        {dayEvents.length}
+                      </span>
+                    </div>
+                    {primaryEvent ? (
+                      <div className="mt-1 space-y-0.5">
+                        <p
+                          className="truncate text-[10px] font-black text-white leading-tight drop-shadow-sm"
+                          title={primaryEvent.eventLabel}
+                        >
+                          {primaryEvent.eventLabel}
+                        </p>
+                        <p className="truncate text-[9px] font-bold text-orange-100/95 drop-shadow-sm">
+                          {primaryEvent.shift} shift
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              }
 
               return (
                 <div
                   key={date.toISOString()}
-                  className={`min-h-16 rounded-xl border p-2 transition-colors ${
-                    dayEvents.length > 0
-                      ? "border-orange-500/25 bg-orange-500/10"
-                      : "border-white/5 bg-white/[0.02]"
-                  } ${isToday ? "ring-1 ring-orange-500/40" : ""}`}
+                  className={`group min-h-16 rounded-xl border p-2 transition-all duration-200 ${dayTheme.border} ${dayTheme.bg} ${dayTheme.glow} ${
+                    isToday
+                      ? "ring-2 ring-amber-400/80 shadow-[0_0_15px_rgba(251,191,36,0.3)]"
+                      : ""
+                  }`}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-xs font-semibold text-white">
+                  <div className="flex items-start justify-between gap-1.5">
+                    <span className={`text-xs font-black ${dayTheme.dayNum}`}>
                       {formatDay(date)}
                     </span>
-                    {dayEvents.length > 0 && (
-                      <span className="rounded-full bg-orange-500/20 px-1.5 py-0.5 text-[9px] font-semibold text-orange-300">
-                        {dayEvents.length}
+                    {isToday && (
+                      <span className="rounded-full border border-amber-400/40 bg-amber-500/20 px-1.5 py-0.2 text-[8px] font-black text-amber-300 shadow-sm">
+                        TODAY
                       </span>
                     )}
                   </div>
-                  {primaryEvent ? (
-                    <div className="mt-1 space-y-0.5">
-                      <p className="truncate text-[10px] font-semibold text-white">
-                        {primaryEvent.eventLabel}
-                      </p>
-                      <p className="truncate text-[9px] text-neutral-300">
-                        {primaryEvent.shift} shift
-                      </p>
-                    </div>
-                  ) : null}
                 </div>
               );
             })}
@@ -236,8 +329,11 @@ export default function UpcomingEventsPanel({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-white/5 bg-[#0A0A0A]/80 p-4 shadow-2xl sm:p-5">
-        <div className="flex items-center justify-between gap-3">
+      {/* Upcoming Events List Panel */}
+      <div className="relative overflow-hidden rounded-2xl border border-sky-500/30 bg-gradient-to-br from-sky-950/25 via-[#0D0D0D] to-[#070707] p-4 shadow-[0_0_35px_rgba(56,189,248,0.12)] sm:p-5">
+        <div className="pointer-events-none absolute -top-12 -right-12 h-44 w-44 rounded-full bg-sky-500/10 blur-3xl" />
+
+        <div className="relative z-10 flex items-center justify-between gap-3 border-b border-white/10 pb-3">
           <div>
             <h3 className="text-base font-bold text-white sm:text-lg">Upcoming Events</h3>
             <p className="text-xs leading-relaxed text-neutral-400 sm:text-sm">
@@ -246,46 +342,48 @@ export default function UpcomingEventsPanel({
           </div>
           <Link
             href={actionHref}
-            className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white transition-colors hover:border-orange-500/30 hover:bg-white/[0.08]"
+            className="inline-flex items-center gap-1 rounded-xl border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-bold text-sky-300 transition-all hover:bg-sky-500/20 hover:border-sky-500/50 shadow-sm"
           >
             {actionLabel} <FiChevronRight className="h-3.5 w-3.5" />
           </Link>
         </div>
 
-        <div className="mt-4 space-y-2">
+        <div className="relative z-10 mt-4 space-y-2.5">
           {upcomingList.length > 0 ? (
             upcomingList.map((event) => (
               <div
                 key={event._id || `${event.eventLabel}-${event.eventDate}`}
-                className="rounded-xl border border-white/5 bg-white/[0.03] p-3"
+                className="group rounded-xl border border-white/10 bg-[#121212]/90 p-3.5 transition-all hover:border-sky-500/40 hover:bg-sky-950/20 hover:shadow-lg"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-white">
+                    <p className="truncate text-sm font-bold text-white group-hover:text-sky-200 transition-colors">
                       {event.eventLabel}
                     </p>
-                    <p className="mt-1 text-[11px] text-neutral-400">
-                      {event.primaryDate?.toLocaleDateString("en-BD", {
-                        weekday: "short",
-                        day: "numeric",
-                        month: "short",
-                      })}
+                    <p className="mt-1 flex items-center gap-2 text-[11px] text-neutral-400">
+                      <span>
+                        {event.primaryDate?.toLocaleDateString("en-BD", {
+                          weekday: "short",
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </span>
                       {event.eventLocation ? (
-                        <span className="ml-2 inline-flex items-center gap-1">
-                          <FiMapPin className="h-3 w-3" />
+                        <span className="inline-flex items-center gap-1 text-neutral-300">
+                          <FiMapPin className="h-3 w-3 text-sky-400" />
                           {event.eventLocation}
                         </span>
                       ) : null}
                     </p>
                   </div>
-                  <span className="rounded-full bg-orange-500/10 px-2 py-1 text-[10px] font-semibold text-orange-300">
+                  <span className="rounded-full border border-orange-500/40 bg-gradient-to-r from-orange-500/20 to-amber-500/20 px-2.5 py-0.5 text-[10px] font-black text-orange-300 shadow-sm">
                     {event.shift}
                   </span>
                 </div>
               </div>
             ))
           ) : (
-            <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.02] p-4 text-sm text-neutral-400">
+            <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.02] p-6 text-center text-sm text-neutral-400">
               {emptyLabel}
             </div>
           )}

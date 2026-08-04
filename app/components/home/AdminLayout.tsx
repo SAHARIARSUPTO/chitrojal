@@ -194,28 +194,13 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     }
   }, [isSidebarOpen]);
 
-  const staffAllowedRoutes = [
-    "/admin/bento",
-    "/admin/photo-drive",
-    "/admin/pose-library",
-    "/admin/staff",
-    "/admin/user-manual",
-  ];
-
-  const visibleNavItems =
-    user?.accessRole === "staff"
-      ? navItems.filter((item) => staffAllowedRoutes.includes(item.href))
-      : navItems;
+  const visibleNavItems = navItems;
 
   useEffect(() => {
-    if (user?.accessRole !== "staff") return;
-    if (staffAllowedRoutes.includes(pathname)) return;
     if (pathname === "/admin/poses") {
       router.replace("/admin/pose-library");
-      return;
     }
-    router.replace("/admin/staff");
-  }, [pathname, router, user?.accessRole]);
+  }, [pathname, router]);
 
   const mobileNavItems = visibleNavItems.slice(0, 4);
   const mobileNavCount = mobileNavItems.length || 4;

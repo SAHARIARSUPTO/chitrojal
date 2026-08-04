@@ -137,6 +137,9 @@ export default function EventManagementsPage() {
   const [form, setForm] =
     useState<EventManagementFormValues>(createEmptyEventForm);
 
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const isAdmin = userRole === "admin";
+
   const fetchOrders = async () => {
     setLoading(true);
     try {
@@ -152,6 +155,18 @@ export default function EventManagementsPage() {
 
   useEffect(() => {
     fetchOrders();
+    const fetchUserRole = async () => {
+      try {
+        const response = await fetch("/api/auth/me");
+        if (response.ok) {
+          const userData = await response.json();
+          setUserRole(userData.user?.accessRole);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user role", error);
+      }
+    };
+    fetchUserRole();
   }, []);
 
   const openEdit = (order: OrderRecord) => {
@@ -253,12 +268,14 @@ export default function EventManagementsPage() {
               Manage bookings, discounts, schedules, and payments.
             </p>
           </div>
-          <Link
-            href="/admin/event-managements/new"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-600 to-orange-500 px-4 py-3 text-sm font-bold text-white transition hover:from-orange-500 hover:to-orange-400"
-          >
-            <FiPlus /> New Booking
-          </Link>
+          {isAdmin && (
+            <Link
+              href="/admin/event-managements/new"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-600 to-orange-500 px-4 py-3 text-sm font-bold text-white transition hover:from-orange-500 hover:to-orange-400"
+            >
+              <FiPlus /> New Booking
+            </Link>
+          )}
         </div>
 
         {/* Mobile View: Cards Layout */}
@@ -346,13 +363,15 @@ export default function EventManagementsPage() {
                   >
                     <FiEye size={14} /> View Details
                   </Link>
-                  <button
-                    onClick={() => openPayment(order._id)}
-                    className="rounded-xl border border-white/10 bg-white/5 p-2 text-neutral-300 hover:text-white"
-                    title="Manage Payments"
-                  >
-                    <FiDollarSign size={14} />
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => openPayment(order._id)}
+                      className="rounded-xl border border-white/10 bg-white/5 p-2 text-neutral-300 hover:text-white"
+                      title="Manage Payments"
+                    >
+                      <FiDollarSign size={14} />
+                    </button>
+                  )}
                   <Link
                     href={`/admin/invoices/${order._id}`}
                     target="_blank"
@@ -361,20 +380,24 @@ export default function EventManagementsPage() {
                   >
                     <FiPrinter size={14} />
                   </Link>
-                  <button
-                    onClick={() => openEdit(order)}
-                    className="rounded-xl border border-white/10 bg-white/5 p-2 text-neutral-300 hover:text-white"
-                    title="Edit"
-                  >
-                    <FiEdit2 size={14} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(order._id)}
-                    className="rounded-xl border border-red-500/20 bg-red-500/10 p-2 text-red-300 hover:text-red-200"
-                    title="Delete"
-                  >
-                    <FiTrash2 size={14} />
-                  </button>
+                  {isAdmin && (
+                    <>
+                      <button
+                        onClick={() => openEdit(order)}
+                        className="rounded-xl border border-white/10 bg-white/5 p-2 text-neutral-300 hover:text-white"
+                        title="Edit"
+                      >
+                        <FiEdit2 size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(order._id)}
+                        className="rounded-xl border border-red-500/20 bg-red-500/10 p-2 text-red-300 hover:text-red-200"
+                        title="Delete"
+                      >
+                        <FiTrash2 size={14} />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ))
@@ -511,27 +534,33 @@ export default function EventManagementsPage() {
                           >
                             <FiPrinter size={14} />
                           </Link>
-                          <button
-                            onClick={() => openPayment(order._id)}
-                            className="rounded-lg border border-white/10 bg-white/5 p-2 text-neutral-300 hover:text-white"
-                            title="Manage Payments"
-                          >
-                            <FiDollarSign size={14} />
-                          </button>
-                          <button
-                            onClick={() => openEdit(order)}
-                            className="rounded-lg border border-white/10 bg-white/5 p-2 text-neutral-300 hover:text-white"
-                            title="Edit"
-                          >
-                            <FiEdit2 size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(order._id)}
-                            className="rounded-lg border border-red-500/20 bg-red-500/10 p-2 text-red-300 hover:text-red-200"
-                            title="Delete"
-                          >
-                            <FiTrash2 size={14} />
-                          </button>
+                          {isAdmin && (
+                            <button
+                              onClick={() => openPayment(order._id)}
+                              className="rounded-lg border border-white/10 bg-white/5 p-2 text-neutral-300 hover:text-white"
+                              title="Manage Payments"
+                            >
+                              <FiDollarSign size={14} />
+                            </button>
+                          )}
+                          {isAdmin && (
+                            <>
+                              <button
+                                onClick={() => openEdit(order)}
+                                className="rounded-lg border border-white/10 bg-white/5 p-2 text-neutral-300 hover:text-white"
+                                title="Edit"
+                              >
+                                <FiEdit2 size={14} />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(order._id)}
+                                className="rounded-lg border border-red-500/20 bg-red-500/10 p-2 text-red-300 hover:text-red-200"
+                                title="Delete"
+                              >
+                                <FiTrash2 size={14} />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
