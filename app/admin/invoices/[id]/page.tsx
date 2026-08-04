@@ -3,31 +3,37 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AdminLayout from "../../../components/home/AdminLayout";
-import { FiDownload, FiCheckCircle, FiClock, FiFileText } from "react-icons/fi";
-import Barcode from "react-barcode";
+import { FiDownload, FiFileText } from "react-icons/fi";
 import Image from "next/image";
 import logo from "../../../components/navbar/logo.png";
-
-type Payment = {
-  _id: string;
-  amount: number;
-  date: string;
-  method: string;
-  notes?: string;
-};
 
 type ScheduleItem = {
   date: string;
   shift: "Day" | "Night";
 };
 
+type InvoiceOrder = {
+  _id: string;
+  dueAmount?: number;
+  totalAmount?: number;
+  discountAmount?: number;
+  paidAmount?: number;
+  finalAmount?: number;
+  eventSchedule?: ScheduleItem[];
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  customerAddress?: string;
+  package?: string;
+  eventDate?: string;
+  createdAt?: string;
+};
+
 export default function InvoicePage() {
   const { id } = useParams();
-  const [order, setOrder] = useState<any | null>(null);
+  const [order, setOrder] = useState<InvoiceOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [pdfLoading, setPdfLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -48,17 +54,6 @@ export default function InvoicePage() {
 
     fetchOrder();
   }, [id]);
-
-  useEffect(() => {
-    if (!order?._id) return;
-    loadPdfPreview();
-
-    return () => {
-      if (pdfUrl) {
-        window.URL.revokeObjectURL(pdfUrl);
-      }
-    };
-  }, [order]);
 
   const handleDownloadPDF = async () => {
     if (!order?._id) return;
@@ -91,37 +86,14 @@ export default function InvoicePage() {
     }
   };
 
-  const loadPdfPreview = async () => {
-    if (!order?._id) return;
-    setPdfLoading(true);
-
-    try {
-      const response = await fetch(`/api/invoices/${order._id}`);
-      if (!response.ok) throw new Error("Failed to generate PDF preview");
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      setPdfUrl(url);
-    } catch (error) {
-      console.error("Error loading PDF preview:", error);
-    } finally {
-      setPdfLoading(false);
-    }
-  };
+  const previewSrc = order?._id
+    ? `/api/invoices/${order._id}#view=FitH&toolbar=1&navpanes=0`
+    : null;
 
   const handlePreviewPDF = () => {
     if (!order?._id) return;
-    if (pdfUrl) {
-      window.open(pdfUrl, "_blank");
-    } else {
-      window.open(`/api/invoices/${order._id}`, "_blank");
-    }
+    window.open(`/api/invoices/${order._id}`, "_blank", "noopener,noreferrer");
   };
-
-  const formatBDT = (amount: unknown) =>
-    `BDT ${Number(amount || 0).toLocaleString("en-BD", {
-      minimumFractionDigits: 2,
-    })}`;
 
   if (loading) {
     return (
@@ -143,14 +115,7 @@ export default function InvoicePage() {
     );
   }
 
-  const isPaid = !order.dueAmount || order.dueAmount <= 0;
   const invoiceId = `INV-${String(order._id).slice(-8).toUpperCase()}`;
-  const schedule: ScheduleItem[] = Array.isArray(order.eventSchedule)
-    ? order.eventSchedule
-    : [];
-  const finalAmount = Number(
-    order.finalAmount ?? order.totalAmount - Number(order.discountAmount || 0),
-  );
 
   return (
     <AdminLayout>
@@ -186,79 +151,79 @@ export default function InvoicePage() {
           </div>
         </div>
 
-        <div className="rounded-[1.75rem] border border-white/10 bg-[#07111f] p-4 text-slate-100 shadow-[0_24px_90px_rgba(2,6,23,0.45)] sm:p-6">
-          <div className="mb-5 rounded-[1.5rem] border border-white/10 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 p-4 shadow-inner sm:p-5">
-            <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-4">
-                <div className="rounded-[1.25rem] border border-white/10 bg-slate-950/90 p-3 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_18px_40px_rgba(0,0,0,0.45)]">
-                  <Image
-                    src={logo}
-                    alt="ChitroJaal logo"
-                    width={110}
-                    height={80}
-                    className=" rounded-xl object-contain"
-                    priority
-                  />
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.28em] text-orange-300/90">
-                    ChitroJaal
-                  </p>
-                  <h2 className="text-2xl font-black tracking-tight text-white">
-                    Invoice Preview
-                  </h2>
-                  <p className="mt-1 text-sm text-slate-300">
-                    Creative production with schedule, discount, and payment
-                    tracking.
-                  </p>
-                </div>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-right backdrop-blur">
-                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">
-                  Invoice
-                </p>
-                <p className="text-sm font-semibold text-white">{invoiceId}</p>
-              </div>
+        <div className="mb-5 flex flex-col gap-3 border-b border-slate-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <Image
+              src={logo}
+              alt="ChitroJaal logo"
+              width={88}
+              height={64}
+              className="h-14 w-auto object-contain"
+              priority
+            />
+            <div>
+              <p className="text-xs uppercase tracking-[0.28em] text-orange-500/80">
+                ChitroJaal
+              </p>
+              <h2 className="text-2xl font-black tracking-tight text-slate-900">
+                Invoice Preview
+              </h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Creative production with schedule, discount, and payment
+                tracking.
+              </p>
             </div>
           </div>
+          <div className="text-right">
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-500">
+              Invoice
+            </p>
+            <p className="text-sm font-semibold text-slate-900">{invoiceId}</p>
+          </div>
+        </div>
 
-          <div className="mb-6 rounded-[1.5rem] border border-white/10 bg-slate-950/80 p-3 text-slate-100 shadow-inner">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">
-                  PDF Preview
-                </p>
-                <p className="text-sm text-slate-200">
-                  Embedded invoice generated from the same backend PDF API.
-                </p>
-              </div>
-              <button
-                onClick={handleDownloadPDF}
-                disabled={downloading}
-                className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:opacity-50"
-              >
-                <FiDownload className={downloading ? "animate-bounce" : ""} />
-                {downloading ? "Generating PDF..." : "Download PDF"}
-              </button>
-            </div>
-            <div className="min-h-[480px] rounded-3xl overflow-hidden border border-white/10 bg-black">
-              {pdfLoading ? (
-                <div className="flex h-full items-center justify-center bg-slate-950 text-slate-300">
-                  Loading preview...
-                </div>
-              ) : pdfUrl ? (
-                <iframe
-                  src={pdfUrl}
-                  className="h-[520px] w-full"
-                  title="Invoice PDF Preview"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center bg-slate-950 text-slate-300">
-                  Unable to load PDF preview.
-                </div>
-              )}
-            </div>
+        <div className="mb-3 flex items-center justify-between gap-3 print:hidden">
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-500">
+              PDF Preview
+            </p>
+            <p className="text-sm text-slate-600">
+              Embedded invoice generated from the same backend PDF API.
+            </p>
           </div>
+          <button
+            onClick={handleDownloadPDF}
+            disabled={downloading}
+            className="inline-flex items-center gap-2 rounded-lg border border-orange-500/20 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-700 transition hover:bg-orange-100 disabled:opacity-50"
+          >
+            <FiDownload className={downloading ? "animate-bounce" : ""} />
+            {downloading ? "Generating PDF..." : "Download PDF"}
+          </button>
+        </div>
+
+        <div className="min-h-[70vh] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          {previewSrc ? (
+            <>
+              <iframe
+                src={previewSrc}
+                className="hidden h-[70vh] w-full sm:block"
+                title="Invoice PDF Preview"
+              />
+              <object
+                data={previewSrc}
+                type="application/pdf"
+                className="block h-[70vh] w-full sm:hidden"
+              >
+                <div className="flex h-full items-center justify-center bg-slate-50 px-6 text-center text-slate-500">
+                  Your browser cannot display the PDF inline. Use Open PDF or Download PDF instead.
+                </div>
+              </object>
+            </>
+          ) : (
+            <div className="flex h-[70vh] items-center justify-center bg-slate-50 text-slate-500">
+              Unable to load PDF preview.
+            </div>
+          )}
         </div>
       </div>
     </AdminLayout>
