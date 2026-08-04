@@ -6,7 +6,7 @@ import PackageCard from "./PackageCard";
 import FullscreenCarousel from "./FullscreenCarousel";
 import ImageGallery from "./ImageGallery";
 
-const BentoGridHero = ({ carouselData, packageImages }) => {
+const BentoGridHero = ({ carouselData, packageImages, bentoSettings }) => {
   const [fullscreen, setFullscreen] = useState({
     isOpen: false,
     images: [],
@@ -39,6 +39,23 @@ const BentoGridHero = ({ carouselData, packageImages }) => {
     openFullscreen(gallery.images, index);
   };
 
+  const portfolioConf = bentoSettings?.portfolio || {
+    intervalDuration: 2000,
+    animationType: "fade",
+  };
+  const portraitConf = bentoSettings?.["portrait-library"] || {
+    intervalDuration: 2000,
+    animationType: "fade",
+  };
+  const packageConf = bentoSettings?.package || {
+    intervalDuration: 2000,
+    animationType: "zoom",
+  };
+  const landscapeConf = bentoSettings?.["landscape-library"] || {
+    intervalDuration: 2000,
+    animationType: "slide",
+  };
+
   return (
     <>
       <section id="gallery" className="w-full bg-[#040404] p-4 md:p-6 lg:p-8">
@@ -62,7 +79,8 @@ const BentoGridHero = ({ carouselData, packageImages }) => {
                   )
                 }
                 autoScroll={true}
-                intervalDuration={3500}
+                intervalDuration={portfolioConf.intervalDuration}
+                animationType={portfolioConf.animationType}
               />
             </motion.div>
             <motion.div
@@ -85,7 +103,8 @@ const BentoGridHero = ({ carouselData, packageImages }) => {
                 titleClassName="tracking-[0.2em]"
                 subtitleClassName="tracking-[0.2em]"
                 autoScroll={true}
-                intervalDuration={4200}
+                intervalDuration={portraitConf.intervalDuration}
+                animationType={portraitConf.animationType}
               />
             </motion.div>
           </div>
@@ -102,7 +121,8 @@ const BentoGridHero = ({ carouselData, packageImages }) => {
                 packageImages={packageImages}
                 onClick={() => openGallery(packageImages, "Our Packages")}
                 autoScroll={true}
-                intervalDuration={3800}
+                intervalDuration={packageConf.intervalDuration}
+                animationType={packageConf.animationType}
               />
             </motion.div>
             <motion.div
@@ -122,7 +142,8 @@ const BentoGridHero = ({ carouselData, packageImages }) => {
                   )
                 }
                 autoScroll={true}
-                intervalDuration={4500}
+                intervalDuration={landscapeConf.intervalDuration}
+                animationType={landscapeConf.animationType}
                 imageClassName="object-cover object-center"
               />
             </motion.div>

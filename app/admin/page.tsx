@@ -327,6 +327,11 @@ export default function DashboardPage() {
 
   const adminPanels = [
     {
+      title: "Bento Grid",
+      description: "Manage local photos & sequence.",
+      href: "/admin/bento",
+    },
+    {
       title: "Booking Management",
       description: "Open bookings, shifts, and payments.",
       href: "/admin/event-managements",

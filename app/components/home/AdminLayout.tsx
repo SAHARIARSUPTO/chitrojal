@@ -20,6 +20,7 @@ import Image from "next/image";
 
 const navItems = [
   { href: "/admin", icon: FiGrid, label: "Dashboard" },
+  { href: "/admin/bento", icon: FiGrid, label: "Bento Grid" },
   { href: "/admin/event-managements", icon: FiBriefcase, label: "Booking Management" },
   { href: "/admin/invoices", icon: FiFileText, label: "Invoices" },
   { href: "/admin/finance", icon: FiDollarSign, label: "Finance" },
@@ -194,6 +195,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   }, [isSidebarOpen]);
 
   const staffAllowedRoutes = [
+    "/admin/bento",
     "/admin/photo-drive",
     "/admin/pose-library",
     "/admin/staff",

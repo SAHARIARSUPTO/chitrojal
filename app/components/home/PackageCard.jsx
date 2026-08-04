@@ -3,12 +3,47 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+const animationVariants = {
+  fade: {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0 },
+    transition: { duration: 1.0, ease: "easeInOut" },
+  },
+  zoom: {
+    initial: { opacity: 0, scale: 0.92 },
+    animate: { opacity: 1, scale: 1 },
+    exit: { opacity: 0, scale: 1.08 },
+    transition: { duration: 1.0, ease: [0.25, 1, 0.5, 1] },
+  },
+  slide: {
+    initial: { opacity: 0, x: 45 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -45 },
+    transition: { duration: 0.9, ease: [0.25, 1, 0.5, 1] },
+  },
+  slideUp: {
+    initial: { opacity: 0, y: 35 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -35 },
+    transition: { duration: 0.9, ease: [0.25, 1, 0.5, 1] },
+  },
+  blur: {
+    initial: { opacity: 0, filter: "blur(12px)" },
+    animate: { opacity: 1, filter: "blur(0px)" },
+    exit: { opacity: 0, filter: "blur(12px)" },
+    transition: { duration: 1.0, ease: "easeInOut" },
+  },
+};
 
 const PackageCard = ({
   packageImages = [],
   onClick,
   autoScroll = true,
-  intervalDuration = 3800,
+  intervalDuration = 2000,
+  animationType = "zoom",
   imageClassName = "object-cover object-top",
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -62,34 +97,38 @@ const PackageCard = ({
     );
   }
 
+  const currentSrc = packageImages[currentIndex] || packageImages[0];
+  const variant = animationVariants[animationType] || animationVariants.zoom;
+
   return (
     <div
-      className="relative w-full h-full group cursor-pointer"
+      className="relative w-full h-full group cursor-pointer overflow-hidden rounded-3xl bg-black"
       onClick={handleCardClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Image Slider Container */}
-      <div className="relative w-full h-full rounded-3xl overflow-hidden bg-black">
-        {packageImages.map((src, index) => (
-          <div
-            key={index}
-            className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${
-              index === currentIndex ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
-            }`}
-          >
-            <Image
-              src={src}
-              alt={`Package image ${index + 1}`}
-              fill
-              className={`${imageClassName} group-hover:scale-[1.02] transition-transform duration-700`}
-              sizes="(max-width: 768px) 90vw, (max-width: 1200px) 50vw, 33vw"
-              priority={index === 0}
-            />
-          </div>
-        ))}
-        <div className="absolute inset-0 z-20 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
-      </div>
+      {/* Image Slider Container with configurable animation transition */}
+      <AnimatePresence mode="popLayout">
+        <motion.div
+          key={currentSrc}
+          initial={variant.initial}
+          animate={variant.animate}
+          exit={variant.exit}
+          transition={variant.transition}
+          className="absolute inset-0 w-full h-full"
+        >
+          <Image
+            src={currentSrc}
+            alt={`Package image ${currentIndex + 1}`}
+            fill
+            className={`${imageClassName} group-hover:scale-[1.02] transition-transform duration-700`}
+            sizes="(max-width: 768px) 90vw, (max-width: 1200px) 50vw, 33vw"
+            priority={currentIndex === 0}
+          />
+        </motion.div>
+      </AnimatePresence>
+
+      <div className="absolute inset-0 z-20 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
 
       {/* Floating Left Arrow */}
       <button
