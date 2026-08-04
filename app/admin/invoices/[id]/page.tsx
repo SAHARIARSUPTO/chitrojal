@@ -55,18 +55,37 @@ export default function InvoicePage() {
     fetchOrder();
   }, [id]);
 
+  const getInvoiceUrl = (mode: "preview" | "download") => {
+    if (!order?._id) return null;
+    const baseUrl = `/api/invoices/${order._id}`;
+    const params = new URLSearchParams();
+
+    if (mode === "download") {
+      params.set("download", "1");
+    }
+
+    const queryString = params.toString();
+    return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+  };
+
   const handleDownloadPDF = async () => {
     if (!order?._id) return;
     setDownloading(true);
 
+    const invoiceUrl = getInvoiceUrl("download");
+    if (!invoiceUrl) {
+      setDownloading(false);
+      return;
+    }
+
     try {
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       if (isMobile) {
-        window.open(`/api/invoices/${order._id}`, "_blank");
+        window.open(invoiceUrl, "_blank", "noopener,noreferrer");
         return;
       }
 
-      const response = await fetch(`/api/invoices/${order._id}`);
+      const response = await fetch(invoiceUrl, { cache: "no-store" });
       if (!response.ok) throw new Error("Failed to generate PDF");
 
       const blob = await response.blob();
@@ -80,19 +99,22 @@ export default function InvoicePage() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error downloading PDF:", error);
-      window.open(`/api/invoices/${order._id}`, "_blank");
+      window.open(invoiceUrl, "_blank", "noopener,noreferrer");
     } finally {
       setDownloading(false);
     }
   };
 
   const previewSrc = order?._id
-    ? `/api/invoices/${order._id}#view=FitH&toolbar=1&navpanes=0`
+    ? `${
+        getInvoiceUrl("preview") || `/api/invoices/${order._id}`
+      }#view=FitH&toolbar=1&navpanes=0`
     : null;
 
   const handlePreviewPDF = () => {
-    if (!order?._id) return;
-    window.open(`/api/invoices/${order._id}`, "_blank", "noopener,noreferrer");
+    const invoiceUrl = getInvoiceUrl("preview");
+    if (!invoiceUrl) return;
+    window.open(invoiceUrl, "_blank", "noopener,noreferrer");
   };
 
   if (loading) {
@@ -215,7 +237,8 @@ export default function InvoicePage() {
                 className="block h-[70vh] w-full sm:hidden"
               >
                 <div className="flex h-full items-center justify-center bg-slate-50 px-6 text-center text-slate-500">
-                  Your browser cannot display the PDF inline. Use Open PDF or Download PDF instead.
+                  Your browser cannot display the PDF inline. Use Open PDF or
+                  Download PDF instead.
                 </div>
               </object>
             </>

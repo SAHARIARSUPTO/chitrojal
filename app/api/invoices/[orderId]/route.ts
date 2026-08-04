@@ -17,6 +17,8 @@ export async function GET(request: Request, context: RouteContext) {
   try {
     const params = await context.params;
     const orderId = params?.orderId;
+    const { searchParams } = new URL(request.url);
+    const shouldDownload = searchParams.get("download") === "1";
 
     if (
       !orderId ||
@@ -290,7 +292,9 @@ export async function GET(request: Request, context: RouteContext) {
               packageName?: string;
               amount?: number;
             }) => [
-              item.packageName || order.package || "Creative Production Package",
+              item.packageName ||
+                order.package ||
+                "Creative Production Package",
               formatDateStr(item.date || order.eventDate),
               item.shift || "Day",
               formatBDT(
@@ -534,7 +538,12 @@ export async function GET(request: Request, context: RouteContext) {
     return new NextResponse(pdfBuffer, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="invoice-${order._id}.pdf"`,
+        "Content-Disposition": shouldDownload
+          ? `attachment; filename="invoice-${order._id}.pdf"`
+          : `inline; filename="invoice-${order._id}.pdf"`,
+        "Cache-Control": "no-store, no-cache, must-revalidate, private",
+        Pragma: "no-cache",
+        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch (error) {
