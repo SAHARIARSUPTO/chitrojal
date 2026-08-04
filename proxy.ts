@@ -11,6 +11,7 @@ const ALLOWED_DOMAINS = [
   "localhost",
   "127.0.0.1",
   "192.168.0.149",
+  "vercel.app",
 ];
 
 /**
@@ -91,9 +92,13 @@ export async function proxy(request: NextRequest) {
   if (isApi) {
     const secFetchDest = request.headers.get("sec-fetch-dest");
     const secFetchMode = request.headers.get("sec-fetch-mode");
+    const isDirectAccessAllowedApi = isUnderPath(pathname, "/api/invoices");
 
-    // 1. Block direct browser navigation/url typing to API endpoints
-    if (secFetchDest === "document" || secFetchMode === "navigate") {
+    // 1. Block direct browser navigation/url typing to API endpoints (except file downloads like invoices)
+    if (
+      (secFetchDest === "document" || secFetchMode === "navigate") &&
+      !isDirectAccessAllowedApi
+    ) {
       return new NextResponse(
         JSON.stringify({
           success: false,
@@ -180,7 +185,8 @@ export async function proxy(request: NextRequest) {
         isUnderPath(pathname, "/api/poses") ||
         isUnderPath(pathname, "/api/folders") ||
         isUnderPath(pathname, "/api/admin/dashboard") ||
-        isUnderPath(pathname, "/api/admin/staff-features"));
+        isUnderPath(pathname, "/api/admin/staff-features") ||
+        isUnderPath(pathname, "/api/invoices"));
 
     if (isStaffAllowedGet) {
       return NextResponse.next();
