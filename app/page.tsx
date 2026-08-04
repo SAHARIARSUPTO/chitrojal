@@ -3,6 +3,7 @@ import path from "path";
 import Navbar from "./components/navbar/page";
 import Footer from "./components/footer/page";
 import HomeClient from "./components/home/home-client";
+import { readBentoSettings } from "./api/admin/bento/route";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -13,9 +14,36 @@ const buildVideoThumbnailUrl = (sourceUrl: string) =>
 const readImageDirectory = (dir: string): string[] => {
   const directoryPath = path.join(process.cwd(), "public", dir);
   try {
-    if (fs.existsSync(directoryPath)) {
-      return fs.readdirSync(directoryPath).map((file) => `/${dir}/${file}`);
+    if (!fs.existsSync(directoryPath)) return [];
+
+    const allFiles = fs.readdirSync(directoryPath).filter((file) => {
+      if (file === "order.json" || file.startsWith(".")) return false;
+      const stat = fs.statSync(path.join(directoryPath, file));
+      return stat.isFile();
+    });
+
+    const orderFilePath = path.join(directoryPath, "order.json");
+    let orderedFilenames: string[] = [];
+
+    if (fs.existsSync(orderFilePath)) {
+      try {
+        const content = fs.readFileSync(orderFilePath, "utf-8");
+        const parsed = JSON.parse(content);
+        if (Array.isArray(parsed)) {
+          orderedFilenames = parsed.filter((name) => typeof name === "string");
+        }
+      } catch (e) {
+        console.error(`Could not parse order.json for ${dir}`, e);
+      }
     }
+
+    const existingOrdered = orderedFilenames.filter((name) =>
+      allFiles.includes(name),
+    );
+    const remaining = allFiles.filter((name) => !existingOrdered.includes(name));
+    const finalOrder = [...existingOrdered, ...remaining];
+
+    return finalOrder.map((file) => `/${dir}/${file}`);
   } catch (error) {
     console.error(`Could not read directory: ${dir}`, error);
   }
@@ -106,6 +134,8 @@ export default function Home() {
     },
   ];
 
+  const bentoSettings = readBentoSettings();
+
   return (
     <div className="bg-[#0a0a0a] text-white selection:bg-orange-500/30 min-h-screen font-sans">
       <Navbar />
@@ -114,6 +144,7 @@ export default function Home() {
         carouselData={carouselData}
         videoData={videoData}
         packageImages={packageImages}
+        bentoSettings={bentoSettings}
       />
 
       <Footer />

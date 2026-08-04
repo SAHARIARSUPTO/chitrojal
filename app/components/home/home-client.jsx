@@ -42,12 +42,13 @@ const ServiceCard = ({ icon, title, description }) => (
   </div>
 );
 
-const HomeClient = ({ services, carouselData, videoData, packageImages }) => {
+const HomeClient = ({ services, carouselData, videoData, packageImages, bentoSettings }) => {
   return (
     <main>
       <BentoGridHero
         carouselData={carouselData}
         packageImages={packageImages}
+        bentoSettings={bentoSettings}
       />
 
       <section id="services" className="py-24 border-b border-white/5">
