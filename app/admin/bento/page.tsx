@@ -188,7 +188,7 @@ export default function BentoGridAdminPage() {
   const fetchBentoData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/bento");
+      const res = await fetch("/api/admin/hero-grid");
       const result = await res.json();
       if (result.success) {
         if (result.folders) setFolderImages(result.folders);
@@ -228,7 +228,7 @@ export default function BentoGridAdminPage() {
     });
 
     try {
-      const res = await fetch("/api/admin/bento", {
+      const res = await fetch("/api/admin/hero-grid", {
         method: "POST",
         body: formData,
       });
@@ -272,10 +272,11 @@ export default function BentoGridAdminPage() {
   const handleSaveAll = async () => {
     setSaving(true);
     try {
-      const res = await fetch("/api/admin/bento", {
-        method: "PUT",
+      const res = await fetch("/api/admin/hero-grid", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          action: "update",
           folder: activeTab,
           images: folderImages[activeTab],
           settings,
@@ -315,10 +316,11 @@ export default function BentoGridAdminPage() {
 
     setDeletingPath(imagePath);
     try {
-      const res = await fetch("/api/admin/bento", {
-        method: "DELETE",
+      const res = await fetch("/api/admin/hero-grid", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          action: "delete",
           folder: activeTab,
           imagePath,
         }),

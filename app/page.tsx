@@ -3,7 +3,7 @@ import path from "path";
 import Navbar from "./components/navbar/page";
 import Footer from "./components/footer/page";
 import HomeClient from "./components/home/home-client";
-import { readBentoSettings } from "./api/admin/bento/route";
+import { readBentoSettings } from "./api/admin/hero-grid/route";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
