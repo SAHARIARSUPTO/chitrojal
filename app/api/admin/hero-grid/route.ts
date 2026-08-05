@@ -63,7 +63,12 @@ export function readBentoSettings(): BentoSettings {
 function saveBentoSettings(settings: Partial<BentoSettings>) {
   const current = readBentoSettings();
   const updated = { ...current, ...settings };
-  fs.writeFileSync(getSettingsFilePath(), JSON.stringify(updated, null, 2), "utf-8");
+  const filePath = getSettingsFilePath();
+  const dirPath = path.dirname(filePath);
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+  fs.writeFileSync(filePath, JSON.stringify(updated, null, 2), "utf-8");
   return updated;
 }
 
@@ -76,8 +81,12 @@ function readFolderImages(folder: BentoFolder): string[] {
 
   const allFiles = fs.readdirSync(dirPath).filter((file) => {
     if (file === "order.json" || file.startsWith(".")) return false;
-    const stat = fs.statSync(path.join(dirPath, file));
-    return stat.isFile();
+    try {
+      const stat = fs.statSync(path.join(dirPath, file));
+      return stat.isFile();
+    } catch {
+      return false;
+    }
   });
 
   const orderFile = getOrderFilePath(folder);
@@ -123,10 +132,10 @@ export async function GET() {
     }
     const settings = readBentoSettings();
     return NextResponse.json({ success: true, folders: data, settings });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching bento images:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to fetch bento images" },
+      { success: false, error: error?.message || "Failed to fetch bento images" },
       { status: 500 },
     );
   }
@@ -146,7 +155,15 @@ export async function POST(request: Request) {
 
     // Handle JSON body requests (Delete or Update/Save)
     if (contentType.includes("application/json")) {
-      const body = await request.json();
+      let body: any;
+      try {
+        body = await request.json();
+      } catch {
+        return NextResponse.json(
+          { success: false, error: "Invalid JSON request body" },
+          { status: 400 },
+        );
+      }
 
       // Action: Delete Image
       if (body.action === "delete") {
@@ -181,29 +198,29 @@ export async function POST(request: Request) {
       }
 
       // Action: Save Order / Settings
-      if (body.action === "update" || body.action === "updateSettings" || body.settings || body.images) {
-        const { folder, images, settings } = body as {
-          folder?: BentoFolder;
-          images?: string[];
-          settings?: BentoSettings;
-        };
+      const { folder, images, settings } = body as {
+        folder?: BentoFolder;
+        images?: string[];
+        settings?: BentoSettings;
+      };
 
-        if (settings) {
-          saveBentoSettings(settings);
-        }
-
-        if (folder && BENTO_FOLDERS.includes(folder) && Array.isArray(images)) {
-          const filenames = images.map((img) => path.basename(img));
-          saveFolderOrder(folder, filenames);
-        }
-
-        return NextResponse.json({
-          success: true,
-          folder,
-          images: folder ? readFolderImages(folder) : undefined,
-          settings: readBentoSettings(),
-        });
+      if (settings) {
+        saveBentoSettings(settings);
       }
+
+      const validFolder = folder && BENTO_FOLDERS.includes(folder) ? folder : undefined;
+
+      if (validFolder && Array.isArray(images)) {
+        const filenames = images.map((img) => path.basename(img));
+        saveFolderOrder(validFolder, filenames);
+      }
+
+      return NextResponse.json({
+        success: true,
+        folder: validFolder,
+        images: validFolder ? readFolderImages(validFolder) : undefined,
+        settings: readBentoSettings(),
+      });
     }
 
     // Handle Multipart Form Data (Upload)
@@ -264,10 +281,10 @@ export async function POST(request: Request) {
       folder,
       images: readFolderImages(folder),
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in hero-grid POST route:", error);
     return NextResponse.json(
-      { success: false, error: "Operation failed" },
+      { success: false, error: error?.message || "Operation failed" },
       { status: 500 },
     );
   }

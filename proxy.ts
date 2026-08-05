@@ -187,6 +187,7 @@ export async function proxy(request: NextRequest) {
         isUnderPath(pathname, "/api/admin/dashboard") ||
         isUnderPath(pathname, "/api/admin/staff-features") ||
         isUnderPath(pathname, "/api/admin/hero-grid") ||
+        isUnderPath(pathname, "/api/admin/bento") ||
         isUnderPath(pathname, "/api/invoices"));
 
     if (isStaffAllowedGet) {
