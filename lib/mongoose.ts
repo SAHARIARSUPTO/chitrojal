@@ -8,6 +8,7 @@ import "@/models/PhotoDriveLink";
 import "@/models/Pose";
 import "@/models/Staff";
 import "@/models/StaffFeature";
+import "@/models/BentoConfig";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 

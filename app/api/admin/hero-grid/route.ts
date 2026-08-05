@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { getSessionTokenFromRequest, verifySessionToken } from "@/lib/session";
+import mongooseConnect from "@/lib/mongoose";
+import BentoConfig from "@/models/BentoConfig";
 
 const BENTO_FOLDERS = [
   "portfolio",
@@ -46,7 +48,19 @@ function getSettingsFilePath() {
   return path.join(process.cwd(), "public", "bento-settings.json");
 }
 
-export function readBentoSettings(): BentoSettings {
+export async function readBentoSettings(): Promise<BentoSettings> {
+  // 1. Try reading from MongoDB
+  try {
+    await mongooseConnect();
+    const doc = await BentoConfig.findOne({ key: "bento_settings" }).lean();
+    if (doc?.value && typeof doc.value === "object") {
+      return { ...DEFAULT_SETTINGS, ...(doc.value as object) };
+    }
+  } catch (e) {
+    console.error("Error reading bento settings from MongoDB:", e);
+  }
+
+  // 2. Fallback to local JSON file
   const filePath = getSettingsFilePath();
   if (fs.existsSync(filePath)) {
     try {
@@ -60,47 +74,82 @@ export function readBentoSettings(): BentoSettings {
   return DEFAULT_SETTINGS;
 }
 
-function saveBentoSettings(settings: Partial<BentoSettings>) {
-  const current = readBentoSettings();
+async function saveBentoSettings(settings: Partial<BentoSettings>) {
+  const current = await readBentoSettings();
   const updated = { ...current, ...settings };
-  const filePath = getSettingsFilePath();
-  const dirPath = path.dirname(filePath);
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
+
+  // Save to MongoDB (works in serverless/production read-only FS)
+  try {
+    await mongooseConnect();
+    await BentoConfig.findOneAndUpdate(
+      { key: "bento_settings" },
+      { value: updated },
+      { upsert: true, new: true }
+    );
+  } catch (e) {
+    console.error("Failed to save bento settings to MongoDB:", e);
   }
-  fs.writeFileSync(filePath, JSON.stringify(updated, null, 2), "utf-8");
+
+  // Try writing to disk if in local writable environment (silently ignore EROFS in production)
+  try {
+    const filePath = getSettingsFilePath();
+    const dirPath = path.dirname(filePath);
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+    fs.writeFileSync(filePath, JSON.stringify(updated, null, 2), "utf-8");
+  } catch {
+    // Ignore read-only filesystem errors in production
+  }
+
   return updated;
 }
 
-function readFolderImages(folder: BentoFolder): string[] {
+async function readFolderImages(folder: BentoFolder): Promise<string[]> {
   const dirPath = getFolderPath(folder);
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
-    return [];
+  let allFiles: string[] = [];
+  if (fs.existsSync(dirPath)) {
+    try {
+      allFiles = fs.readdirSync(dirPath).filter((file) => {
+        if (file === "order.json" || file.startsWith(".")) return false;
+        try {
+          const stat = fs.statSync(path.join(dirPath, file));
+          return stat.isFile();
+        } catch {
+          return false;
+        }
+      });
+    } catch (e) {
+      console.error(`Error reading dir for ${folder}:`, e);
+    }
   }
 
-  const allFiles = fs.readdirSync(dirPath).filter((file) => {
-    if (file === "order.json" || file.startsWith(".")) return false;
-    try {
-      const stat = fs.statSync(path.join(dirPath, file));
-      return stat.isFile();
-    } catch {
-      return false;
-    }
-  });
-
-  const orderFile = getOrderFilePath(folder);
   let orderedFilenames: string[] = [];
 
-  if (fs.existsSync(orderFile)) {
-    try {
-      const content = fs.readFileSync(orderFile, "utf-8");
-      const parsed = JSON.parse(content);
-      if (Array.isArray(parsed)) {
-        orderedFilenames = parsed.filter((name) => typeof name === "string");
+  // 1. Try reading order from MongoDB
+  try {
+    await mongooseConnect();
+    const doc = await BentoConfig.findOne({ key: `bento_order_${folder}` }).lean();
+    if (Array.isArray(doc?.value)) {
+      orderedFilenames = doc.value.filter((name: unknown) => typeof name === "string");
+    }
+  } catch (e) {
+    console.error(`Error reading order from DB for ${folder}:`, e);
+  }
+
+  // 2. Fallback to order.json
+  if (orderedFilenames.length === 0) {
+    const orderFile = getOrderFilePath(folder);
+    if (fs.existsSync(orderFile)) {
+      try {
+        const content = fs.readFileSync(orderFile, "utf-8");
+        const parsed = JSON.parse(content);
+        if (Array.isArray(parsed)) {
+          orderedFilenames = parsed.filter((name) => typeof name === "string");
+        }
+      } catch (e) {
+        console.error(`Error reading order.json for ${folder}:`, e);
       }
-    } catch (e) {
-      console.error(`Error reading order.json for ${folder}:`, e);
     }
   }
 
@@ -114,13 +163,30 @@ function readFolderImages(folder: BentoFolder): string[] {
   return finalOrder.map((name) => `/${folder}/${name}`);
 }
 
-function saveFolderOrder(folder: BentoFolder, filenames: string[]) {
-  const dirPath = getFolderPath(folder);
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
+async function saveFolderOrder(folder: BentoFolder, filenames: string[]) {
+  // Save to MongoDB
+  try {
+    await mongooseConnect();
+    await BentoConfig.findOneAndUpdate(
+      { key: `bento_order_${folder}` },
+      { value: filenames },
+      { upsert: true, new: true }
+    );
+  } catch (e) {
+    console.error(`Failed to save folder order to MongoDB for ${folder}:`, e);
   }
-  const orderFile = getOrderFilePath(folder);
-  fs.writeFileSync(orderFile, JSON.stringify(filenames, null, 2), "utf-8");
+
+  // Try writing to disk if in local writable environment (silently ignore EROFS in production)
+  try {
+    const dirPath = getFolderPath(folder);
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+    const orderFile = getOrderFilePath(folder);
+    fs.writeFileSync(orderFile, JSON.stringify(filenames, null, 2), "utf-8");
+  } catch {
+    // Ignore read-only filesystem errors in production
+  }
 }
 
 // GET all bento folder images and settings
@@ -128,9 +194,9 @@ export async function GET() {
   try {
     const data: Record<string, string[]> = {};
     for (const folder of BENTO_FOLDERS) {
-      data[folder] = readFolderImages(folder);
+      data[folder] = await readFolderImages(folder);
     }
-    const settings = readBentoSettings();
+    const settings = await readBentoSettings();
     return NextResponse.json({ success: true, folders: data, settings });
   } catch (error: any) {
     console.error("Error fetching bento images:", error);
@@ -183,17 +249,21 @@ export async function POST(request: Request) {
         const filePath = path.join(getFolderPath(folder), filename);
 
         if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
+          try {
+            fs.unlinkSync(filePath);
+          } catch (e) {
+            console.warn("Could not delete file from disk (production read-only FS):", e);
+          }
         }
 
-        const currentImages = readFolderImages(folder);
-        const updatedFilenames = currentImages.map((img) => path.basename(img));
-        saveFolderOrder(folder, updatedFilenames);
+        const currentImages = await readFolderImages(folder);
+        const updatedFilenames = currentImages.map((img) => path.basename(img)).filter((n) => n !== filename);
+        await saveFolderOrder(folder, updatedFilenames);
 
         return NextResponse.json({
           success: true,
           folder,
-          images: readFolderImages(folder),
+          images: await readFolderImages(folder),
         });
       }
 
@@ -205,21 +275,21 @@ export async function POST(request: Request) {
       };
 
       if (settings) {
-        saveBentoSettings(settings);
+        await saveBentoSettings(settings);
       }
 
       const validFolder = folder && BENTO_FOLDERS.includes(folder) ? folder : undefined;
 
       if (validFolder && Array.isArray(images)) {
         const filenames = images.map((img) => path.basename(img));
-        saveFolderOrder(validFolder, filenames);
+        await saveFolderOrder(validFolder, filenames);
       }
 
       return NextResponse.json({
         success: true,
         folder: validFolder,
-        images: validFolder ? readFolderImages(validFolder) : undefined,
-        settings: readBentoSettings(),
+        images: validFolder ? await readFolderImages(validFolder) : undefined,
+        settings: await readBentoSettings(),
       });
     }
 
@@ -246,11 +316,8 @@ export async function POST(request: Request) {
     }
 
     const dirPath = getFolderPath(folder);
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true });
-    }
 
-    const currentImages = readFolderImages(folder);
+    const currentImages = await readFolderImages(folder);
     const currentFilenames = currentImages.map((img) => path.basename(img));
     const newFilenames: string[] = [];
 
@@ -269,17 +336,35 @@ export async function POST(request: Request) {
 
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      fs.writeFileSync(path.join(dirPath, targetName), buffer);
-      newFilenames.push(targetName);
+
+      try {
+        if (!fs.existsSync(dirPath)) {
+          fs.mkdirSync(dirPath, { recursive: true });
+        }
+        fs.writeFileSync(path.join(dirPath, targetName), buffer);
+        newFilenames.push(targetName);
+      } catch (e: any) {
+        if (e?.code === "EROFS" || e?.message?.includes("read-only")) {
+          return NextResponse.json(
+            {
+              success: false,
+              error:
+                "File upload to public folder is not supported in serverless production (read-only filesystem). Please add images to git repository or configure cloud storage.",
+            },
+            { status: 400 },
+          );
+        }
+        throw e;
+      }
     }
 
     const updatedFilenames = [...currentFilenames, ...newFilenames];
-    saveFolderOrder(folder, updatedFilenames);
+    await saveFolderOrder(folder, updatedFilenames);
 
     return NextResponse.json({
       success: true,
       folder,
-      images: readFolderImages(folder),
+      images: await readFolderImages(folder),
     });
   } catch (error: any) {
     console.error("Error in hero-grid POST route:", error);
@@ -322,17 +407,21 @@ export async function DELETE(request: Request) {
     const filePath = path.join(getFolderPath(folder), filename);
 
     if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+      try {
+        fs.unlinkSync(filePath);
+      } catch (e) {
+        console.warn("Could not delete file from disk (production read-only FS):", e);
+      }
     }
 
-    const currentImages = readFolderImages(folder);
-    const updatedFilenames = currentImages.map((img) => path.basename(img));
-    saveFolderOrder(folder, updatedFilenames);
+    const currentImages = await readFolderImages(folder);
+    const updatedFilenames = currentImages.map((img) => path.basename(img)).filter((n) => n !== filename);
+    await saveFolderOrder(folder, updatedFilenames);
 
     return NextResponse.json({
       success: true,
       folder,
-      images: readFolderImages(folder),
+      images: await readFolderImages(folder),
     });
   } catch (error) {
     console.error("Error deleting hero grid image:", error);
@@ -342,3 +431,4 @@ export async function DELETE(request: Request) {
     );
   }
 }
+
