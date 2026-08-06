@@ -27,20 +27,101 @@ const StatItem = ({ number, text }) => (
   </div>
 );
 
-const serviceIcons = {
-  Heart: <Heart className="w-8 h-8 text-orange-500" />,
-  Video: <Video className="w-8 h-8 text-orange-500" />,
-  Camera: <Camera className="w-8 h-8 text-orange-500" />,
-  Aperture: <Aperture className="w-8 h-8 text-orange-500" />,
+const serviceThemes = {
+  "wedding-photography": {
+    border: "border-rose-500/40 hover:border-rose-400/80",
+    bg: "bg-gradient-to-br from-rose-950/50 via-pink-950/25 to-[#0A0A0A]",
+    iconBg: "border-rose-500/40 bg-rose-500/20 text-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.25)]",
+    icon: <Heart className="w-8 h-8 text-rose-400" />,
+    titleColor: "text-rose-100 group-hover:text-white",
+    glow: "shadow-[0_0_25px_rgba(244,63,94,0.12)] group-hover:shadow-[0_0_35px_rgba(244,63,94,0.3)]",
+    badge: "border-rose-500/40 bg-rose-500/15 text-rose-300",
+    tag: "ওয়েডিং সেগমেন্ট",
+  },
+  "cinematic-wedding": {
+    border: "border-cyan-500/40 hover:border-cyan-400/80",
+    bg: "bg-gradient-to-br from-cyan-950/50 via-blue-950/25 to-[#0A0A0A]",
+    iconBg: "border-cyan-500/40 bg-cyan-500/20 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.25)]",
+    icon: <Video className="w-8 h-8 text-cyan-400" />,
+    titleColor: "text-cyan-100 group-hover:text-white",
+    glow: "shadow-[0_0_25px_rgba(6,182,212,0.12)] group-hover:shadow-[0_0_35px_rgba(6,182,212,0.3)]",
+    badge: "border-cyan-500/40 bg-cyan-500/15 text-cyan-300",
+    tag: "সিনেমাটিক ফিল্ম",
+  },
+  "pre-wedding-shoot": {
+    border: "border-purple-500/40 hover:border-purple-400/80",
+    bg: "bg-gradient-to-br from-purple-950/50 via-fuchsia-950/25 to-[#0A0A0A]",
+    iconBg: "border-purple-500/40 bg-purple-500/20 text-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.25)]",
+    icon: <Camera className="w-8 h-8 text-purple-400" />,
+    titleColor: "text-purple-100 group-hover:text-white",
+    glow: "shadow-[0_0_25px_rgba(168,85,247,0.12)] group-hover:shadow-[0_0_35px_rgba(168,85,247,0.3)]",
+    badge: "border-purple-500/40 bg-purple-500/15 text-purple-300",
+    tag: "ক্রিয়েটিভ শ্যুট",
+  },
+  "holud-and-mehendi": {
+    border: "border-amber-500/40 hover:border-amber-400/80",
+    bg: "bg-gradient-to-br from-amber-950/50 via-orange-950/25 to-[#0A0A0A]",
+    iconBg: "border-amber-500/40 bg-amber-500/20 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.25)]",
+    icon: <Aperture className="w-8 h-8 text-amber-400" />,
+    titleColor: "text-amber-100 group-hover:text-white",
+    glow: "shadow-[0_0_25px_rgba(245,158,11,0.12)] group-hover:shadow-[0_0_35px_rgba(245,158,11,0.3)]",
+    badge: "border-amber-500/40 bg-amber-500/15 text-amber-300",
+    tag: "কালারফুল উৎসব",
+  },
 };
 
-const ServiceCard = ({ icon, title, description }) => (
-  <div className="bg-white/5 p-8 rounded-3xl border border-white/10 flex flex-col items-center text-center transform transition-transform duration-300 hover:scale-105 hover:border-orange-500/50 hover:shadow-2xl hover:shadow-orange-500/10">
-    <div className="mb-4">{serviceIcons[icon]}</div>
-    <h3 className="text-xl font-bold mb-2">{title}</h3>
-    <p className="text-gray-400 text-sm leading-relaxed">{description}</p>
-  </div>
-);
+const ServiceCard = ({ slug, icon, title, description }) => {
+  const theme = serviceThemes[slug] || {
+    border: "border-orange-500/40 hover:border-orange-400/80",
+    bg: "bg-gradient-to-br from-orange-950/50 via-amber-950/25 to-[#0A0A0A]",
+    iconBg: "border-orange-500/40 bg-orange-500/20 text-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.25)]",
+    icon: <Camera className="w-8 h-8 text-orange-400" />,
+    titleColor: "text-orange-100 group-hover:text-white",
+    glow: "shadow-[0_0_25px_rgba(249,115,22,0.12)] group-hover:shadow-[0_0_35px_rgba(249,115,22,0.3)]",
+    badge: "border-orange-500/40 bg-orange-500/15 text-orange-300",
+    tag: "বিশেষ সেবা",
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 25 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      whileHover={{ y: -8, scale: 1.02 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className={`group relative p-8 rounded-3xl border ${theme.border} ${theme.bg} ${theme.glow} flex flex-col items-center text-center transition-all duration-300 overflow-hidden backdrop-blur-xl`}
+    >
+      {/* Top Tag Badge */}
+      <div className="mb-4">
+        <span className={`inline-block px-3 py-1 rounded-full border text-[11px] font-bold tracking-wider ${theme.badge}`}>
+          {theme.tag}
+        </span>
+      </div>
+
+      {/* Icon Badge */}
+      <div className={`p-4 rounded-2xl mb-4 border transition-transform duration-300 group-hover:scale-110 ${theme.iconBg}`}>
+        {theme.icon}
+      </div>
+
+      {/* Title */}
+      <h3 className={`text-xl font-extrabold mb-3 transition-colors duration-300 ${theme.titleColor}`}>
+        {title}
+      </h3>
+
+      {/* Description */}
+      <p className="text-gray-300/80 text-sm leading-relaxed font-sans mb-6 flex-grow">
+        {description}
+      </p>
+
+      {/* Bottom Action Badge */}
+      <Link href="/booking">
+        <span className={`inline-flex items-center gap-1.5 text-xs font-bold transition-all duration-300 group-hover:gap-2.5 ${theme.badge} px-4 py-2 rounded-xl border`}>
+          বুকিং করুন <Phone className="w-3.5 h-3.5" />
+        </span>
+      </Link>
+    </motion.div>
+  );
+};
 
 const HomeClient = ({ services, carouselData, videoData, packageImages, bentoSettings }) => {
   return (
@@ -51,11 +132,15 @@ const HomeClient = ({ services, carouselData, videoData, packageImages, bentoSet
         bentoSettings={bentoSettings}
       />
 
-      <section id="services" className="py-24 border-b border-white/5">
-        <div className="container mx-auto px-4">
+      <section id="services" className="py-24 border-b border-white/5 relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-600/5 rounded-full blur-[160px] pointer-events-none"></div>
+        <div className="container mx-auto px-4 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold font-serif mb-4">
+            <span className="inline-block border border-orange-500/30 bg-orange-500/10 px-4 py-1.5 rounded-full text-orange-400 text-xs font-bold uppercase tracking-widest mb-4">
               আমাদের সেবাসমূহ
+            </span>
+            <h2 className="text-4xl md:text-5xl font-bold font-serif mb-4">
+              আমাদের প্রিমিয়াম সেবাসমূহ
             </h2>
             <p className="text-gray-400 text-lg">
               আপনার বিশেষ মুহূর্তগুলোকে ফ্রেমবন্দি করতে আমরা বিভিন্ন ধরনের
@@ -66,6 +151,7 @@ const HomeClient = ({ services, carouselData, videoData, packageImages, bentoSet
             {services.map((service) => (
               <ServiceCard
                 key={service.slug}
+                slug={service.slug}
                 icon={service.icon}
                 title={service.title}
                 description={service.description}

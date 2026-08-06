@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import fs from "fs";
 import path from "path";
 import { getSessionTokenFromRequest, verifySessionToken } from "@/lib/session";
@@ -12,7 +13,7 @@ const BENTO_FOLDERS = [
   "package",
 ] as const;
 
-type BentoFolder = (typeof BENTO_FOLDERS)[number];
+export type BentoFolder = (typeof BENTO_FOLDERS)[number];
 
 export type AnimationType = "fade" | "zoom" | "slide" | "slideUp" | "blur";
 
@@ -102,10 +103,16 @@ async function saveBentoSettings(settings: Partial<BentoSettings>) {
     // Ignore read-only filesystem errors in production
   }
 
+  try {
+    revalidatePath("/");
+  } catch (e) {
+    // Ignore revalidatePath errors outside request lifecycle if any
+  }
+
   return updated;
 }
 
-async function readFolderImages(folder: BentoFolder): Promise<string[]> {
+export async function readFolderImages(folder: BentoFolder): Promise<string[]> {
   const dirPath = getFolderPath(folder);
   let allFiles: string[] = [];
   if (fs.existsSync(dirPath)) {
@@ -125,20 +132,22 @@ async function readFolderImages(folder: BentoFolder): Promise<string[]> {
   }
 
   let orderedFilenames: string[] = [];
+  let hasConfiguredOrder = false;
 
   // 1. Try reading order from MongoDB
   try {
     await mongooseConnect();
     const doc = await BentoConfig.findOne({ key: `bento_order_${folder}` }).lean();
     if (Array.isArray(doc?.value)) {
-      orderedFilenames = doc.value.filter((name: unknown) => typeof name === "string");
+      orderedFilenames = doc.value.filter((name: unknown) => typeof name === "string") as string[];
+      hasConfiguredOrder = true;
     }
   } catch (e) {
     console.error(`Error reading order from DB for ${folder}:`, e);
   }
 
   // 2. Fallback to order.json
-  if (orderedFilenames.length === 0) {
+  if (!hasConfiguredOrder) {
     const orderFile = getOrderFilePath(folder);
     if (fs.existsSync(orderFile)) {
       try {
@@ -146,6 +155,7 @@ async function readFolderImages(folder: BentoFolder): Promise<string[]> {
         const parsed = JSON.parse(content);
         if (Array.isArray(parsed)) {
           orderedFilenames = parsed.filter((name) => typeof name === "string");
+          hasConfiguredOrder = true;
         }
       } catch (e) {
         console.error(`Error reading order.json for ${folder}:`, e);
@@ -153,14 +163,19 @@ async function readFolderImages(folder: BentoFolder): Promise<string[]> {
     }
   }
 
-  const existingOrdered = orderedFilenames.filter((name) =>
-    allFiles.includes(name),
-  );
+  let finalFilenames: string[] = [];
 
-  const remaining = allFiles.filter((name) => !existingOrdered.includes(name));
-  const finalOrder = [...existingOrdered, ...remaining];
+  if (hasConfiguredOrder) {
+    if (allFiles.length > 0) {
+      finalFilenames = orderedFilenames.filter((name) => allFiles.includes(name));
+    } else {
+      finalFilenames = orderedFilenames;
+    }
+  } else {
+    finalFilenames = allFiles;
+  }
 
-  return finalOrder.map((name) => `/${folder}/${name}`);
+  return finalFilenames.map((name) => `/${folder}/${name}`);
 }
 
 async function saveFolderOrder(folder: BentoFolder, filenames: string[]) {
@@ -186,6 +201,12 @@ async function saveFolderOrder(folder: BentoFolder, filenames: string[]) {
     fs.writeFileSync(orderFile, JSON.stringify(filenames, null, 2), "utf-8");
   } catch {
     // Ignore read-only filesystem errors in production
+  }
+
+  try {
+    revalidatePath("/");
+  } catch (e) {
+    // Ignore revalidatePath errors outside request lifecycle if any
   }
 }
 
@@ -245,19 +266,26 @@ export async function POST(request: Request) {
           );
         }
 
-        const filename = path.basename(imagePath);
+        const decodedPath = decodeURIComponent(imagePath);
+        const filename = path.basename(decodedPath);
         const filePath = path.join(getFolderPath(folder), filename);
 
         if (fs.existsSync(filePath)) {
           try {
             fs.unlinkSync(filePath);
+            console.log(`[Bento Delete] Successfully deleted file from disk: ${filePath}`);
           } catch (e) {
-            console.warn("Could not delete file from disk (production read-only FS):", e);
+            console.error(`[Bento Delete] Error deleting file from disk: ${filePath}`, e);
           }
+        } else {
+          console.warn(`[Bento Delete] File not found on disk: ${filePath}`);
         }
 
         const currentImages = await readFolderImages(folder);
-        const updatedFilenames = currentImages.map((img) => path.basename(img)).filter((n) => n !== filename);
+        const updatedFilenames = currentImages
+          .map((img) => path.basename(decodeURIComponent(img)))
+          .filter((n) => n !== filename);
+
         await saveFolderOrder(folder, updatedFilenames);
 
         return NextResponse.json({
@@ -403,19 +431,26 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const filename = path.basename(imagePath);
+    const decodedPath = decodeURIComponent(imagePath);
+    const filename = path.basename(decodedPath);
     const filePath = path.join(getFolderPath(folder), filename);
 
     if (fs.existsSync(filePath)) {
       try {
         fs.unlinkSync(filePath);
+        console.log(`[Bento Delete] Successfully deleted file from disk: ${filePath}`);
       } catch (e) {
-        console.warn("Could not delete file from disk (production read-only FS):", e);
+        console.error(`[Bento Delete] Error deleting file from disk: ${filePath}`, e);
       }
+    } else {
+      console.warn(`[Bento Delete] File not found on disk: ${filePath}`);
     }
 
     const currentImages = await readFolderImages(folder);
-    const updatedFilenames = currentImages.map((img) => path.basename(img)).filter((n) => n !== filename);
+    const updatedFilenames = currentImages
+      .map((img) => path.basename(decodeURIComponent(img)))
+      .filter((n) => n !== filename);
+
     await saveFolderOrder(folder, updatedFilenames);
 
     return NextResponse.json({

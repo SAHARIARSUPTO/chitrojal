@@ -31,7 +31,13 @@ export async function POST(request: Request) {
     await newPayment.save();
 
     order.payments.push(newPayment._id);
-    order.paidAmount = Number(order.paidAmount || 0) + newPayment.amount;
+    await order.populate("payments");
+    const paymentsSum = Array.isArray(order.payments)
+      ? order.payments.reduce((sum: number, p: any) => sum + Number(p?.amount || 0), 0)
+      : 0;
+
+    const advanceAmount = Number(order.advanceAmount || 0);
+    order.paidAmount = Math.max(advanceAmount, paymentsSum);
     const discountAmount = Number(order.discountAmount || 0);
     order.finalAmount = Math.max(Number(order.totalAmount || 0) - discountAmount, 0);
     order.dueAmount = Math.max(order.finalAmount - order.paidAmount, 0);

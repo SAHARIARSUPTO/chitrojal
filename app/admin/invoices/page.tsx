@@ -56,14 +56,22 @@ export default function InvoicesPage() {
     return () => window.removeEventListener("focus", handleFocus);
   }, []);
 
+  const getInvoiceDue = (invoice: InvoiceRecord) => {
+    const total = Number(invoice.totalAmount || 0);
+    const discount = Number(invoice.discountAmount || 0);
+    const finalAmt = Math.max(total - discount, 0);
+    const paid = Number(invoice.paidAmount || 0);
+    return Math.max(finalAmt - paid, 0);
+  };
+
   const filteredInvoices = useMemo(() => {
     return records.filter((invoice) => {
       const query = `${invoice.customerName} ${invoice.package || ""} ${
         invoice.customerPhone || ""
       }`.toLowerCase();
       const matchesSearch = query.includes(searchTerm.toLowerCase());
-      const status =
-        invoice.dueAmount && invoice.dueAmount > 0 ? "Pending" : "Paid";
+      const due = getInvoiceDue(invoice);
+      const status = due > 0 ? "Pending" : "Paid";
       const matchesStatus =
         statusFilter === "All Status" || status === statusFilter;
       return matchesSearch && matchesStatus;
@@ -80,7 +88,7 @@ export default function InvoicesPage() {
       0,
     );
     const overdue = records.filter(
-      (invoice) => (invoice.dueAmount || 0) > 0,
+      (invoice) => getInvoiceDue(invoice) > 0,
     ).length;
     return { totalRevenue, paid, overdue, count: records.length };
   }, [records]);
@@ -198,10 +206,8 @@ export default function InvoicesPage() {
               </thead>
               <tbody className="divide-y divide-white/5">
                 {filteredInvoices.map((invoice) => {
-                  const status =
-                    invoice.dueAmount && invoice.dueAmount > 0
-                      ? "Pending"
-                      : "Paid";
+                  const due = getInvoiceDue(invoice);
+                  const status = due > 0 ? "Pending" : "Paid";
                   return (
                     <tr
                       key={invoice._id}

@@ -207,11 +207,11 @@ export default function InvoiceDetailPage() {
   const totalAmount = Number(order.totalAmount || 0);
   const discountAmount = Number(order.discountAmount || 0);
   const finalPayable = Math.max(totalAmount - discountAmount, 0);
-  const paidAmount = Number(order.paidAmount || 0);
-  const dueAmount = Math.max(
-    order.dueAmount !== undefined ? order.dueAmount : finalPayable - paidAmount,
-    0,
-  );
+  const paymentsSum = Array.isArray(order.payments)
+    ? order.payments.reduce((sum, p: any) => sum + Number(p?.amount || 0), 0)
+    : 0;
+  const paidAmount = Math.max(Number(order.paidAmount || 0), paymentsSum);
+  const dueAmount = Math.max(finalPayable - paidAmount, 0);
   const isPaidInFull = dueAmount <= 0;
 
   return (

@@ -64,9 +64,7 @@ const mapOrderToForm = (
   const totalAmount = Number(order.totalAmount || 0);
   const discountAmount = Number(order.discountAmount || 0);
   const paidAmount = Number(order.paidAmount || 0);
-  const dueAmount = Number(
-    order.dueAmount || Math.max(totalAmount - discountAmount - paidAmount, 0),
-  );
+  const dueAmount = Math.max(totalAmount - discountAmount - paidAmount, 0);
 
   return {
     ...createEmptyEventForm(),

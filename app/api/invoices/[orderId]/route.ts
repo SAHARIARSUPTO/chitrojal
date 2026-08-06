@@ -52,12 +52,17 @@ export async function GET(request: Request, context: RouteContext) {
     const formatBDT = (amount: number) =>
       `BDT ${amount.toLocaleString("en-BD", { minimumFractionDigits: 2 })}`;
 
-    const finalAmount = Math.max(
-      Number(order.totalAmount || 0) - Number(order.discountAmount || 0),
-      0,
-    );
+    const totalAmount = Number(order.totalAmount || 0);
+    const discountAmount = Number(order.discountAmount || 0);
+    const finalAmount = Math.max(totalAmount - discountAmount, 0);
 
-    const isPaid = !order.dueAmount || order.dueAmount <= 0;
+    const paymentsSum = Array.isArray(order.payments)
+      ? order.payments.reduce((sum: number, p: any) => sum + Number(p?.amount || 0), 0)
+      : 0;
+    const paidAmount = Math.max(Number(order.paidAmount || 0), paymentsSum);
+    const dueAmount = Math.max(finalAmount - paidAmount, 0);
+
+    const isPaid = dueAmount <= 0;
     const statusText = isPaid ? "PAID IN FULL" : "PAYMENT PENDING";
     const statusColor = isPaid
       ? { fill: "#DCFCE7", text: "#15803D" }
@@ -410,14 +415,16 @@ export async function GET(request: Request, context: RouteContext) {
       calcY += 16;
     };
 
-    addSummaryRow("Subtotal", formatBDT(order.totalAmount || 0));
-    addSummaryRow(
-      "Discount Applied",
-      `- ${formatBDT(order.discountAmount || 0)}`,
-      false,
-      "#16A34A",
-    );
-    addSummaryRow("Advance Paid", formatBDT(order.paidAmount || 0));
+    addSummaryRow("Subtotal", formatBDT(totalAmount));
+    if (discountAmount > 0) {
+      addSummaryRow(
+        "Discount Applied",
+        `- ${formatBDT(discountAmount)}`,
+        false,
+        "#16A34A",
+      );
+    }
+    addSummaryRow("Total Paid", formatBDT(paidAmount));
 
     // Divider Line
     doc.setDrawColor(brandColor);
@@ -433,9 +440,9 @@ export async function GET(request: Request, context: RouteContext) {
     calcY += 16;
     addSummaryRow(
       "Total Due",
-      formatBDT(order.dueAmount || finalAmount),
+      formatBDT(dueAmount),
       true,
-      brandColor,
+      dueAmount <= 0 ? "#16A34A" : brandColor,
     );
 
     // -------------------------------------------------------------
