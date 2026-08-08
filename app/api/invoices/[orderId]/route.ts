@@ -59,7 +59,11 @@ export async function GET(request: Request, context: RouteContext) {
     const paymentsSum = Array.isArray(order.payments)
       ? order.payments.reduce((sum: number, p: any) => sum + Number(p?.amount || 0), 0)
       : 0;
-    const paidAmount = Math.max(Number(order.paidAmount || 0), paymentsSum);
+    const paidAmount = Math.max(
+      Number(order.paidAmount || 0),
+      Number(order.advanceAmount || 0),
+      paymentsSum,
+    );
     const dueAmount = Math.max(finalAmount - paidAmount, 0);
 
     const isPaid = dueAmount <= 0;
@@ -424,7 +428,7 @@ export async function GET(request: Request, context: RouteContext) {
         "#16A34A",
       );
     }
-    addSummaryRow("Total Paid", formatBDT(paidAmount));
+    addSummaryRow("Total Paid", formatBDT(paidAmount), true);
 
     // Divider Line
     doc.setDrawColor(brandColor);

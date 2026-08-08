@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     const [orders, payments, expenses] = await Promise.all([
       Order.find(
         orderQuery,
-        "totalAmount paidAmount dueAmount customerName package eventDate eventSchedule",
+        "totalAmount paidAmount advanceAmount dueAmount customerName package eventDate eventSchedule",
       )
         .sort({ eventDate: -1 })
         .lean(),

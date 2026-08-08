@@ -210,7 +210,11 @@ export default function InvoiceDetailPage() {
   const paymentsSum = Array.isArray(order.payments)
     ? order.payments.reduce((sum, p: any) => sum + Number(p?.amount || 0), 0)
     : 0;
-  const paidAmount = Math.max(Number(order.paidAmount || 0), paymentsSum);
+  const paidAmount = Math.max(
+    Number(order.paidAmount || 0),
+    Number(order.advanceAmount || 0),
+    paymentsSum,
+  );
   const dueAmount = Math.max(finalPayable - paidAmount, 0);
   const isPaidInFull = dueAmount <= 0;
 
@@ -518,7 +522,7 @@ export default function InvoiceDetailPage() {
               </div>
 
               <div className="flex items-center justify-between px-5 py-3 text-neutral-300">
-                <span>Total Amount Paid / Advance:</span>
+                <span>Total Amount Paid:</span>
                 <span className="font-mono font-bold text-emerald-400">
                   {formatBDT(paidAmount)}
                 </span>

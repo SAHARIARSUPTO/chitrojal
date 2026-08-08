@@ -29,6 +29,8 @@ export async function POST(request: Request) {
     const parsedPaid = Number(body.paidAmount || body.paid || 0);
     const finalAmount = Math.max(totalAmount - discountAmount, 0);
 
+    const totalPaid = Math.max(parsedPaid, parsedAdvance);
+
     if (!customerName || !customerPhone || !eventDate) {
       return NextResponse.json(
         { message: "Name, Phone number, and Event Date are required." },
@@ -62,9 +64,9 @@ export async function POST(request: Request) {
       notes: body.notes || body.message || "",
       totalAmount,
       discountAmount,
-      advanceAmount: parsedAdvance,
-      paidAmount: parsedPaid,
-      dueAmount: Math.max(finalAmount - parsedPaid, 0),
+      advanceAmount: totalPaid,
+      paidAmount: totalPaid,
+      dueAmount: Math.max(finalAmount - totalPaid, 0),
       finalAmount,
       status: "Pending",
       createdFromBooking: true,

@@ -63,8 +63,9 @@ const mapOrderToForm = (
 
   const totalAmount = Number(order.totalAmount || 0);
   const discountAmount = Number(order.discountAmount || 0);
-  const paidAmount = Number(order.paidAmount || 0);
-  const dueAmount = Math.max(totalAmount - discountAmount - paidAmount, 0);
+  const paidAmount = Math.max(Number(order.paidAmount || 0), Number(order.advanceAmount || 0));
+  const finalAmount = Math.max(totalAmount - discountAmount, 0);
+  const dueAmount = Math.max(finalAmount - paidAmount, 0);
 
   return {
     ...createEmptyEventForm(),
@@ -89,7 +90,7 @@ const mapOrderToForm = (
     notes: order.notes || "",
     totalAmount: totalAmount.toString(),
     discountAmount: discountAmount.toString(),
-    advanceAmount: Number(order.advanceAmount || 0).toString(),
+    advanceAmount: paidAmount.toString(),
     paidAmount: paidAmount.toString(),
     dueAmount: dueAmount.toString(),
     status: order.status || "Pending",
@@ -177,8 +178,7 @@ export default function EventManagementsPage() {
 
     const totalAmount = Number(form.totalAmount || 0);
     const discountAmount = Number(form.discountAmount || 0);
-    const advanceAmount = Number(form.advanceAmount || 0);
-    const paidAmount = Number(form.paidAmount || advanceAmount || 0);
+    const paidAmount = Number(form.paidAmount || 0);
     const finalAmount = Math.max(totalAmount - discountAmount, 0);
     const dueAmount = Math.max(finalAmount - paidAmount, 0);
 
@@ -189,7 +189,7 @@ export default function EventManagementsPage() {
         ...form,
         totalAmount,
         discountAmount,
-        advanceAmount,
+        advanceAmount: paidAmount,
         paidAmount,
         dueAmount,
         finalAmount,
@@ -639,7 +639,12 @@ export default function EventManagementsPage() {
                 {!paymentLoading && paymentOrder ? (
                   <p className="text-sm text-neutral-400">
                     Due: {formatMoney(paymentOrder.dueAmount)} | Paid:{" "}
-                    {formatMoney(paymentOrder.paidAmount)}
+                    {formatMoney(
+                      Math.max(
+                        Number(paymentOrder.paidAmount || 0),
+                        Number((paymentOrder as any).advanceAmount || 0),
+                      ),
+                    )}
                   </p>
                 ) : null}
               </div>
@@ -717,7 +722,7 @@ export default function EventManagementsPage() {
                               </p>
                             ) : null}
                           </div>
-                          <p className="text-sm font-semibold text-white">
+                          <p className="text-sm font-semibold text-emerald-400">
                             {formatMoney(payment.amount)}
                           </p>
                         </div>
@@ -725,7 +730,7 @@ export default function EventManagementsPage() {
                     </div>
                   ) : (
                     <p className="rounded-xl border border-dashed border-white/10 p-4 text-sm text-neutral-400">
-                      No payment history found.
+                      No payment transaction history recorded.
                     </p>
                   )}
                 </div>

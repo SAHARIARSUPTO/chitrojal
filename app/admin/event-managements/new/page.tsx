@@ -18,8 +18,7 @@ export default function NewEventManagementPage() {
     try {
       const totalAmount = Number(form.totalAmount || 0);
       const discountAmount = Number(form.discountAmount || 0);
-      const advanceAmount = Number(form.advanceAmount || 0);
-      const paidAmount = Number(form.paidAmount || advanceAmount || 0);
+      const paidAmount = Number(form.paidAmount || 0);
       const finalAmount = Math.max(totalAmount - discountAmount, 0);
       const dueAmount = Math.max(finalAmount - paidAmount, 0);
 
@@ -30,7 +29,7 @@ export default function NewEventManagementPage() {
           ...form,
           totalAmount,
           discountAmount,
-          advanceAmount,
+          advanceAmount: paidAmount,
           paidAmount,
           dueAmount,
           finalAmount,

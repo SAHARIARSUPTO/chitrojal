@@ -41,8 +41,8 @@ const normalizeSchedule = (schedule: unknown, fallbackDate?: string | Date) => {
 const normalizeAmounts = (body: Record<string, unknown>) => {
   const totalAmount = Number(body.totalAmount || 0);
   const discountAmount = Number(body.discountAmount || 0);
-  const advanceAmount = Number(body.advanceAmount || 0);
-  const paidAmount = Number(body.paidAmount || advanceAmount || 0);
+  const paidAmount = Number(body.paidAmount || body.advanceAmount || 0);
+  const advanceAmount = paidAmount;
   const finalAmount = Math.max(totalAmount - discountAmount, 0);
   const dueAmount = Math.max(finalAmount - paidAmount, 0);
 

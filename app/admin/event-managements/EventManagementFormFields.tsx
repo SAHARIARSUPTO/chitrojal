@@ -85,7 +85,6 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
     prevTotal: string,
     discountStr: string,
     paidStr: string,
-    advanceStr: string,
   ) => {
     const hasAnyScheduleAmount = schedule.some(
       (s) => s.amount !== undefined && s.amount !== "" && !isNaN(Number(s.amount)),
@@ -100,8 +99,9 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
     }
     const totalNum = Number(totalAmount || 0);
     const discountNum = Number(discountStr || 0);
-    const paidNum = Number(paidStr || advanceStr || 0);
-    const dueAmount = Math.max(totalNum - discountNum - paidNum, 0).toString();
+    const paidNum = Number(paidStr || 0);
+    const finalAmount = Math.max(totalNum - discountNum, 0);
+    const dueAmount = Math.max(finalAmount - paidNum, 0).toString();
 
     return { totalAmount, dueAmount };
   };
@@ -114,16 +114,18 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
       const next = { ...prev, [name]: value };
       const totalAmount = Number(next.totalAmount || 0);
       const discountAmount = Number(next.discountAmount || 0);
-      const paidAmount = Number(next.paidAmount || next.advanceAmount || 0);
-      const dueAmount = Math.max(totalAmount - discountAmount - paidAmount, 0);
+      const paidAmount = Number(next.paidAmount || 0);
+      const finalAmount = Math.max(totalAmount - discountAmount, 0);
+      const dueAmount = Math.max(finalAmount - paidAmount, 0);
       next.dueAmount = dueAmount.toString();
 
-      if (name === "advanceAmount" && !next.paidAmount) {
-        next.paidAmount = value;
-        next.dueAmount = Math.max(
-          totalAmount - discountAmount - Number(value || 0),
-          0,
-        ).toString();
+      if (name === "totalAmount" && next.eventSchedule.length === 1) {
+        next.eventSchedule = [
+          {
+            ...next.eventSchedule[0],
+            amount: value,
+          },
+        ];
       }
 
       if (name === "eventDate") {
@@ -158,7 +160,6 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
         prev.totalAmount,
         prev.discountAmount,
         prev.paidAmount,
-        prev.advanceAmount,
       );
 
       return {
@@ -207,7 +208,6 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
         prev.totalAmount,
         prev.discountAmount,
         prev.paidAmount,
-        prev.advanceAmount,
       );
 
       return {
@@ -447,17 +447,6 @@ export default function EventManagementFormFields({ form, setForm }: Props) {
             onChange={(e) => updateField("discountAmount", e.target.value)}
             className={inputClass}
             placeholder="Discount"
-          />
-        </div>
-        <div>
-          <label className={labelClass}>Advance Amount (BDT)</label>
-          <input
-            type="number"
-            min="0"
-            value={form.advanceAmount}
-            onChange={(e) => updateField("advanceAmount", e.target.value)}
-            className={inputClass}
-            placeholder="Advance amount"
           />
         </div>
         <div>

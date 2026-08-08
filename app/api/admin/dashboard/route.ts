@@ -58,7 +58,7 @@ export async function GET(request: Request) {
         Order.countDocuments({ status: "Completed" }),
         Order.find(
           {},
-          "dueAmount paidAmount totalAmount eventDate eventSchedule eventName customerName status",
+          "dueAmount paidAmount advanceAmount totalAmount eventDate eventSchedule eventName customerName status",
         ).lean(),
         Staff.countDocuments(),
         Pose.countDocuments(),
@@ -93,7 +93,8 @@ export async function GET(request: Request) {
       .slice(0, 5);
 
     const paymentReceived = orderSummaries.reduce(
-      (sum, order) => sum + (order.paidAmount || 0),
+      (sum, order: any) =>
+        sum + Math.max(Number(order.paidAmount || 0), Number(order.advanceAmount || 0)),
       0,
     );
 

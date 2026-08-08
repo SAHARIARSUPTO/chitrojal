@@ -38,12 +38,11 @@ const normalizeSchedule = (schedule: unknown, fallbackDate?: string | Date) => {
   return [];
 };
 
-const normalizeAmounts = (body: Record<string, unknown>, paymentsSum = 0) => {
+const normalizeAmounts = (body: Record<string, unknown>) => {
   const totalAmount = Number(body.totalAmount || 0);
   const discountAmount = Number(body.discountAmount || 0);
-  const advanceAmount = Number(body.advanceAmount || 0);
-  const bodyPaid = Number(body.paidAmount || 0);
-  const paidAmount = Math.max(bodyPaid, advanceAmount, paymentsSum);
+  const paidAmount = Number(body.paidAmount ?? body.advanceAmount ?? 0);
+  const advanceAmount = paidAmount;
   const finalAmount = Math.max(totalAmount - discountAmount, 0);
   const dueAmount = Math.max(finalAmount - paidAmount, 0);
 
@@ -88,7 +87,7 @@ export async function PUT(
       ? existingOrder.payments.reduce((sum: number, p: any) => sum + Number(p?.amount || 0), 0)
       : 0;
 
-    const amounts = normalizeAmounts(body, paymentsSum);
+    const amounts = normalizeAmounts(body);
     const eventSchedule = normalizeSchedule(body.eventSchedule, body.eventDate);
     const eventDate = eventSchedule[0]?.date || body.eventDate;
     const updatePayload = {

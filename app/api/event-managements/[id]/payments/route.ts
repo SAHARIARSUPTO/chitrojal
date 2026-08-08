@@ -42,8 +42,9 @@ export async function POST(
       ? order.payments.reduce((sum: number, p: any) => sum + Number(p?.amount || 0), 0)
       : 0;
 
-    const advanceAmount = Number(order.advanceAmount || 0);
-    order.paidAmount = Math.max(advanceAmount, paymentsSum);
+    const existingPaid = Math.max(Number(order.paidAmount || 0), Number(order.advanceAmount || 0));
+    order.paidAmount = Math.max(existingPaid, paymentsSum);
+    order.advanceAmount = order.paidAmount;
     const discountAmount = Number(order.discountAmount || 0);
     order.finalAmount = Math.max(Number(order.totalAmount || 0) - discountAmount, 0);
     order.dueAmount = Math.max(order.finalAmount - order.paidAmount, 0);

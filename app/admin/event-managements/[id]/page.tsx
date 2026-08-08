@@ -266,23 +266,24 @@ export default function EventManagementDetailPage() {
                   value={formatMoney(order.discountAmount)}
                 />
                 <DetailItem
-                  label="Advance Amount"
-                  value={formatMoney(order.advanceAmount)}
-                />
-                <DetailItem
-                  label="Paid Amount"
-                  value={formatMoney(order.paidAmount)}
-                />
-                <DetailItem
-                  label="Due Amount"
-                  value={formatMoney(order.dueAmount)}
-                />
-                <DetailItem
                   label="Final Amount"
                   value={formatMoney(
                     order.finalAmount ??
                       order.totalAmount - Number(order.discountAmount || 0),
                   )}
+                />
+                <DetailItem
+                  label="Paid Amount"
+                  value={formatMoney(
+                    Math.max(
+                      Number(order.paidAmount || 0),
+                      Number(order.advanceAmount || 0),
+                    ),
+                  )}
+                />
+                <DetailItem
+                  label="Due Amount"
+                  value={formatMoney(order.dueAmount)}
                 />
               </div>
             </section>
@@ -308,7 +309,7 @@ export default function EventManagementDetailPage() {
                           </p>
                         ) : null}
                       </div>
-                      <p className="text-sm font-semibold text-white">
+                      <p className="text-sm font-semibold text-emerald-400">
                         {formatMoney(payment.amount)}
                       </p>
                     </div>
@@ -316,7 +317,7 @@ export default function EventManagementDetailPage() {
                 </div>
               ) : (
                 <p className="rounded-2xl border border-dashed border-white/10 p-4 text-sm text-neutral-400">
-                  No payments recorded yet.
+                  No payment transactions recorded yet.
                 </p>
               )}
             </section>
